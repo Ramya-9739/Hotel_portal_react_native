@@ -1,0 +1,26 @@
+{
+  "name": "hotel-portal-app",
+  "version": "1.0.0",
+  "main": "App.js",
+  "scripts": {
+    "dev": "expo start --web --offline",
+    "start": "expo start --offline",
+    "android": "expo start --android --offline",
+    "ios": "expo start --ios --offline",
+    "web": "expo start --web --offline",
+    "server": "node backend/server.js"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~4.0.1",
+    "expo": "~52.0.0",
+    "mongodb": "^7.6.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-native": "0.76.7",
+    "react-native-web": "~0.19.13"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2"
+  },
+  "private": true
+}

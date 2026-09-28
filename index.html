@@ -1,0 +1,1445 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Hotel Guest Portal | Dynamic Location-Based Concierge</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* Smooth custom scrollbars that are always clearly visible */
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #0E1017; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+    
+    /* Smooth card hover lift */
+    .portal-card { 
+      transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease; 
+      user-select: none;
+    }
+    .portal-card:hover { 
+      transform: translateY(-2px); 
+      border-color: #6366F1; 
+      background-color: #1A1E29; 
+      box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.5);
+    }
+    .portal-card:active {
+      transform: scale(0.98);
+    }
+
+    /* Grab to drag scrolling */
+    .drag-scroll {
+      cursor: grab;
+    }
+    .drag-scroll:active {
+      cursor: grabbing;
+    }
+
+    /* Shimmer effect for promo badge */
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.6)); }
+      50% { opacity: 0.85; filter: drop-shadow(0 0 2px rgba(99, 102, 241, 0.2)); }
+    }
+    .center-glow {
+      animation: pulseGlow 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-[#08090C] text-slate-100 font-sans antialiased min-h-screen p-2 md:p-3 flex flex-col justify-between select-none">
+
+  <!-- ===================================================================== -->
+  <!-- TOP BRANDING BAR (THE PALMYRAH TENEMENTS, MYSORE)                     -->
+  <!-- ===================================================================== -->
+  <header class="bg-[#10121A] border border-[#1E2230] rounded-xl px-3 py-2 mb-2 flex flex-wrap items-center justify-between gap-2 shadow-lg">
+    
+    <!-- Hotel Logo & Pitch Switcher -->
+    <div class="flex items-center gap-3">
+      <div id="hotelIconBadge" class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center font-black text-white text-base shadow-md shadow-amber-600/30">
+        P
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 id="brandHotelName" class="text-sm md:text-base font-extrabold tracking-wide text-white">
+            The Palmyrah Tenements
+          </h1>
+          
+        </div>
+        <p class="text-[10px] text-slate-400 flex items-center gap-1.5">
+          <span>In-House Guest & Dining Portal</span>
+          <span class="text-slate-600">â€¢</span>
+          <span class="text-amber-400 font-medium">Scanned via Dining Table QR Code</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Active Table & Service Badge -->
+    <div class="flex items-center gap-2">
+      <div class="bg-[#161924] border border-[#272E40] px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-inner">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <div class="text-right">
+          <p class="text-[11px] font-bold text-white">Table #14 (Dining Courtyard)</p>
+          <p class="text-[9px] text-emerald-400 font-medium">Guest VIP Pass Active</p>
+        </div>
+      </div>
+      <button onclick="openTableServiceModal()" class="hidden sm:flex bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-md items-center gap-1.5 transition-all">
+        <span>ðŸ›Žï¸</span> Call Waiter / Front Desk
+      </button>
+    </div>
+
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- 1. TOP SECTION: ROYAL MYSORE ATTRACTIONS (HORIZONTAL SCROLL)           -->
+  <!-- ===================================================================== -->
+  <section class="bg-[#10121A] border border-[#1E2230] p-2.5 rounded-xl mb-2 shadow-md">
+    <div class="flex justify-between items-center mb-2 px-1">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+          <span>ðŸ›ï¸</span> Royal Mysore Attractions Nearby
+        </span>
+        <span class="text-[9px] font-bold bg-[#1B1F2E] text-slate-300 border border-[#2B3145] px-2 py-0.5 rounded-full">
+          Horizontal Scroll â€¢ 8 Authentic Heritage Spots
+        </span>
+      </div>
+      <!-- Controls -->
+      <div class="flex items-center gap-1.5">
+        <span class="text-[10px] text-slate-400 font-medium hidden sm:inline">Swipe or use arrows âž”</span>
+        <button onclick="scrollSection('topTouristScroll', -340)" title="Scroll Left" class="w-7 h-6 rounded-md bg-[#1B1F2E] hover:bg-amber-600 hover:text-white text-slate-300 text-xs font-bold flex items-center justify-center transition-all border border-[#2E354A]">â—€</button>
+        <button onclick="scrollSection('topTouristScroll', 340)" title="Scroll Right" class="w-7 h-6 rounded-md bg-[#1B1F2E] hover:bg-amber-600 hover:text-white text-slate-300 text-xs font-bold flex items-center justify-center transition-all border border-[#2E354A]">â–¶</button>
+      </div>
+    </div>
+
+    <!-- Drag & Wheel Enabled Horizontal Container -->
+    <div id="topTouristScroll" class="custom-scroll drag-scroll flex gap-3 overflow-x-auto pb-2 scroll-smooth">
+      
+      <!-- Tourist 1: Mysore Palace -->
+      <div onclick="openItemModal('Mysore Palace (Amba Vilas)', 'Indo-Saracenic Royal Residence with 100,000 Lights', '10:00 AM - 05:30 PM â€¢ 6.5 km', 'FAST-TRACK PASS', 'https://images.unsplash.com/photo-1590766940554-634a7ed41450?w=600&q=80', 12480, 'Royal Palace', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1590766940554-634a7ed41450?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="Mysore Palace">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">Mysore Palace</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-extrabold">FAST PASS</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Amba Vilas Royal Residence</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-amber-400 font-semibold">ðŸ•’ 6.5 km â€¢ 15 Mins</span>
+            <span>â¤ï¸ 12,480</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tourist 2: Chamundi Hill & Temple -->
+      <div onclick="openItemModal('Chamundi Hill & Temple', 'Sacred 1,000 Steps Hilltop Shrine & Giant Nandi Bull', '06:00 AM - 09:00 PM â€¢ 13.2 km', 'VIP DARSHAN', 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&q=80', 9840, 'Hilltop Shrine', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="Chamundi Hill">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">Chamundi Hill Temple</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-extrabold">VIP ENTRY</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Panoramic View & Nandi Monolith</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-amber-400 font-semibold">ðŸ•’ 13.2 km â€¢ 25 Mins</span>
+            <span>â¤ï¸ 9,840</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tourist 3: Brindavan Gardens -->
+      <div onclick="openItemModal('Brindavan Gardens & KRS Dam', 'Terraced Botanical Marvel & Evening Musical Fountains', '06:00 AM - 08:00 PM â€¢ 14.2 km', 'FOUNTAIN TOUR', 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?w=600&q=80', 8720, 'Botanical Gardens', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="Brindavan Gardens">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">Brindavan Gardens</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 font-extrabold">FOUNTAINS</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">KRS Dam Terraced Gardens</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-amber-400 font-semibold">ðŸ•’ 14.2 km â€¢ 22 Mins</span>
+            <span>â¤ï¸ 8,720</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tourist 4: St. Philomena's Cathedral -->
+      <div onclick="openItemModal('St. Philomenaâ€™s Cathedral', 'Neo-Gothic Twin Spire Basilica with Crypt', '05:00 AM - 08:00 PM â€¢ 4.9 km', 'FREE PASS', 'https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=600&q=80', 6540, 'Historic Cathedral', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="St Philomena Cathedral">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">St. Philomenaâ€™s Cathedral</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 font-extrabold">FREE ENTRY</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">175ft Twin Gothic Spires</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-amber-400 font-semibold">ðŸ•’ 4.9 km â€¢ 12 Mins</span>
+            <span>â¤ï¸ 6,540</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tourist 5: Mysore Zoo -->
+      <div onclick="openItemModal('Sri Chamarajendra Zoological Gardens', 'Centuries-Old 157-Acre Royal Zoo & Wildlife Sanctuary', '08:30 AM - 05:30 PM â€¢ 7.1 km', '15% HOTEL PASS', 'https://images.unsplash.com/photo-1534567153574-2b12153a87f0?w=600&q=80', 7890, 'Royal Zoo', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1534567153574-2b12153a87f0?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="Mysore Zoo">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">Mysore Zoo</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-extrabold">15% PASS</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Royal Wildlife Sanctuary</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-amber-400 font-semibold">ðŸ•’ 7.1 km â€¢ 16 Mins</span>
+            <span>â¤ï¸ 7,890</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tourist 6: Jaganmohan Palace -->
+      <div onclick="openItemModal('Jaganmohan Palace Art Gallery', 'Royal Art Gallery featuring Raja Ravi Varma Original Masterpieces', '08:30 AM - 05:30 PM â€¢ 5.8 km', 'ART PASS', 'https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?w=600&q=80', 4120, 'Art Gallery', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="Jaganmohan Palace">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">Jaganmohan Palace</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-extrabold">ART PASS</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Raja Ravi Varma Gallery</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-amber-400 font-semibold">ðŸ•’ 5.8 km â€¢ 14 Mins</span>
+            <span>â¤ï¸ 4,120</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tourist 7: Karanji Lake -->
+      <div onclick="openItemModal('Karanji Lake & Nature Aviary', 'Scenic 90-Acre Freshwater Wetland & Indiaâ€™s Largest Walk-Through Aviary', '08:30 AM - 05:30 PM â€¢ 7.8 km', 'NATURE PASS', 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&q=80', 5230, 'Nature Park', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="Karanji Lake">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">Karanji Nature Lake</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-extrabold">AVIARY PASS</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Butterfly Park & Wetlands</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-amber-400 font-semibold">ðŸ•’ 7.8 km â€¢ 18 Mins</span>
+            <span>â¤ï¸ 5,230</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tourist 8: Devaraja Market -->
+      <div onclick="openItemModal('Devaraja Heritage Market', 'Vibrant 130-Year-Old Traditional Bazaar for Mysore Betel, Jasmine & Spices', '06:30 AM - 09:30 PM â€¢ 5.2 km', 'FREE ENTRY', 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=600&q=80', 6100, 'Heritage Bazaar', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="Devaraja Market">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">Devaraja Market</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-400 font-extrabold">BAZAAR</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Sandalwood, Silk & Spices</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-amber-400 font-semibold">ðŸ•’ 5.2 km â€¢ 12 Mins</span>
+            <span>â¤ï¸ 6,100</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- 2. MIDDLE AREA (12 COLS):                                             -->
+  <!-- LEFT: Shopping Malls & Silk Boutiques (3 cols)                        -->
+  <!-- CENTER: 40% The Palmyrah Tenements & In-House Dining (6 cols)         -->
+  <!-- RIGHT: Transit & Hospitals (3 cols)                                  -->
+  <!-- ===================================================================== -->
+  <section class="grid grid-cols-12 gap-2.5 my-1 flex-1 items-stretch">
+    
+    <!-- ------------------------------------------------------------------- -->
+    <!-- LEFT SIDEBAR: SHOPPING MALLS & SILK (VERTICAL SCROLL)               -->
+    <!-- ------------------------------------------------------------------- -->
+    <div class="col-span-12 md:col-span-3 flex flex-col bg-[#10121A] border border-[#1E2230] p-2.5 rounded-xl shadow-md">
+      <div class="flex justify-between items-center mb-1.5 px-1">
+        <div>
+          <span class="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+            <span>ðŸ›ï¸</span> Shopping & Silk Malls
+          </span>
+          <p class="text-[9px] text-slate-400">Vertical Scroll â€¢ 5 Centers</p>
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="scrollSectionVert('leftMallsScroll', -100)" title="Scroll Up" class="w-6 h-6 rounded bg-[#1B1F2E] hover:bg-amber-500 hover:text-black text-slate-300 text-xs font-bold flex items-center justify-center transition-all border border-[#2E354A]">â–²</button>
+          <button onclick="scrollSectionVert('leftMallsScroll', 100)" title="Scroll Down" class="w-6 h-6 rounded bg-[#1B1F2E] hover:bg-amber-500 hover:text-black text-slate-300 text-xs font-bold flex items-center justify-center transition-all border border-[#2E354A]">â–¼</button>
+        </div>
+      </div>
+
+      <!-- Vertical Scrollable Container -->
+      <div id="leftMallsScroll" class="custom-scroll space-y-2 overflow-y-auto h-64 pr-1 scroll-smooth">
+        
+        <!-- Mall 1: Mall of Mysore -->
+        <div onclick="openItemModal('Mall of Mysore', 'Premium Retail, Multiplex Cinema & Gastronomy â€¢ MG Road', '10:00 AM - 10:00 PM â€¢ 7.4 km', 'VIP PASS', 'https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=600&q=80', 4820, 'Shopping Mall', this)" class="portal-card cursor-pointer bg-[#151822] border border-[#252A3B] rounded-xl p-2 flex gap-2.5 items-center">
+          <img src="https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=160&q=80" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=160&q=80'" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" alt="Mall of Mysore">
+          <div class="flex-1 min-w-0">
+            <h5 class="text-xs font-bold text-white truncate">Mall of Mysore</h5>
+            <p class="text-[9.5px] text-slate-400 truncate">Flagship Brands & INOX</p>
+            <p class="text-[9px] text-amber-400 mt-0.5 font-medium">ðŸ•’ 7.4 km â€¢ MG Road</p>
+          </div>
+        </div>
+
+        <!-- Mall 2: Nexus Centre City Mall -->
+        <div onclick="openItemModal('Nexus Centre City Mall', 'Hypermarket, Lifestyle Shopping & Food Court â€¢ Hyder Ali Road', '10:00 AM - 10:00 PM â€¢ 5.1 km', '10% OFF VOUCHER', 'https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=600&q=80', 3940, 'Shopping Mall', this)" class="portal-card cursor-pointer bg-[#151822] border border-[#252A3B] rounded-xl p-2 flex gap-2.5 items-center">
+          <img src="https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=160&q=80" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=160&q=80'" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" alt="Nexus Centre City">
+          <div class="flex-1 min-w-0">
+            <h5 class="text-xs font-bold text-white truncate">Nexus Centre City</h5>
+            <p class="text-[9.5px] text-slate-400 truncate">Shopping & Entertainment</p>
+            <p class="text-[9px] text-amber-400 mt-0.5 font-medium">ðŸ•’ 5.1 km â€¢ Hyder Ali Rd</p>
+          </div>
+        </div>
+
+        <!-- Mall 3: KSIC Mysore Silk Showroom -->
+        <div onclick="openItemModal('KSIC Mysore Silk Showroom', 'Authentic Pure Zari Silk Sarees by Govt of Karnataka', '10:00 AM - 08:00 PM â€¢ 6.8 km', 'GOVT AUTHENTIC', 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=80', 5420, 'Silk Emporium', this)" class="portal-card cursor-pointer bg-[#151822] border border-[#252A3B] rounded-xl p-2 flex gap-2.5 items-center">
+          <img src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=160&q=80" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=160&q=80'" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" alt="KSIC Mysore Silk">
+          <div class="flex-1 min-w-0">
+            <h5 class="text-xs font-bold text-white truncate">KSIC Mysore Silk</h5>
+            <p class="text-[9.5px] text-slate-400 truncate">Pure Gold Zari Sarees</p>
+            <p class="text-[9px] text-amber-400 mt-0.5 font-medium">ðŸ•’ 6.8 km â€¢ Mananthavady Rd</p>
+          </div>
+        </div>
+
+        <!-- Mall 4: Garuda Mall Mysore -->
+        <div onclick="openItemModal('Garuda Mall Mysore', 'Retail Hub, Electronics, Dining & Family Entertainment', '10:00 AM - 10:00 PM â€¢ 6.2 km', 'VIP PRICING', 'https://images.unsplash.com/photo-1567449303078-57ad995bd301?w=600&q=80', 3120, 'Shopping Mall', this)" class="portal-card cursor-pointer bg-[#151822] border border-[#252A3B] rounded-xl p-2 flex gap-2.5 items-center">
+          <img src="https://images.unsplash.com/photo-1567449303078-57ad995bd301?w=160&q=80" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=160&q=80'" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" alt="Garuda Mall">
+          <div class="flex-1 min-w-0">
+            <h5 class="text-xs font-bold text-white truncate">Garuda Mall Mysore</h5>
+            <p class="text-[9.5px] text-slate-400 truncate">Albert Victor Road</p>
+            <p class="text-[9px] text-amber-400 mt-0.5 font-medium">ðŸ•’ 6.2 km â€¢ City Heart</p>
+          </div>
+        </div>
+
+        <!-- Mall 5: Cauvery Arts & Crafts -->
+        <div onclick="openItemModal('Cauvery Arts & Crafts Emporium', 'Heritage Sandalwood Carvings, Rosewood Inlay & Brass Artefacts', '10:00 AM - 08:30 PM â€¢ 5.3 km', 'HANDICRAFT PASS', 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=600&q=80', 4110, 'Handicrafts Emporium', this)" class="portal-card cursor-pointer bg-[#151822] border border-[#252A3B] rounded-xl p-2 flex gap-2.5 items-center">
+          <img src="https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=160&q=80" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=160&q=80'" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" alt="Cauvery Arts">
+          <div class="flex-1 min-w-0">
+            <h5 class="text-xs font-bold text-white truncate">Cauvery Emporium</h5>
+            <p class="text-[9.5px] text-slate-400 truncate">Sandalwood & Rosewood Inlay</p>
+            <p class="text-[9px] text-amber-400 mt-0.5 font-medium">ðŸ•’ 5.3 km â€¢ Sayyaji Rao Rd</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------------------- -->
+    <!-- CENTER 40% OCCUPANCY: THE PALMYRAH TENEMENTS (WHERE GUEST IS SITTING)-->
+    <!-- ------------------------------------------------------------------- -->
+    <div class="col-span-12 md:col-span-6 flex flex-col justify-center">
+      <div class="rounded-2xl border-2 border-amber-500/60 bg-gradient-to-b from-[#141724] to-[#0E1018] p-3 md:p-4 flex flex-col justify-between shadow-2xl relative overflow-hidden h-full center-glow">
+        
+        <!-- Header badge row inside center -->
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-[10.5px] font-black tracking-wider text-amber-300 bg-amber-500/20 border border-amber-500/40 px-2.5 py-1 rounded-md flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+            â˜… YOUR RESIDENCE & DINING (CENTER 40% DISPLAY)
+          </span>
+          <span class="text-[10px] font-extrabold text-white bg-gradient-to-r from-amber-600 to-amber-700 px-3 py-1 rounded-md shadow">
+            YOU ARE DINING HERE
+          </span>
+        </div>
+
+        <!-- Center Image of The Palmyrah Tenements -->
+        <div class="relative w-full h-44 md:h-48 rounded-xl overflow-hidden my-1 border border-[#2B3245] shadow-inner group">
+          <img id="centerHotelImage" src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1000&q=80" onerror="this.src='https://images.unsplash.com/photo-1582719508461-905c673771fd?w=1000&q=80'" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="Hotel View">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"></div>
+          
+          <!-- In-dining table overlay -->
+          <div class="absolute bottom-2.5 left-2.5 right-2.5 flex justify-between items-end gap-2">
+            <div class="bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10">
+              <span class="text-[10.5px] text-emerald-400 font-black">â— Currently Seated at Table #14</span>
+              <p class="text-[9px] text-slate-300">Dining Courtyard & Garden Terrace</p>
+            </div>
+            <div class="bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10 text-right">
+              <span class="text-[10.5px] text-amber-300 font-black">â˜… 4.95 Rating</span>
+              <p class="text-[9px] text-slate-300">4,820 Verified Guest Reviews</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center Hotel Details -->
+        <div class="mt-2">
+          <div class="flex justify-between items-start">
+            <div>
+              <h2 id="centerHotelHeading" class="text-base md:text-lg font-black text-white">
+                The Palmyrah Tenements
+              </h2>
+              <p id="centerHotelSub" class="text-xs text-amber-300 font-medium mt-0.5">
+                Boutique Luxury Residences & Suites Â· Mysore
+              </p>
+            </div>
+            <span class="text-xs text-red-400 font-bold bg-red-500/15 px-2 py-0.5 rounded border border-red-500/30 flex items-center gap-1">
+              â¤ï¸ 4,820 Residents
+            </span>
+          </div>
+
+          <!-- Description highlighting food and amenities -->
+          <p id="centerHotelDesc" class="text-[11px] text-slate-300 mt-1.5 leading-relaxed">
+            Welcome to our dining room. While enjoying your food, use this portal to discover surrounding Royal Mysore attractions, book private hotel chauffeur cabs, arrange shopping guides, or request immediate emergency support.
+          </p>
+
+          <!-- Dynamic Start âž” End Route Box in Central Panel (User Request) -->
+          <div id="centerRouteSection" class="mt-2 bg-[#0F131E] border border-sky-500/35 rounded-lg p-2.5 shadow-md">
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="text-[10px] font-extrabold text-sky-400 flex items-center gap-1.5">
+                <span>ðŸ§­</span> START âž” ENDING POINT NAVIGATION
+              </span>
+              <span id="centerDistanceBadge" class="text-[9.5px] font-bold bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded border border-sky-500/30">
+                ðŸ“ 0.0 km
+              </span>
+            </div>
+            
+            <div class="space-y-1 text-[10px]">
+              <div class="flex items-start gap-1.5">
+                <span class="w-4 h-4 rounded-full bg-emerald-500 text-white font-black text-[9px] flex items-center justify-center flex-shrink-0 mt-0.5">A</span>
+                <div class="min-w-0">
+                  <p class="font-bold text-emerald-400">STARTING POINT (ORIGIN):</p>
+                  <p class="text-slate-300 truncate">The Palmyrah Tenements â€¢ Plot No. 5, Contour Road, Hebbal 1st Stage, Mysore</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-1.5 pt-0.5">
+                <span class="w-4 h-4 rounded-full bg-red-500 text-white font-black text-[9px] flex items-center justify-center flex-shrink-0 mt-0.5">B</span>
+                <div class="min-w-0">
+                  <p class="font-bold text-red-400">ENDING POINT (DESTINATION):</p>
+                  <p id="centerDestinationAddress" class="text-white font-medium truncate">Courtyard Garden & Dining Terrace, Hebbal</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Travel Times -->
+            <div class="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-white/5 text-[9.5px] text-slate-400">
+              <span class="text-slate-300">ðŸš— Drive: <span id="centerDriveTime" class="text-amber-400 font-bold">1 min</span></span>
+              <span>â€¢</span>
+              <span class="text-slate-300">ðŸ›º Auto: <span id="centerAutoTime" class="text-sky-400 font-bold">2 mins</span></span>
+              <span>â€¢</span>
+              <span class="text-slate-300">ðŸš¶ Walk: <span id="centerWalkTime" class="text-emerald-400 font-bold">2 mins</span></span>
+            </div>
+          </div>
+
+          <!-- Dining perk banner -->
+          <div class="mt-2 bg-[#1B202E] border border-[#2B334A] rounded-lg p-2 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-base">â˜•</span>
+              <div>
+                <p class="text-[10.5px] font-bold text-white">Today's In-House Dining Offer</p>
+                <p class="text-[9px] text-amber-300">Complimentary South Indian Filter Kaapi & Royal Mysore Pak with meals</p>
+              </div>
+            </div>
+            <span class="text-[9.5px] font-extrabold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded">CLAIMED</span>
+          </div>
+        </div>
+
+        <!-- Center action bar -->
+        <div class="mt-2 pt-2 border-t border-[#202534] flex flex-wrap justify-between items-center gap-2">
+          <span class="text-[10px] text-slate-400 flex items-center gap-1">
+            <span>ðŸ“</span> Plot No. 5, Contour Road, Hebbal 1st Stage, Mysore - 570016
+          </span>
+          <div class="flex items-center gap-2">
+            <button id="centerMapsBtn" onclick="openLiveGoogleMaps()" class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-extrabold transition-all shadow-md flex items-center gap-1">
+              <span>ðŸ—ºï¸</span> Google Maps
+            </button>
+            <button onclick="openTableServiceModal()" class="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-black transition-all shadow-md">
+              View Route & Pass â†’
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------------------- -->
+    <!-- RIGHT SIDEBAR: TRANSIT & HOSPITALS (VERTICAL SCROLL)                -->
+    <!-- ------------------------------------------------------------------- -->
+    <div class="col-span-12 md:col-span-3 flex flex-col bg-[#10121A] border border-[#1E2230] p-2.5 rounded-xl shadow-md">
+      <div class="flex justify-between items-center mb-1.5 px-1">
+        <div>
+          <span class="text-xs font-black uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
+            <span>ðŸ¥</span> Transit & Healthcare
+          </span>
+          <p class="text-[9px] text-slate-400">Vertical Scroll â€¢ 6 Services</p>
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="scrollSectionVert('rightTransitScroll', -100)" title="Scroll Up" class="w-6 h-6 rounded bg-[#1B1F2E] hover:bg-sky-500 hover:text-black text-slate-300 text-xs font-bold flex items-center justify-center transition-all border border-[#2E354A]">â–²</button>
+          <button onclick="scrollSectionVert('rightTransitScroll', 100)" title="Scroll Down" class="w-6 h-6 rounded bg-[#1B1F2E] hover:bg-sky-500 hover:text-black text-slate-300 text-xs font-bold flex items-center justify-center transition-all border border-[#2E354A]">â–¼</button>
+        </div>
+      </div>
+
+      <!-- Vertical Scrollable Container -->
+      <div id="rightTransitScroll" class="custom-scroll space-y-2 overflow-y-auto h-64 pr-1 scroll-smooth">
+        
+        <!-- Hospital 1: Manipal Hospital Mysore -->
+        <div onclick="openItemModal('Manipal Hospital Mysore', '24/7 Emergency Trauma ICU, Multi-Specialty Surgery & Advanced Cardiology', 'Open 24/7 â€¢ 1.5 km', 'PRIORITY ER PASS', 'https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=600&q=80', 3840, 'Emergency Hospital', this)" class="portal-card cursor-pointer bg-[#151822] border border-[#252A3B] rounded-xl p-2 flex gap-2.5 items-center">
+          <img src="https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=160&q=80" onerror="this.src='https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=160&q=80'" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" alt="Manipal Hospital">
+          <div class="flex-1 min-w-0">
+            <h5 class="text-xs font-bold text-white truncate">Manipal Hospital</h5>
+            <p class="text-[9.5px] text-red-400 font-extrabold truncate">24/7 Multi-Specialty ICU</p>
+            <p class="text-[9px] text-sky-400 mt-0.5 font-medium">ðŸ•’ 1.5 km â€¢ Hebbal Ring Rd</p>
+          </div>
+        </div>
+
+        <!-- Transit 2: Mysore Junction Railway Station -->
+        <div onclick="openItemModal('Mysore Junction Railway Station (MYS)', 'Primary Rail Gateway connecting Bengaluru, Chennai & National Express Lines', 'Open 24/7 â€¢ 5.2 km', 'RAIL TRANSIT PASS', 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80', 4920, 'Railway Station', this)" class="portal-card cursor-pointer bg-[#151822] border border-[#252A3B] rounded-xl p-2 flex gap-2.5 items-center">
+          <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=160&q=80" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=160&q=80'" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" alt="Mysore Railway Station">
+          <div class="flex-1 min-w-0">
+            <h5 class="text-xs font-bold text-white truncate">Mysore Junction (MYS)</h5>
+            <p class="text-[9.5px] text-slate-400 truncate">Vande Bharat & Express Hub</p>
+            <p class="text-[9px] text-sky-400 mt-0.5 font-medium">ðŸ•’ 5.2 km â€¢ Medar Block</p>
+          </div>
+        </div>
+
+        <!-- Transit 3: KSRTC Suburban Central Bus Stand -->
+        <div onclick="openItemModal('KSRTC Suburban Central Bus Stand', 'Intercity & Inter-state Airavat Club Class KSRTC Coach Terminal', 'Open 24/7 â€¢ 6.1 km', 'KSRTC PASS', 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80', 3450, 'Bus Terminal', this)" class="portal-card cursor-pointer bg-[#151822] border border-[#252A3B] rounded-xl p-2 flex gap-2.5 items-center">
+          <img src="https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=160&q=80" onerror="this.src='https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=160&q=80'" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" alt="KSRTC Bus Stand">
+          <div class="flex-1 min-w-0">
+            <h5 class="text-xs font-bold text-white truncate">KSRTC Central Bus Stand</h5>
+            <p class="text-[9.5px] text-slate-400 truncate">Suburban & Highway Coaches</p>
+            <p class="text-[9px] text-sky-400 mt-0.5 font-medium">ðŸ•’ 6.1 km â€¢ Nazarbad</p>
+          </div>
+        </div>
+
+        <!-- Clinic 4: Asha Kirana Urgent Care Clinic -->
+        <div onclick="openItemModal('Asha Kirana Urgent Care Clinic', 'Walk-In Care, Doctor Consultation & Immediate Pharmacy Dispensing', 'Open 24 Hours â€¢ 0.2 km', 'WALK-IN CARE', 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=600&q=80', 2120, 'Medical Clinic', this)" class="portal-card cursor-pointer bg-[#151822] border border-[#252A3B] rounded-xl p-2 flex gap-2.5 items-center">
+          <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=160&q=80" onerror="this.src='https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=160&q=80'" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" alt="Urgent Clinic">
+          <div class="flex-1 min-w-0">
+            <h5 class="text-xs font-bold text-white truncate">Asha Kirana Clinic</h5>
+            <p class="text-[9.5px] text-slate-400 truncate">Contour Road Urgent Care</p>
+            <p class="text-[9px] text-sky-400 mt-0.5 font-medium">ðŸ•’ 0.2 km â€¢ 2 Mins Walk</p>
+          </div>
+        </div>
+
+        <!-- Hospital 5: Apollo BGS Hospitals -->
+        <div onclick="openItemModal('Apollo BGS Hospitals', 'Tertiary Care Hospital with 24/7 Comprehensive Trauma & Cardiac Care', 'Open 24/7 â€¢ 5.8 km', 'APOLLO PASS', 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=600&q=80', 3610, 'Tertiary Hospital', this)" class="portal-card cursor-pointer bg-[#151822] border border-[#252A3B] rounded-xl p-2 flex gap-2.5 items-center">
+          <img src="https://images.unsplash.com/photo-1516549655169-df83a0774514?w=160&q=80" onerror="this.src='https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=160&q=80'" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" alt="Apollo BGS">
+          <div class="flex-1 min-w-0">
+            <h5 class="text-xs font-bold text-white truncate">Apollo BGS Hospitals</h5>
+            <p class="text-[9.5px] text-red-400 font-extrabold truncate">Emergency & Cardiac ICU</p>
+            <p class="text-[9px] text-sky-400 mt-0.5 font-medium">ðŸ•’ 5.8 km â€¢ Kuvempunagar</p>
+          </div>
+        </div>
+
+        <!-- Chauffeur 6: Hebbal Auto & Taxi Stand -->
+        <div onclick="openItemModal('Hebbal Ring Road Auto & Taxi Stand', 'Private AC Sedans & Pre-fixed Metered Autos Available at Porch', 'Available 24/7 On Demand â€¢ 0.4 km', 'INSTANT DISPATCH', 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=600&q=80', 2890, 'Taxi & Auto Stand', this)" class="portal-card cursor-pointer bg-[#151822] border border-[#252A3B] rounded-xl p-2 flex gap-2.5 items-center">
+          <img src="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=160&q=80" onerror="this.src='https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=160&q=80'" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" alt="Taxi Stand">
+          <div class="flex-1 min-w-0">
+            <h5 class="text-xs font-bold text-white truncate">Hebbal Ring Rd Taxi Stand</h5>
+            <p class="text-[9.5px] text-slate-400 truncate">Private Sedan & Auto Fleet</p>
+            <p class="text-[9px] text-sky-400 mt-0.5 font-medium">ðŸ•’ 0.4 km â€¢ Instant Dispatch</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- 3. BOTTOM SECTION: DINING, 24/7 ATMS, POOLS & PARLOUR (HORIZONTAL)     -->
+  <!-- ===================================================================== -->
+  <section class="bg-[#10121A] border border-[#1E2230] p-2.5 rounded-xl mt-1 shadow-md">
+    <div class="flex justify-between items-center mb-2 px-1">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+          <span>ðŸŒŸ</span> Dining, 24/7 ATMs, Swimming Pools & Parlour
+        </span>
+        <span class="text-[9px] font-bold bg-[#1B1F2E] text-slate-300 border border-[#2B3145] px-2 py-0.5 rounded-full">
+          Horizontal Scroll â€¢ 10 Mysore Essentials
+        </span>
+      </div>
+      <!-- Controls -->
+      <div class="flex items-center gap-1.5">
+        <span class="text-[10px] text-slate-400 font-medium hidden sm:inline">Swipe or use arrows âž”</span>
+        <button onclick="scrollSection('bottomLeisureScroll', -340)" title="Scroll Left" class="w-7 h-6 rounded-md bg-[#1B1F2E] hover:bg-emerald-600 hover:text-white text-slate-300 text-xs font-bold flex items-center justify-center transition-all border border-[#2E354A]">â—€</button>
+        <button onclick="scrollSection('bottomLeisureScroll', 340)" title="Scroll Right" class="w-7 h-6 rounded-md bg-[#1B1F2E] hover:bg-emerald-600 hover:text-white text-slate-300 text-xs font-bold flex items-center justify-center transition-all border border-[#2E354A]">â–¶</button>
+      </div>
+    </div>
+
+    <!-- Drag & Wheel Enabled Horizontal Container -->
+    <div id="bottomLeisureScroll" class="custom-scroll drag-scroll flex gap-3 overflow-x-auto pb-2 scroll-smooth">
+      
+      <!-- Leisure 1: Hotel Original Mylari -->
+      <div onclick="openItemModal('Hotel Original Mylari', 'Legendary Melt-in-Mouth Butter Dosa with Coconut Chutney â€¢ Nazarbad', '06:30 AM - 09:30 PM â€¢ 6.1 km', 'LEGENDARY DOSA', 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=600&q=80', 8920, 'Heritage Dining', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="Mylari Dosa">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">Hotel Original Mylari</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-extrabold">MUST VISIT</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Iconic Butter Dosa Since 1938</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-emerald-400 font-semibold">ðŸ•’ 6.1 km â€¢ Agrahara</span>
+            <span>â¤ï¸ 8,920</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leisure 2: Depth 'n' Green Organic Cafe -->
+      <div onclick="openItemModal('Depth â€™nâ€™ Green Organic Cafe', 'Artisanal Single-Origin Filter Coffee, Sourdough & Vegan Delights â€¢ Gokulam', '07:30 AM - 10:00 PM â€¢ 2.8 km', 'ORGANIC COFFEE', 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=80', 4320, 'Artisan Cafe', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="Depth n Green Cafe">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">Depth â€™nâ€™ Green Cafe</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-extrabold">GOKULAM</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Specialty Coffee & Bakes</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-emerald-400 font-semibold">ðŸ•’ 2.8 km â€¢ 7 Mins</span>
+            <span>â¤ï¸ 4,320</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leisure 3: Oyster Bay Restaurant -->
+      <div onclick="openItemModal('Oyster Bay Restaurant', 'Celebrated Coastal Karnataka Seafood, Ghee Roast & Tandoor â€¢ Vijay Nagar', '11:30 AM - 11:00 PM â€¢ 2.4 km', 'FINE DINING', 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80', 4110, 'Gourmet Dining', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="Oyster Bay Restaurant">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">Oyster Bay Restaurant</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 font-extrabold">SEAFOOD</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Mangalorean Ghee Roast & Neer Dosa</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-emerald-400 font-semibold">ðŸ•’ 2.4 km â€¢ Vijay Nagar</span>
+            <span>â¤ï¸ 4,110</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leisure 4: Mahesh Prasad Traditional Dining -->
+      <div onclick="openItemModal('Mahesh Prasad Traditional Dining', 'Authentic South Indian Vegetarian Thali, Filter Kaapi & Crispy Vada â€¢ Ballal Circle', '07:00 AM - 10:30 PM â€¢ 6.4 km', 'VEG FEAST', 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&q=80', 3890, 'Vegetarian Dining', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="Mahesh Prasad">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">Mahesh Prasad</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-extrabold">PURE VEG</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Royal Karnataka Meals & Thali</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-emerald-400 font-semibold">ðŸ•’ 6.4 km â€¢ Ballal Circle</span>
+            <span>â¤ï¸ 3,890</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leisure 5: SBI 24/7 ATM -->
+      <div onclick="openItemModal('SBI 24/7 ATM & Cash Deposit', 'State Bank of India Multi-Function ATM, Cash Recycler & UPI QR Cash Withdrawal', 'Open 24/7 â€¢ 0.3 km', '24/7 CASH', 'https://images.unsplash.com/photo-1601597111158-2fceff292cdc?w=600&q=80', 1240, '24/7 Banking ATM', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1601597111158-2fceff292cdc?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="SBI ATM">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">SBI 24/7 ATM</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-extrabold">24/7 CASH</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Contour Rd â€¢ Cash Deposit & ATM</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-emerald-400 font-semibold">ðŸ•’ 0.3 km â€¢ 3 Mins Walk</span>
+            <span>â¤ï¸ 1,240</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leisure 6: HDFC Bank Express ATM -->
+      <div onclick="openItemModal('HDFC Bank Express ATM', 'High-Speed Cash Withdrawal & International Card Support â€¢ Hebbal Ring Road', 'Open 24/7 â€¢ 0.6 km', 'GLOBAL CARDS', 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=600&q=80', 1150, '24/7 Banking ATM', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1601597111158-2fceff292cdc?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="HDFC ATM">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">HDFC Bank ATM</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 font-extrabold">EXPRESS</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Hebbal Ring Rd Junction</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-emerald-400 font-semibold">ðŸ•’ 0.6 km â€¢ 6 Mins Walk</span>
+            <span>â¤ï¸ 1,150</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leisure 7: The Palmyrah Resident Azure Pool -->
+      <div onclick="openItemModal('The Palmyrah Resident Azure Pool', 'Temperature-Controlled Courtyard Swimming Pool & Sun Loungers â€¢ Hebbal', '06:00 AM - 09:30 PM â€¢ 0.0 km', 'IN-HOUSE ACCESS', 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=600&q=80', 3420, 'Swimming Pool', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1519315901367-f34ff9154487?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="Palmyrah Azure Pool">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">Palmyrah Azure Pool</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 font-extrabold">RESIDENT</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Internal Courtyard Azure Pool</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-emerald-400 font-semibold">ðŸ•’ In-House â€¢ 0.0 km</span>
+            <span>â¤ï¸ 3,420</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leisure 8: Chamundi Vihar Olympic Complex -->
+      <div onclick="openItemModal('Chamundi Vihar Olympic Swimming Pool', '50-Meter Olympic Standard Aquatic Sports Complex & Diving Board â€¢ Nazarbad', '06:00 AM - 07:30 PM â€¢ 6.2 km', 'OLYMPIC PASS', 'https://images.unsplash.com/photo-1519315901367-f34ff9154487?w=600&q=80', 2980, 'Olympic Pool', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1519315901367-f34ff9154487?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="Chamundi Vihar Pool">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">Chamundi Vihar Pool</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 font-extrabold">50M POOL</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Olympic Standard Swimming</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-emerald-400 font-semibold">ðŸ•’ 6.2 km â€¢ Nazarbad</span>
+            <span>â¤ï¸ 2,980</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leisure 9: Naturals Lounge Salon & Parlour -->
+      <div onclick="openItemModal('Naturals Lounge Salon & Bridal Parlour', 'Luxury Hair Styling, Spa Treatments, Facial & Bridal Care â€¢ Hebbal Main Road', '09:00 AM - 09:00 PM â€¢ 0.8 km', '20% HOTEL PRIVILEGE', 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&q=80', 2650, 'Beauty Parlour & Salon', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="Naturals Parlour">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">Naturals Salon & Parlour</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-400 font-extrabold">20% OFF</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Hair, Skin & Bridal Spa</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-emerald-400 font-semibold">ðŸ•’ 0.8 km â€¢ Hebbal Main Rd</span>
+            <span>â¤ï¸ 2,650</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leisure 10: Green Trends Hair & Style Parlour -->
+      <div onclick="openItemModal('Green Trends Hair & Style Parlour', 'Trendsetting Haircuts, Organic Keratin Spa & Radiant Skin Glow â€¢ Jayalakshmipuram', '09:30 AM - 09:30 PM â€¢ 2.3 km', 'STYLE PASS', 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80', 2410, 'Beauty Parlour & Salon', this)" class="portal-card cursor-pointer flex-shrink-0 w-80 bg-[#151822] border border-[#252A3B] rounded-xl p-2.5 flex gap-3 items-center">
+        <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=200&q=80" onerror="this.src='https://images.unsplash.com/photo-1560066984-138dadb4c035?w=200&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" alt="Green Trends">
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold truncate text-white">Green Trends Parlour</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-extrabold">STYLE PASS</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate mt-0.5">Keratin & Radiant Skin Spa</p>
+          <div class="flex items-center justify-between mt-1.5 text-[9px] text-slate-400">
+            <span class="text-emerald-400 font-semibold">ðŸ•’ 2.3 km â€¢ Kalidasa Rd</span>
+            <span>â¤ï¸ 2,410</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- 4. MODAL: REGISTRATION & SERVICE DISPATCH                             -->
+  <!-- ===================================================================== -->
+  <div id="serviceModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-[#12151F] border border-[#2B3245] w-full max-w-md rounded-2xl p-5 shadow-2xl relative">
+      
+      <!-- Close Button -->
+      <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold">âœ•</button>
+
+      <!-- Step 1: Booking Form -->
+      <div id="modalFormStep" class="max-h-[82vh] overflow-y-auto pr-1 custom-scroll">
+        <div class="flex items-center gap-2 mb-2">
+          <span id="modalTypeBadge" class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            The Palmyrah Concierge
+          </span>
+          <span class="text-xs text-slate-400">â€¢ Mysore Excursion & Live Navigation</span>
+        </div>
+
+        <h3 id="modalTitle" class="text-base font-extrabold text-white">Item Title</h3>
+        <p id="modalSub" class="text-xs text-slate-400 mb-2">Item Subtitle</p>
+
+        <!-- Selected item banner -->
+        <div class="bg-[#171A26] border border-[#272E40] rounded-xl p-2.5 flex items-center gap-3 mb-3">
+          <img id="modalImg" src="" class="w-14 h-14 rounded-lg object-cover bg-slate-800" alt="preview">
+          <div class="min-w-0 flex-1">
+            <p id="modalTiming" class="text-xs text-amber-400 font-semibold">Timing info</p>
+            <p id="modalOffer" class="text-xs text-emerald-400 font-bold mt-0.5">Special Offer</p>
+          </div>
+        </div>
+
+        <!-- START TO ENDING POINT DIRECTIONS (USER REQUEST) -->
+        <div class="bg-[#0D1018] border border-sky-500/35 rounded-xl p-3 mb-3">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-sky-400 flex items-center gap-1">
+              <span>ðŸ§­</span> START âž” ENDING POINT NAVIGATION
+            </span>
+            <span id="modalDistanceBadge" class="text-[9px] font-bold bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded border border-sky-500/30">
+              ðŸ“ 5.8 km
+            </span>
+          </div>
+
+          <div class="space-y-1.5 text-xs">
+            <div class="flex items-start gap-2">
+              <span class="w-5 h-5 rounded-full bg-emerald-500 text-white font-black text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">A</span>
+              <div>
+                <p class="text-[10px] font-bold text-emerald-400 uppercase">STARTING POINT (ORIGIN)</p>
+                <p class="text-white font-bold">The Palmyrah Tenements</p>
+                <p class="text-[10.5px] text-slate-400">Plot No. 5, Contour Road, Hebbal 1st Stage, Mysore - 570016</p>
+              </div>
+            </div>
+
+            <!-- Connector & travel times -->
+            <div class="flex items-center gap-2 pl-2 py-1">
+              <div class="w-0.5 h-6 bg-slate-600"></div>
+              <div class="flex flex-wrap gap-1.5 text-[9.5px]">
+                <span id="modalDriveChip" class="bg-[#1A2030] text-slate-300 px-2 py-0.5 rounded border border-white/5">ðŸš— Drive: 14 mins</span>
+                <span id="modalAutoChip" class="bg-[#1A2030] text-slate-300 px-2 py-0.5 rounded border border-white/5">ðŸ›º Auto: 18 mins</span>
+                <span id="modalWalkChip" class="bg-[#1A2030] text-slate-300 px-2 py-0.5 rounded border border-white/5">ðŸš¶ Walk: 1 hr</span>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-2">
+              <span class="w-5 h-5 rounded-full bg-red-500 text-white font-black text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">B</span>
+              <div>
+                <p class="text-[10px] font-bold text-red-400 uppercase">ENDING POINT (DESTINATION)</p>
+                <p id="modalDestName" class="text-white font-bold">Destination Name</p>
+                <p id="modalDestAddress" class="text-[10.5px] text-slate-400">Destination Address, Mysore</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Turn-by-Turn Mysore Route Steps -->
+          <div class="mt-2.5 pt-2 border-t border-white/10">
+            <p class="text-[10px] font-extrabold text-amber-400 uppercase mb-1.5">Turn-by-Turn Mysore Route Steps:</p>
+            <div id="modalRouteSteps" class="space-y-1 text-[11px] text-slate-300 leading-snug">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
+
+          <!-- Open in Google Maps Live Navigation Button -->
+          <a id="modalMapsLink" href="#" target="_blank" rel="noopener noreferrer" class="mt-3 flex items-center justify-center gap-2 bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs py-2 px-3 rounded-lg shadow transition-all">
+            <span>ðŸ—ºï¸</span> Open in Google Maps Live Navigation âž”
+          </a>
+        </div>
+
+        <form onsubmit="handleModalSubmit(event)" class="space-y-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Your Name</label>
+            <input id="guestNameInput" type="text" required value="Hotel Resident" class="w-full bg-[#1A1E2C] border border-[#2E364C] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Table or Suite #</label>
+              <input id="guestLocationInput" type="text" required value="Table #14" class="w-full bg-[#1A1E2C] border border-[#2E364C] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Mobile Phone</label>
+              <input id="guestPhoneInput" type="tel" required value="+91 98450 12345" class="w-full bg-[#1A1E2C] border border-[#2E364C] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Service Type</label>
+            <select id="guestServiceSelect" class="w-full bg-[#1A1E2C] border border-[#2E364C] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+              <option>Book Chauffeur AC Sedan to this Destination</option>
+              <option>Claim VIP Hotel Guest Fast-Track Pass</option>
+              <option>Reserve Table / Order Direct to Room</option>
+              <option>Request Emergency Medical Chauffeur</option>
+              <option>Ask Waiter at Table for Excursion Guidance</option>
+            </select>
+          </div>
+          <button type="submit" class="w-full mt-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold text-xs py-2.5 rounded-lg shadow-lg transition-all">
+            Confirm & Generate Pass â†’
+          </button>
+        </form>
+      </div>
+
+      <!-- Step 2: Confirmed Digital Pass Ticket -->
+      <div id="modalSuccessStep" class="hidden text-center py-2">
+        <div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 mx-auto flex items-center justify-center text-xl font-black mb-2">
+          âœ“
+        </div>
+        <h4 class="text-base font-extrabold text-white">Service Request Dispatched!</h4>
+        <p class="text-xs text-slate-400 mt-1">The Palmyrah front desk concierge and table waiter have received your request.</p>
+        
+        <div class="bg-[#171A26] border border-[#282F42] rounded-xl p-3 my-4 text-left space-y-2 text-xs">
+          <div class="flex justify-between">
+            <span class="text-slate-400">Digital Voucher:</span>
+            <span class="font-mono font-bold text-amber-400">#PAL-9402-VIP</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">Guest:</span>
+            <span id="resGuestName" class="font-bold text-white">-</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">Location:</span>
+            <span id="resGuestLoc" class="font-bold text-white">-</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">Selected Spot:</span>
+            <span id="resSpot" class="font-bold text-amber-400 truncate max-w-[180px]">-</span>
+          </div>
+        </div>
+
+        <button onclick="closeModal()" class="w-full bg-[#1F2435] hover:bg-[#282E44] text-white font-bold text-xs py-2 rounded-lg transition-all">
+          Return to Hotel Portal
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- JAVASCRIPT: SWIPE, WHEEL, TOUCH & SELECTION LOGIC                     -->
+  <!-- ===================================================================== -->
+  <script>
+    // 1. Scroll helper for button clicks
+    function scrollSection(id, amount) {
+      const el = document.getElementById(id);
+      if (el) el.scrollBy({ left: amount, behavior: 'smooth' });
+    }
+
+    function scrollSectionVert(id, amount) {
+      const el = document.getElementById(id);
+      if (el) el.scrollBy({ top: amount, behavior: 'smooth' });
+    }
+
+    // 2. Enable horizontal mouse wheel scrolling and click-drag on horizontal containers
+    function attachDragAndWheel(elementId) {
+      const slider = document.getElementById(elementId);
+      if (!slider) return;
+
+      // Mouse wheel horizontally
+      slider.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0) {
+          e.preventDefault();
+          slider.scrollLeft += e.deltaY;
+        }
+      }, { passive: false });
+
+      // Click and drag to scroll (mouse / trackpad)
+      let isDown = false;
+      let startX;
+      let scrollLeft;
+
+      slider.addEventListener('mousedown', (e) => {
+        isDown = true;
+        startX = e.pageX - slider.offsetLeft;
+        scrollLeft = slider.scrollLeft;
+      });
+      slider.addEventListener('mouseleave', () => { isDown = false; });
+      slider.addEventListener('mouseup', () => { isDown = false; });
+      slider.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - slider.offsetLeft;
+        const walk = (x - startX) * 1.5; // scroll speed
+        slider.scrollLeft = scrollLeft - walk;
+      });
+    }
+
+    attachDragAndWheel('topTouristScroll');
+    attachDragAndWheel('bottomLeisureScroll');
+
+    // 3. Hotel Demo Switcher (Instant rebrand to pitch to Mysore hotels)
+    function switchHotel(name, subtitle, imageLink, badgeLetter, address) {
+      document.getElementById('brandHotelName').innerText = name;
+      document.getElementById('centerHotelHeading').innerText = name;
+      document.getElementById('centerHotelSub').innerText = subtitle;
+      document.getElementById('centerHotelImage').src = imageLink;
+      const badge = document.getElementById('hotelIconBadge');
+      if (badge) badge.innerText = badgeLetter || name.charAt(0);
+    }
+
+    function promptCustomHotel() {
+      const newName = prompt("Enter hotel name in Mysore:", "The Palmyrah Tenements");
+      if (newName && newName.trim() !== "") {
+        switchHotel(newName.trim(), "Boutique Luxury Stay & Dining Experience Â· Mysore", "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1000&q=80", newName.trim().charAt(0));
+      }
+    }
+
+    // 4. Authentic Start âž” End Mysore Route Directions Generator
+    const HOTEL_START = {
+      name: 'The Palmyrah Tenements',
+      address: 'Plot No. 5, Contour Road, Hebbal 1st Stage, Mysore - 570016',
+    };
+
+    function getMysoreRoute(title) {
+      const t = (title || '').toLowerCase();
+
+      // Intercept any legacy or dummy coastal titles and redirect to Mysore Palace
+      if (t.includes('harbor') || t.includes('waterfront') || t.includes('marine') || t.includes('promenade') || t.includes('oceanfront')) {
+        return {
+          destAddress: 'Sayyaji Rao Road, Agrahara, Chamrajpura, Mysuru - 570001',
+          mapsQuery: 'Amba Vilas Palace, Sayyaji Rao Road, Agrahara, Chamrajpura, Mysuru, Karnataka 570001',
+          distance: '5.8 km',
+          driveTime: '14 mins',
+          autoTime: '18 mins',
+          walkTime: '1 hr 10 mins',
+          steps: [
+            'Depart The Palmyrah Tenements gate onto Contour Road heading south.',
+            'Turn left onto Hebbal Ring Road / KRS Road towards Yadavagiri.',
+            'Continue past Mysore Junction Railway Station onto Sayyaji Rao Road.',
+            'Proceed straight past D. Devaraj Urs Road to Amba Vilas Palace South / Main Gate.'
+          ]
+        };
+      }
+
+      if (t.includes('palace') && !t.includes('jaganmohan') && !t.includes('lalitha') && !t.includes('summer')) {
+        return {
+          destAddress: 'Sayyaji Rao Road, Agrahara, Chamrajpura, Mysuru - 570001',
+          mapsQuery: 'Amba Vilas Palace, Sayyaji Rao Road, Agrahara, Chamrajpura, Mysuru, Karnataka 570001',
+          distance: '5.8 km',
+          driveTime: '14 mins',
+          autoTime: '18 mins',
+          walkTime: '1 hr 10 mins',
+          steps: [
+            'Depart The Palmyrah Tenements gate onto Contour Road heading south.',
+            'Turn left onto Hebbal Ring Road / KRS Road towards Yadavagiri.',
+            'Continue past Mysore Junction Railway Station onto Sayyaji Rao Road.',
+            'Proceed straight past D. Devaraj Urs Road to Amba Vilas Palace South / Main Gate.'
+          ]
+        };
+      }
+      if (t.includes('chamundi')) {
+        return {
+          destAddress: 'Chamundi Hill, Mysuru - 570010',
+          mapsQuery: 'Sri Chamundeshwari Temple, Chamundi Hill, Mysuru, Karnataka 570010',
+          distance: '13.2 km',
+          driveTime: '26 mins',
+          autoTime: '32 mins',
+          walkTime: '2 hrs 45 mins',
+          steps: [
+            'Start at The Palmyrah Tenements, Contour Road, Hebbal 1st Stage.',
+            'Take Hebbal Ring Road southeast past Sayyaji Rao Rd towards Lalitha Mahal Road.',
+            'Ascend scenic Chamundi Hill Road winding past the 1,000 steps and Nandi Bull.',
+            'Arrive at Sri Chamundeshwari Temple Hilltop Gopuram & VIP Parking.'
+          ]
+        };
+      }
+      if (t.includes('brindavan') || t.includes('krs')) {
+        return {
+          destAddress: 'KRS Dam Road, Mandya District (Near Mysore) - 571607',
+          mapsQuery: 'Brindavan Gardens, KRS Dam Road, Mandya, Karnataka 571607',
+          distance: '14.2 km',
+          driveTime: '22 mins',
+          autoTime: '28 mins',
+          walkTime: '3 hrs',
+          steps: [
+            'Exit The Palmyrah Tenements onto Contour Road.',
+            'Turn onto KRS Road (State Highway 39) heading north towards Kaveri river.',
+            'Follow highway straight past Royal Enclave and Mandya border.',
+            'Arrive at KRS Dam North Gate & Brindavan Musical Gardens.'
+          ]
+        };
+      }
+      if (t.includes('philomena')) {
+        return {
+          destAddress: 'Lourdes Nagar, Ashoka Road, Lashkar Mohalla, Mysuru - 570001',
+          mapsQuery: "St. Philomena's Cathedral, Ashoka Road, Lashkar Mohalla, Mysuru, Karnataka 570001",
+          distance: '4.9 km',
+          driveTime: '12 mins',
+          autoTime: '15 mins',
+          walkTime: '58 mins',
+          steps: [
+            'Depart The Palmyrah Tenements via Contour Road.',
+            'Take Hebbal Ring Road east towards Bamboo Bazaar.',
+            'Turn right onto Ashoka Road heading directly towards twin Gothic spires.',
+            'Arrive at St. Philomenaâ€™s Cathedral Gate & Visitors Porch.'
+          ]
+        };
+      }
+      if (t.includes('zoo') || t.includes('chamarajendra')) {
+        return {
+          destAddress: 'Indiranagar, Ittige Gudu, Mysuru - 570010',
+          mapsQuery: 'Sri Chamarajendra Zoological Gardens, Indiranagar, Mysuru, Karnataka 570010',
+          distance: '7.1 km',
+          driveTime: '16 mins',
+          autoTime: '20 mins',
+          walkTime: '1 hr 25 mins',
+          steps: [
+            'Depart The Palmyrah Tenements heading south via Sayyaji Rao Road.',
+            'Follow MG Road past Mall of Mysore into Ittige Gudu.',
+            'Turn right onto Shalivahana Road directly into Zoo Visitor Entrance.'
+          ]
+        };
+      }
+      if (t.includes('jaganmohan')) {
+        return {
+          destAddress: 'Deshika Road, Chamrajpura, Subbarayanakere, Mysuru - 570024',
+          mapsQuery: 'Jaganmohan Palace Art Gallery, Deshika Road, Chamrajpura, Mysuru, Karnataka 570024',
+          distance: '5.8 km',
+          driveTime: '14 mins',
+          autoTime: '18 mins',
+          walkTime: '1 hr 10 mins',
+          steps: [
+            'Head south on Contour Road through Yadavagiri via Princess Road.',
+            'Follow Railway Station Road past Medical College to Subbarayanakere.',
+            'Arrive at Jaganmohan Palace Art Gallery Main Pavilion.'
+          ]
+        };
+      }
+      if (t.includes('karanji')) {
+        return {
+          destAddress: 'Chamundi Hill Road, Lalitha Mahal Nagar, Mysuru - 570011',
+          mapsQuery: 'Karanji Lake Nature Park, Chamundi Hill Road, Mysuru, Karnataka 570011',
+          distance: '7.8 km',
+          driveTime: '18 mins',
+          autoTime: '22 mins',
+          walkTime: '1 hr 35 mins',
+          steps: [
+            'Depart Hebbal via Outer Ring Road southeast towards Nazarbad.',
+            'Pass Lalitha Mahal Road and turn onto Karanji Lake Road.',
+            'Arrive at Karanji Lake & Walk-Through Nature Aviary Entrance.'
+          ]
+        };
+      }
+      if (t.includes('devaraja')) {
+        return {
+          destAddress: 'Sayyaji Rao Road, Shivarampet, Mysuru - 570001',
+          mapsQuery: 'Devaraja Market, Sayyaji Rao Road, Shivarampet, Mysuru, Karnataka 570001',
+          distance: '5.2 km',
+          driveTime: '12 mins',
+          autoTime: '15 mins',
+          walkTime: '1 hr 2 mins',
+          steps: [
+            'Head south down Sayyaji Rao Road directly into heritage city center.',
+            'Pass Bamboo Bazaar and Government Ayurveda Hospital.',
+            'Arrive at Devaraja Heritage Market North Gate opposite Chamaraja Circle.'
+          ]
+        };
+      }
+      if (t.includes('mall of mysore')) {
+        return {
+          destAddress: 'MG Road, Indira Nagar, Nazarbad, Mysuru - 570010',
+          mapsQuery: 'Mall of Mysore, MG Road, Indiranagar, Nazarbad, Mysuru, Karnataka 570010',
+          distance: '7.4 km',
+          driveTime: '16 mins',
+          autoTime: '20 mins',
+          walkTime: '1 hr 30 mins',
+          steps: [
+            'Depart The Palmyrah Tenements via Hebbal Ring Road heading southeast.',
+            'Proceed past Nazarbad and follow MG Road straight to Mall of Mysore portico.'
+          ]
+        };
+      }
+      if (t.includes('nexus') || t.includes('centre city')) {
+        return {
+          destAddress: 'Hyder Ali Road, Nazarbad Mohalla, Mysuru - 570007',
+          mapsQuery: 'Nexus Centre City Mall, Hyder Ali Road, Nazarbad Mohalla, Mysuru, Karnataka 570007',
+          distance: '5.1 km',
+          driveTime: '11 mins',
+          autoTime: '15 mins',
+          walkTime: '1 hr',
+          steps: [
+            'Take Hebbal Ring Road east towards Bamboo Bazaar.',
+            'Turn onto Hyder Ali Road into Nexus Centre City Mall parking.'
+          ]
+        };
+      }
+      if (t.includes('ksic') || t.includes('silk')) {
+        return {
+          destAddress: 'Mananthavady Road, Ashokapuram, Mysuru - 570008',
+          mapsQuery: 'KSIC Mysore Silk Showroom, Mananthavady Road, Ashokapuram, Mysuru, Karnataka 570008',
+          distance: '6.8 km',
+          driveTime: '15 mins',
+          autoTime: '19 mins',
+          walkTime: '1 hr 20 mins',
+          steps: [
+            'Take Outer Ring Road south towards Mananthavady Road.',
+            'Arrive at Karnataka Silk Industries Corporation (KSIC) Factory & Showroom.'
+          ]
+        };
+      }
+      if (t.includes('manipal')) {
+        return {
+          destAddress: 'KRS Road, Hebbal Industrial Area, Mysuru - 570016',
+          mapsQuery: 'Manipal Hospital, KRS Road, Hebbal Industrial Area, Mysuru, Karnataka 570016',
+          distance: '1.5 km',
+          driveTime: '4 mins',
+          autoTime: '6 mins',
+          walkTime: '18 mins',
+          steps: [
+            'Exit The Palmyrah Tenements onto Contour Road.',
+            'Turn right onto Hebbal Ring Road junction.',
+            'Proceed 1.5 km straight; hospital emergency entrance is on the left.'
+          ]
+        };
+      }
+      if (t.includes('railway') || t.includes('junction') || t.includes('mys')) {
+        return {
+          destAddress: 'Station Circle, Medar Block, Yadavagiri, Mysuru - 570020',
+          mapsQuery: 'Mysore Junction Railway Station, Medar Block, Yadavagiri, Mysuru, Karnataka 570020',
+          distance: '5.2 km',
+          driveTime: '11 mins',
+          autoTime: '15 mins',
+          walkTime: '1 hr 2 mins',
+          steps: [
+            'Head south on Contour Road through Yadavagiri via Princess Road.',
+            'Turn onto Railway Station Road directly to Station Circle.'
+          ]
+        };
+      }
+      if (t.includes('bus stand') || t.includes('ksrtc')) {
+        return {
+          destAddress: 'Bangalore-Nilgiri Road, Nazarbad, Mysuru - 570001',
+          mapsQuery: 'KSRTC Suburban Bus Stand, Bangalore Nilgiri Road, Lashkar Mohalla, Mysuru, Karnataka 570001',
+          distance: '6.1 km',
+          driveTime: '14 mins',
+          autoTime: '18 mins',
+          walkTime: '1 hr 15 mins',
+          steps: [
+            'Head towards city center via Sayyaji Rao Road.',
+            'Turn onto Bangalore-Nilgiri Road at Nazarbad to KSRTC Suburban Terminal.'
+          ]
+        };
+      }
+      if (t.includes('asha kirana')) {
+        return {
+          destAddress: 'Plot No. 12, Contour Road, Hebbal 1st Stage, Mysuru - 570016',
+          mapsQuery: 'Asha Kirana Hospital, Contour Road, Hebbal 1st Stage, Mysuru, Karnataka 570016',
+          distance: '0.2 km',
+          driveTime: '1 min',
+          autoTime: '1 min',
+          walkTime: '2 mins',
+          steps: [
+            'Exit The Palmyrah Tenements main entrance.',
+            'Walk 200 meters east directly on Contour Road, Hebbal 1st Stage.'
+          ]
+        };
+      }
+      if (t.includes('apollo')) {
+        return {
+          destAddress: 'Adichunchanagiri Road, Kuvempunagar, Mysuru - 570023',
+          mapsQuery: 'Apollo BGS Hospitals, Adichunchanagiri Road, Kuvempu Nagara, Mysuru, Karnataka 570023',
+          distance: '5.8 km',
+          driveTime: '14 mins',
+          autoTime: '18 mins',
+          walkTime: '1 hr 15 mins',
+          steps: [
+            'Exit The Palmyrah Tenements via Contour Road heading south.',
+            'Proceed along Vishwamanava Double Road into Kuvempunagar.',
+            'Arrive at Apollo BGS Hospitals Emergency & Cardiac Block.'
+          ]
+        };
+      }
+      if (t.includes('mylari')) {
+        return {
+          destAddress: 'Shop No. 79, Shop 1, Nazarbad Main Rd, Mysuru - 570010',
+          mapsQuery: 'Hotel Original Vinayaka Mylari, Nazarbad Main Road, Mysuru, Karnataka 570010',
+          distance: '6.1 km',
+          driveTime: '14 mins',
+          autoTime: '18 mins',
+          walkTime: '1 hr 15 mins',
+          steps: [
+            'Head south down Sayyaji Rao Road through KR Circle.',
+            'Continue into Agrahara to Old Agrahar Circle near Sri Rama Mandira.'
+          ]
+        };
+      }
+      if (t.includes('depth')) {
+        return {
+          destAddress: '5th Main Road, Gokulam 3rd Stage, Mysuru - 570002',
+          mapsQuery: "Depth 'n' Green, 5th Main Road, Gokulam 3rd Stage, Mysuru, Karnataka 570002",
+          distance: '2.8 km',
+          driveTime: '7 mins',
+          autoTime: '9 mins',
+          walkTime: '34 mins',
+          steps: [
+            'Head south from Hebbal via Temple Road into Gokulam 3rd Stage.',
+            'Turn onto 5th Main Road; Depth â€™nâ€™ Green Cafe is on the corner.'
+          ]
+        };
+      }
+      if (t.includes('oyster')) {
+        return {
+          destAddress: 'Kalidasa Road, Vijayanagar 1st Stage, Mysuru - 570017',
+          mapsQuery: 'Oyster Bay, Kalidasa Road, Vijayanagar 1st Stage, Mysuru, Karnataka 570017',
+          distance: '2.4 km',
+          driveTime: '6 mins',
+          autoTime: '8 mins',
+          walkTime: '29 mins',
+          steps: [
+            'Take Contour Road south onto Kalidasa Road, Vijay Nagar 1st Stage.',
+            'Oyster Bay Restaurant is located 2.4 km ahead on the main commercial boulevard.'
+          ]
+        };
+      }
+      if (t.includes('atm') || t.includes('sbi')) {
+        return {
+          destAddress: 'Contour Road, Hebbal 1st Stage Commercial Arcade, Mysuru - 570016',
+          mapsQuery: 'State Bank of India ATM, Contour Road, Hebbal 1st Stage, Mysuru, Karnataka 570016',
+          distance: '0.3 km',
+          driveTime: '1 min',
+          autoTime: '1 min',
+          walkTime: '3 mins',
+          steps: [
+            'Exit The Palmyrah Tenements building.',
+            'Walk 300 meters down Contour Road towards Hebbal Ring Road / Police Station junction.',
+            'ATM is situated in the well-lit commercial arcade on the right.'
+          ]
+        };
+      }
+      if (t.includes('azure pool')) {
+        return {
+          destAddress: 'Courtyard Garden, The Palmyrah Tenements, Mysuru - 570016',
+          mapsQuery: 'The Palmyrah Tenements, Plot No. 5, Contour Road, Hebbal 1st Stage, Mysuru, Karnataka 570016',
+          distance: '0.0 km',
+          driveTime: '0 min',
+          autoTime: '0 min',
+          walkTime: '1 min',
+          steps: [
+            'Step out of your suite or dining table at The Palmyrah Tenements.',
+            'Walk through the central ground floor courtyard archway.',
+            'The Resident Azure Pool deck and sun cabanas are situated right in the center garden.'
+          ]
+        };
+      }
+      if (t.includes('chamundi vihar') && t.includes('pool')) {
+        return {
+          destAddress: 'Chamundi Vihar Sports Complex, Nazarbad, Mysuru - 570010',
+          mapsQuery: 'Chamundi Vihar Olympic Swimming Pool, Nazarbad, Mysuru, Karnataka 570010',
+          distance: '6.2 km',
+          driveTime: '14 mins',
+          autoTime: '18 mins',
+          walkTime: '1 hr 15 mins',
+          steps: [
+            'Depart Hebbal via Outer Ring Road southeast towards Nazarbad.',
+            'Turn onto Hyder Ali Road towards Chamundi Vihar Stadium complex.',
+            'Arrive at the Olympic standard aquatic center entrance.'
+          ]
+        };
+      }
+      if (t.includes('parlour') || t.includes('salon') || t.includes('naturals') || t.includes('green trends')) {
+        return {
+          destAddress: 'Hebbal Main Road / Kalidasa Road corridor, Mysuru - 570016',
+          mapsQuery: 'Naturals Salon, Hebbal Main Road, Mysuru, Karnataka 570016',
+          distance: '0.8 km',
+          driveTime: '3 mins',
+          autoTime: '4 mins',
+          walkTime: '10 mins',
+          steps: [
+            'Exit The Palmyrah Tenements onto Contour Road.',
+            'Turn onto Hebbal Main Road towards Kalidasa Road corridor.',
+            'Arrive at salon reception on main boulevard.'
+          ]
+        };
+      }
+
+      // Default Mysore route
+      const cleanTitle = (title || 'Mysore Palace').replace(/\(.*?\)/g, '').trim();
+      return {
+        destAddress: 'Mysuru, Karnataka - 570001',
+        mapsQuery: `${cleanTitle}, Mysuru, Karnataka`,
+        distance: '3.5 km',
+        driveTime: '9 mins',
+        autoTime: '12 mins',
+        walkTime: '42 mins',
+        steps: [
+          'Start from The Palmyrah Tenements (Plot No. 5, Contour Road, Hebbal 1st Stage, Mysore).',
+          'Connect to Hebbal Ring Road and follow city signage towards destination.',
+          'Proceed along the main arterial corridor directly to destination entrance.',
+          'Arrive at visitor gate / parking area.'
+        ]
+      };
+    }
+
+    // 5. Component Selection: Spotlights card in Central 40% Display
+    let selectedCardEl = null;
+    let currentItem = {
+      title: 'The Palmyrah Tenements',
+      subtitle: 'Boutique Luxury Residences & Suites Â· Mysore',
+      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1000&q=80',
+      timing: '24/7 In-House Resident Dining & Concierge',
+      discount: 'VIP RESIDENT PRIVILEGE'
+    };
+
+    function openItemModal(title, subtitle, timing, discount, image, likes, type, el) {
+      currentItem = { title, subtitle, timing, discount, image, likes, type };
+
+      // 1. Update Central 40% Panel immediately
+      const centerTitle = document.getElementById('centerHotelHeading');
+      const centerSub = document.getElementById('centerHotelSub');
+      const centerImg = document.getElementById('centerHotelImage');
+      
+      if (centerTitle) centerTitle.innerText = title;
+      if (centerSub) centerSub.innerText = subtitle;
+      if (centerImg) centerImg.src = image;
+
+      // 2. Compute route and update Central Route Box
+      const route = getMysoreRoute(title);
+      const distBadge = document.getElementById('centerDistanceBadge');
+      const destAddr = document.getElementById('centerDestinationAddress');
+      const driveTime = document.getElementById('centerDriveTime');
+      const autoTime = document.getElementById('centerAutoTime');
+      const walkTime = document.getElementById('centerWalkTime');
+
+      if (distBadge) distBadge.innerText = 'ðŸ“ ' + route.distance;
+      if (destAddr) destAddr.innerText = title + ' â€¢ ' + route.destAddress;
+      if (driveTime) driveTime.innerText = route.driveTime;
+      if (autoTime) autoTime.innerText = route.autoTime;
+      if (walkTime) walkTime.innerText = route.walkTime;
+
+      // 3. Visual indication of selection on clicked card
+      if (selectedCardEl) {
+        selectedCardEl.classList.remove('border-amber-500', 'ring-2', 'ring-amber-400', 'bg-[#1E2333]');
+      }
+      if (el) {
+        selectedCardEl = el;
+        el.classList.add('border-amber-500', 'ring-2', 'ring-amber-400', 'bg-[#1E2333]');
+      }
+    }
+
+    function openLiveGoogleMaps() {
+      const route = getMysoreRoute(currentItem.title);
+      const originQuery = encodeURIComponent("The Palmyrah Tenements, Plot No. 5, Contour Road, Hebbal 1st Stage, Mysuru, Karnataka 570016");
+      const destQuery = encodeURIComponent(route.mapsQuery || route.destAddress || "Mysore Palace, Mysuru, Karnataka");
+      const url = `https://www.google.com/maps/dir/?api=1&origin=${originQuery}&destination=${destQuery}&travelmode=driving`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+
+    function openTableServiceModal() {
+      const hotelName = document.getElementById('brandHotelName').innerText;
+      document.getElementById('modalTitle').innerText = currentItem.title || hotelName;
+      document.getElementById('modalSub').innerText = currentItem.subtitle || 'Table & Excursion Concierge Request';
+      document.getElementById('modalImg').src = currentItem.image || document.getElementById('centerHotelImage').src;
+      document.getElementById('modalTiming').innerText = currentItem.timing || 'Immediate Chauffeur / Waiter Response';
+      document.getElementById('modalOffer').innerText = currentItem.discount || 'VIP RESIDENT PASS';
+      
+      // Populate Start âž” End route information
+      const route = getMysoreRoute(currentItem.title);
+      document.getElementById('modalDistanceBadge').innerText = 'ðŸ“ ' + route.distance;
+      document.getElementById('modalDestName').innerText = currentItem.title;
+      document.getElementById('modalDestAddress').innerText = route.destAddress;
+      document.getElementById('modalDriveChip').innerText = 'ðŸš— Drive: ' + route.driveTime;
+      document.getElementById('modalAutoChip').innerText = 'ðŸ›º Auto: ' + route.autoTime;
+      document.getElementById('modalWalkChip').innerText = 'ðŸš¶ Walk: ' + route.walkTime;
+
+      // Populate turn-by-turn steps
+      const stepsContainer = document.getElementById('modalRouteSteps');
+      if (stepsContainer) {
+        stepsContainer.innerHTML = route.steps.map((s, idx) => `
+          <div class="flex items-start gap-2">
+            <span class="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[9px] font-black flex items-center justify-center flex-shrink-0 mt-0.5">${idx + 1}</span>
+            <p>${s}</p>
+          </div>
+        `).join('');
+      }
+
+      // Populate Google Maps link
+      const mapsLink = document.getElementById('modalMapsLink');
+      if (mapsLink) {
+        const originQuery = encodeURIComponent("The Palmyrah Tenements, Plot No. 5, Contour Road, Hebbal 1st Stage, Mysuru, Karnataka 570016");
+        const destQuery = encodeURIComponent(route.mapsQuery || route.destAddress || "Mysore Palace, Mysuru, Karnataka");
+        mapsLink.href = `https://www.google.com/maps/dir/?api=1&origin=${originQuery}&destination=${destQuery}&travelmode=driving`;
+      }
+
+      document.getElementById('modalFormStep').classList.remove('hidden');
+      document.getElementById('modalSuccessStep').classList.add('hidden');
+      document.getElementById('serviceModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('serviceModal').classList.add('hidden');
+    }
+
+    function handleModalSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('guestNameInput').value;
+      const loc = document.getElementById('guestLocationInput').value;
+      
+      document.getElementById('resGuestName').innerText = name;
+      document.getElementById('resGuestLoc').innerText = loc;
+      document.getElementById('resSpot').innerText = currentItem.title || 'The Palmyrah Tenements';
+
+      document.getElementById('modalFormStep').classList.add('hidden');
+      document.getElementById('modalSuccessStep').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
+
+
