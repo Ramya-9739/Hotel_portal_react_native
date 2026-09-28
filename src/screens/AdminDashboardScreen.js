@@ -548,9 +548,10 @@ export default function AdminDashboardScreen({
       ? hotelImages.map((img) => (typeof img === 'object' && img && img.url ? img.url : img))
       : (hotelConfigForm.imageLink.trim() ? [hotelConfigForm.imageLink.trim()] : []);
 
-    const heroImage = finalImageUrls[0] || null;
+    const cur = currentActiveHotel || activeHotelService.getActiveHotel() || {};
 
     const saved = activeHotelService.saveAndActivateHotel({
+      ...cur,
       name: hotelConfigForm.name.trim(),
       title: hotelConfigForm.name.trim(),
       city: hotelConfigForm.city.trim(),
@@ -565,22 +566,23 @@ export default function AdminDashboardScreen({
       subtitle: hotelConfigForm.subtitle.trim() || hotelConfigForm.address.trim() || '',
       pricePerNight: hotelConfigForm.pricePerNight.trim() || '',
       rating: parseFloat(hotelConfigForm.rating) || null,
+      nearby: cur.nearby || undefined,
     });
 
     setCurrentActiveHotel(saved);
     if (onSetActiveHotel) onSetActiveHotel(saved);
 
-    showToast('"' + saved.name + '" saved as active hotel! Scanning nearby places...', 'success');
+    showToast('"' + saved.name + '" saved as active hotel!', 'success');
 
-    // Trigger nearby scan if coordinates valid
-    if (saved.latitude != null && saved.longitude != null) {
+    // Trigger nearby scan ONLY if coordinates valid AND no places exist yet
+    const hasAnyPlaces = Object.values(saved.nearby || {}).some((arr) => Array.isArray(arr) && arr.length > 0);
+    if (!hasAnyPlaces && saved.latitude != null && saved.longitude != null) {
       activeHotelService.populateAllNearby(saved, 5000, (label, curr, total) => {
         showToast(`Scanning nearby ${label} (${curr}/${total})...`, 'info');
       }).then((enriched) => {
         if (enriched) {
           setCurrentActiveHotel(enriched);
           if (onSetActiveHotel) onSetActiveHotel(enriched);
-          showToast(`✅ "${saved.name}" ready with real nearby places!`, 'success');
         }
       }).catch(console.warn);
     }
@@ -626,27 +628,27 @@ export default function AdminDashboardScreen({
   const handleOpenAddPlaceModal = (categoryKey = 'touristPlaces') => {
     setSelectedPlaceCategory(categoryKey);
     setEditingPlaceId(null);
-    const baseLat = currentActiveHotel && currentActiveHotel.latitude ? Number(currentActiveHotel.latitude) : null;
-    const baseLng = currentActiveHotel && currentActiveHotel.longitude ? Number(currentActiveHotel.longitude) : null;
+    const baseLat = currentActiveHotel && currentActiveHotel.latitude ? Number(currentActiveHotel.latitude) : 12.9716;
+    const baseLng = currentActiveHotel && currentActiveHotel.longitude ? Number(currentActiveHotel.longitude) : 77.5946;
     const offset = (Math.random() - 0.5) * 0.03;
 
     setNewPlaceForm({
       title: '',
       subtitle: '',
       category: categoryKey,
-      latitude: baseLat != null ? (baseLat + offset).toFixed(4) : '',
-      longitude: baseLng != null ? (baseLng + offset).toFixed(4) : '',
-      address: currentActiveHotel && currentActiveHotel.city ? currentActiveHotel.city : '',
-      distance: '',
-      rating: '',
+      latitude: (baseLat + offset).toFixed(4),
+      longitude: (baseLng + offset).toFixed(4),
+      address: currentActiveHotel && currentActiveHotel.city ? `${currentActiveHotel.city} Area` : 'Local Area',
+      distance: '1.2 km from Hotel',
+      rating: '4.8',
       imageLink: '',
       websiteUrl: '',
-      timings: '',
-      data1: '',
-      data2: '',
-      data3: '',
-      data4: '',
-      data5: '',
+      timings: '9:00 AM - 6:00 PM',
+      data1: '★ 4.8 Rating',
+      data2: '1.2 km from Hotel',
+      data3: 'Concierge Partner',
+      data4: 'Open Today',
+      data5: 'Priority Access',
     });
     setPlaceModalVisible(true);
   };
@@ -683,11 +685,13 @@ export default function AdminDashboardScreen({
       return;
     }
 
+    const targetCat = newPlaceForm.category || selectedPlaceCategory || 'touristPlaces';
+
     const placeData = {
       title: newPlaceForm.title.trim(),
       subtitle: newPlaceForm.subtitle.trim() || 'Curated Destination',
-      category: newPlaceForm.category,
-      tag: newPlaceForm.category.toUpperCase(),
+      category: targetCat,
+      tag: targetCat.toUpperCase(),
       latitude: parseFloat(newPlaceForm.latitude) || null,
       longitude: parseFloat(newPlaceForm.longitude) || null,
       address: newPlaceForm.address.trim(),
@@ -709,21 +713,23 @@ export default function AdminDashboardScreen({
     };
 
     if (editingPlaceId) {
-      const updated = activeHotelService.updatePlaceInActiveHotel(newPlaceForm.category, editingPlaceId, placeData);
+      const updated = activeHotelService.updatePlaceInActiveHotel(targetCat, editingPlaceId, placeData);
       if (updated) {
         setCurrentActiveHotel(updated);
         if (onSetActiveHotel) onSetActiveHotel(updated);
+        setSelectedPlaceCategory(targetCat);
         setPlaceModalVisible(false);
         setEditingPlaceId(null);
-        showToast(`✅ Updated "${placeData.title}" in ${newPlaceForm.category}!`, 'success');
+        showToast(`✅ Updated "${placeData.title}" in ${targetCat}!`, 'success');
       }
     } else {
-      const updated = activeHotelService.addPlaceToActiveHotel(newPlaceForm.category, placeData);
+      const updated = activeHotelService.addPlaceToActiveHotel(targetCat, placeData);
       if (updated) {
         setCurrentActiveHotel(updated);
         if (onSetActiveHotel) onSetActiveHotel(updated);
+        setSelectedPlaceCategory(targetCat);
         setPlaceModalVisible(false);
-        showToast(`✅ Added "${placeData.title}" to ${newPlaceForm.category} with 10-digit ID!`, 'success');
+        showToast(`✅ Added "${placeData.title}" to ${targetCat}!`, 'success');
       }
     }
   };
@@ -1000,14 +1006,14 @@ export default function AdminDashboardScreen({
         };
         if (modalMode === 'create') {
           const res = await apiService.createHotel(payload);
-          if (res && res.data) {
-            setHotels((prev) => [res.data, ...prev]);
-            showToast(`Created hotel "${formFields.title}" in MongoDB!`);
-          } else {
-            const fallbackItem = { ...payload, id: `hotel-${Date.now()}` };
-            setHotels((prev) => [fallbackItem, ...prev]);
-            showToast(`Added hotel "${formFields.title}"!`);
+          const newItem = (res && res.data) ? res.data : { ...payload, id: `hotel-${Date.now()}` };
+          setHotels((prev) => [newItem, ...prev]);
+          if (!activeHotelService.getActiveHotel()) {
+            const activated = activeHotelService.saveAndActivateHotel(newItem);
+            setCurrentActiveHotel(activated);
+            if (onSetActiveHotel) onSetActiveHotel(activated);
           }
+          showToast(`Created hotel "${formFields.title}"!`);
         } else if (editingItem) {
           await apiService.updateHotel(editingItem.id, payload);
           setHotels((prev) =>

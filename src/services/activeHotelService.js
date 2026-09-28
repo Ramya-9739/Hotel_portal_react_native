@@ -130,18 +130,46 @@ class ActiveHotelService {
       googleMapsUrl: (!isNaN(lat) && !isNaN(lng))
         ? ('https://www.google.com/maps/search/?api=1&query=' + lat + ',' + lng)
         : null,
-      // nearby is loaded by real search — starts empty, populated by placeSearchService
-      nearby: hotelData.nearby || {
-        touristPlaces: [],
-        shopping: [],
-        transportation: [],
-        hospitals: [],
-        pharmacies: [],
-        gyms: [],
-        takeaways: [],
-        restaurants: []
-      },
-      customCategories: Array.isArray(hotelData.customCategories) ? hotelData.customCategories : [],
+    // Merge nearby: preserve existing places so re-saving hotel config never wipes out tourist places
+    const prevNearby = (this.activeHotel && this.activeHotel.nearby) || {};
+    const inputNearby = hotelData.nearby || {};
+    const mergedNearby = {
+      touristPlaces: inputNearby.touristPlaces || prevNearby.touristPlaces || [],
+      shopping: inputNearby.shopping || prevNearby.shopping || [],
+      transportation: inputNearby.transportation || prevNearby.transportation || [],
+      hospitals: inputNearby.hospitals || prevNearby.hospitals || [],
+      pharmacies: inputNearby.pharmacies || prevNearby.pharmacies || [],
+      gyms: inputNearby.gyms || prevNearby.gyms || [],
+      takeaways: inputNearby.takeaways || prevNearby.takeaways || [],
+      restaurants: inputNearby.restaurants || prevNearby.restaurants || [],
+      pools: inputNearby.pools || prevNearby.pools || [],
+      dining: inputNearby.dining || prevNearby.dining || [],
+    };
+
+    const newHotel = {
+      ...hotelData,
+      id: id,
+      name: hotelData.name || hotelData.title || '',
+      title: hotelData.name || hotelData.title || '',
+      subtitle: hotelData.subtitle || hotelData.address || '',
+      address: hotelData.address || '',
+      city: hotelData.city || hotelData.location || '',
+      location: hotelData.location || hotelData.city || '',
+      latitude: !isNaN(lat) ? lat : null,
+      longitude: !isNaN(lng) ? lng : null,
+      lat: !isNaN(lat) ? lat : null,
+      lng: !isNaN(lng) ? lng : null,
+      rating: hotelData.rating ? parseFloat(hotelData.rating) : null,
+      images: imagesList,
+      imageObjects: Array.isArray(hotelData.imageObjects) ? hotelData.imageObjects.slice(0, 8) : [],
+      imageLink: imagesList[0] || null,
+      googleMapsUrl: (!isNaN(lat) && !isNaN(lng))
+        ? ('https://www.google.com/maps/search/?api=1&query=' + lat + ',' + lng)
+        : null,
+      nearby: mergedNearby,
+      customCategories: Array.isArray(hotelData.customCategories)
+        ? hotelData.customCategories
+        : (this.activeHotel?.customCategories || []),
     };
 
     // Persist to custom hotels list
@@ -168,8 +196,7 @@ class ActiveHotelService {
 
   /**
    * Automatically populates real nearby places for the active hotel across all categories.
-   * Uses real GPS coordinates of the active hotel.
-   * If a category has no places found, it remains an empty array [].
+   * Merges with any places already configured by the admin without wiping them.
    */
   async populateAllNearby(hotel = null, radius = 5000, onProgress = null) {
     const targetHotel = hotel || this.activeHotel;
@@ -189,28 +216,43 @@ class ActiveHotelService {
       { key: 'restaurants', searchCat: 'restaurant', label: 'Bistros & Dining' },
     ];
 
-    const updatedNearby = { ...(targetHotel.nearby || {}) };
+    const currentHotel = this.activeHotel || targetHotel;
+    const updatedNearby = { ...(currentHotel.nearby || {}) };
 
     for (let i = 0; i < categories.length; i++) {
       const cat = categories[i];
       if (onProgress) onProgress(cat.label, i + 1, categories.length);
       try {
         const res = await searchNearby(lat, lng, cat.searchCat, radius);
-        if (res.success && Array.isArray(res.places)) {
-          updatedNearby[cat.key] = res.places;
-        } else {
-          updatedNearby[cat.key] = [];
+        if (res.success && Array.isArray(res.places) && res.places.length > 0) {
+          const existing = updatedNearby[cat.key] || [];
+          const existingTitles = new Set(existing.map((p) => (p.title || p.name || '').toLowerCase().trim()));
+          const newUnique = res.places.filter((p) => {
+            const t = (p.title || p.name || '').toLowerCase().trim();
+            return t && !existingTitles.has(t);
+          });
+          updatedNearby[cat.key] = [...existing, ...newUnique];
         }
       } catch (err) {
         console.warn(`[ActiveHotelService] Nearby search failed for ${cat.key}:`, err.message);
-        updatedNearby[cat.key] = [];
       }
     }
 
     const updatedHotel = {
-      ...targetHotel,
+      ...(this.activeHotel || targetHotel),
       nearby: updatedNearby,
     };
+
+    // Update in customHotels too
+    const existingIdx = this.customHotels.findIndex((h) => h.id === updatedHotel.id);
+    if (existingIdx >= 0) {
+      this.customHotels[existingIdx] = updatedHotel;
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+        try {
+          window.localStorage.setItem(CUSTOM_HOTELS_STORAGE_KEY, JSON.stringify(this.customHotels));
+        } catch (e) {}
+      }
+    }
 
     return this.setActiveHotel(updatedHotel);
   }
@@ -239,27 +281,111 @@ class ActiveHotelService {
   }
 
   addPlaceToActiveHotel(categoryKey, placeData) {
-    if (!this.activeHotel) return null;
+    if (!this.activeHotel) {
+      if (this.customHotels && this.customHotels.length > 0) {
+        this.activeHotel = { ...this.customHotels[0] };
+      } else {
+        this.activeHotel = {
+          id: 'hotel-' + Date.now(),
+          hotelPropertyId: '1000000001',
+          name: 'Active Hotel Property',
+          city: placeData.address || 'Local Area',
+          latitude: placeData.latitude || 12.9716,
+          longitude: placeData.longitude || 77.5946,
+          nearby: {},
+          customCategories: [],
+        };
+      }
+    }
+
     const updatedHotel = { ...this.activeHotel };
     if (!updatedHotel.nearby) updatedHotel.nearby = {};
     if (!Array.isArray(updatedHotel.nearby[categoryKey])) updatedHotel.nearby[categoryKey] = [];
+
+    const minId = 1000000000;
+    const maxId = 9999999999;
+    const auto10DigitId = String(Math.floor(minId + Math.random() * (maxId - minId + 1)));
+
     const newPlace = {
       ...placeData,
-      id: placeData.id || (categoryKey + '-' + Date.now()),
-      latitude: parseFloat(placeData.latitude) || null,
-      longitude: parseFloat(placeData.longitude) || null,
+      id: placeData.id || auto10DigitId,
+      subComponentId: placeData.id || auto10DigitId,
+      category: categoryKey,
+      latitude: parseFloat(placeData.latitude != null ? placeData.latitude : placeData.lat) || null,
+      longitude: parseFloat(placeData.longitude != null ? placeData.longitude : placeData.lng) || null,
     };
+
     updatedHotel.nearby[categoryKey] = [newPlace, ...updatedHotel.nearby[categoryKey]];
-    return this.setActiveHotel(updatedHotel);
+
+    // Sync to customHotels
+    const hIndex = this.customHotels.findIndex((h) => h.id === updatedHotel.id);
+    if (hIndex >= 0) {
+      this.customHotels[hIndex] = updatedHotel;
+    } else {
+      this.customHotels.push(updatedHotel);
+    }
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+      try {
+        window.localStorage.setItem(CUSTOM_HOTELS_STORAGE_KEY, JSON.stringify(this.customHotels));
+      } catch (e) {}
+    }
+
+    this.setActiveHotel(updatedHotel);
+
+    // Sync with MongoDB backend as DisplaySubComponent asynchronously
+    import('./apiService.js').then(({ apiService }) => {
+      const typeMap = {
+        dining: 1,
+        restaurants: 1,
+        gyms: 2,
+        pools: 2,
+        takeaways: 3,
+        shopping: 3,
+        homeDelivery: 4,
+        delivery: 4,
+        transportation: 4,
+        touristPlaces: 5,
+        tourist: 5,
+        hospitals: 2,
+        pharmacies: 2,
+      };
+      const compTypeId = typeMap[categoryKey] || 5;
+      const subTypeId = parseInt(newPlace.id.slice(-3), 10) || 501;
+      const propId = updatedHotel.hotelPropertyId || updatedHotel.id || '1000000001';
+
+      apiService.createDisplaySubComponent(newPlace, compTypeId, subTypeId, propId).catch((err) => {
+        console.warn('[ActiveHotelService] Sub-component backend sync error:', err.message);
+      });
+    }).catch(() => {});
+
+    return updatedHotel;
   }
 
   deletePlaceFromActiveHotel(categoryKey, placeId) {
     if (!this.activeHotel || !this.activeHotel.nearby) return null;
     const updatedHotel = { ...this.activeHotel };
     if (Array.isArray(updatedHotel.nearby[categoryKey])) {
+      const target = updatedHotel.nearby[categoryKey].find((p) => String(p.id) === String(placeId));
       updatedHotel.nearby[categoryKey] = updatedHotel.nearby[categoryKey].filter((p) => String(p.id) !== String(placeId));
+
+      const hIndex = this.customHotels.findIndex((h) => h.id === updatedHotel.id);
+      if (hIndex >= 0) {
+        this.customHotels[hIndex] = updatedHotel;
+      }
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+        try {
+          window.localStorage.setItem(CUSTOM_HOTELS_STORAGE_KEY, JSON.stringify(this.customHotels));
+        } catch (e) {}
+      }
+      this.setActiveHotel(updatedHotel);
+
+      if (target && target._id) {
+        import('./apiService.js').then(({ apiService }) => {
+          apiService.deleteDisplaySubComponent(target._id).catch(() => {});
+        }).catch(() => {});
+      }
     }
-    return this.setActiveHotel(updatedHotel);
+    return updatedHotel;
   }
 
   updatePlaceInActiveHotel(categoryKey, placeId, updatedPlaceData) {
@@ -271,14 +397,32 @@ class ActiveHotelService {
       const existing = updatedHotel.nearby[categoryKey][placeIndex];
       const latVal = parseFloat(updatedPlaceData.latitude != null ? updatedPlaceData.latitude : updatedPlaceData.lat);
       const lngVal = parseFloat(updatedPlaceData.longitude != null ? updatedPlaceData.longitude : updatedPlaceData.lng);
-      updatedHotel.nearby[categoryKey][placeIndex] = {
+      const merged = {
         ...existing,
         ...updatedPlaceData,
         id: existing.id || placeId,
         latitude: !isNaN(latVal) ? latVal : existing.latitude,
         longitude: !isNaN(lngVal) ? lngVal : existing.longitude,
       };
-      return this.setActiveHotel(updatedHotel);
+      updatedHotel.nearby[categoryKey][placeIndex] = merged;
+
+      const hIndex = this.customHotels.findIndex((h) => h.id === updatedHotel.id);
+      if (hIndex >= 0) {
+        this.customHotels[hIndex] = updatedHotel;
+      }
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+        try {
+          window.localStorage.setItem(CUSTOM_HOTELS_STORAGE_KEY, JSON.stringify(this.customHotels));
+        } catch (e) {}
+      }
+      this.setActiveHotel(updatedHotel);
+
+      if (merged._id) {
+        import('./apiService.js').then(({ apiService }) => {
+          apiService.updateDisplaySubComponent(merged._id, merged).catch(() => {});
+        }).catch(() => {});
+      }
+      return updatedHotel;
     }
     return null;
   }

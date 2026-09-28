@@ -1,0 +1,296 @@
+{
+  "adminCredentials": {
+    "username": "admin",
+    "password": "admin123",
+    "role": "SuperAdmin",
+    "loginUrl": "http://localhost:8081/#/admin"
+  },
+  "sampleHotels": [
+    {
+      "id": "hotel-1000000001",
+      "hotelPropertyId": "1000000001",
+      "name": "The Grand Horizon Palace & Resort",
+      "subtitle": "5-Star Luxury Boutique Stay & Ayurvedic Wellness Sanctuary",
+      "address": "42 MG Road, Ashok Nagar, Bengaluru, Karnataka 560001",
+      "city": "Bengaluru",
+      "latitude": 12.9753,
+      "longitude": 77.6062,
+      "hotelLatLong": "12.9753,77.6062",
+      "contactNumber": "+91 98765 43210",
+      "pricePerNight": "₹14,500 / night",
+      "rating": 4.9,
+      "amenities": [
+        "High-Speed Wi-Fi 6",
+        "Infinity Rooftop Pool",
+        "Ayurvedic Spa & Sauna",
+        "24/7 Concierge Service",
+        "Fine Dining Multi-Cuisine Restaurant",
+        "Free Valet Parking",
+        "Airport Shuttle Limousine"
+      ],
+      "wifi": {
+        "networkName": "GrandHorizon_Guest_5G",
+        "password": "HorizonLuxury2026",
+        "supportPhone": "Ext. 100"
+      },
+      "images": [
+        {
+          "id": "1000000001",
+          "url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80",
+          "caption": "Grand Horizon Resort Exterior & Pool"
+        },
+        {
+          "id": "1000000002",
+          "url": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1200&q=80",
+          "caption": "Presidential Luxury Suite Bedroom"
+        },
+        {
+          "id": "1000000003",
+          "url": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1200&q=80",
+          "caption": "Palace Courtyard & Water Fountain"
+        },
+        {
+          "id": "1000000004",
+          "url": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80",
+          "caption": "The Royal Spice Fine Dining Pavilion"
+        }
+      ]
+    },
+    {
+      "id": "hotel-1000000002",
+      "hotelPropertyId": "1000000002",
+      "name": "The Palmyrah Boutique Heritage Haven",
+      "subtitle": "Colonial Heritage Luxury Retreat with Courtyard Gardens",
+      "address": "18 Palace View Enclave, Chamundi Hill Foothills, Mysore, Karnataka 570010",
+      "city": "Mysore",
+      "latitude": 12.3051,
+      "longitude": 76.6551,
+      "hotelLatLong": "12.3051,76.6551",
+      "contactNumber": "+91 821 243 9000",
+      "pricePerNight": "₹9,800 / night",
+      "rating": 4.8,
+      "amenities": [
+        "Heritage Courtyard",
+        "Private Plunge Pool",
+        "Organic Garden-to-Table Cafe",
+        "Traditional Silk Weaving Tours",
+        "24-Hour Butler Support"
+      ],
+      "wifi": {
+        "networkName": "Palmyrah_Heritage_Guest",
+        "password": "RoyalMysore2026",
+        "supportPhone": "Ext. 0"
+      },
+      "images": [
+        {
+          "id": "2000000001",
+          "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1200&q=80",
+          "caption": "Heritage Courtyard Architecture"
+        },
+        {
+          "id": "2000000002",
+          "url": "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=1200&q=80",
+          "caption": "Classic Teakwood Suite"
+        }
+      ]
+    }
+  ],
+  "samplePlacesByCategory": {
+    "restaurants": [
+      {
+        "componentTypeId": 1,
+        "subComponentTypeId": 101,
+        "title": "The Royal Spice Pavilion",
+        "subtitle": "Authentic Mughlai & Royal Indian Fine Dining",
+        "rating": 4.9,
+        "distance": "0.3 km",
+        "address": "Shop 4, Grand Arcade, MG Road",
+        "timings": "12:00 PM - 11:30 PM",
+        "imageLink": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
+        "data1": "Timings: 12:00 PM - 11:30 PM",
+        "data2": "Phone: +91 98765 11001",
+        "data3": "Avg Cost: ₹1,800 for two",
+        "data4": "Specialties: Dum Biryani, Galouti Kebab, Dal Bukhara",
+        "data5": "Valet Parking: Available"
+      },
+      {
+        "componentTypeId": 1,
+        "subComponentTypeId": 102,
+        "title": "Azure Coastal Bistro",
+        "subtitle": "Fresh Coastal Seafood & Mediterranean Deck",
+        "rating": 4.8,
+        "distance": "0.8 km",
+        "address": "12 Lavelle Road, Central District",
+        "timings": "11:00 AM - 11:00 PM",
+        "imageLink": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80",
+        "data1": "Timings: 11:00 AM - 11:00 PM",
+        "data2": "Phone: +91 98765 11002",
+        "data3": "Avg Cost: ₹2,200 for two",
+        "data4": "Specialties: Butter Garlic Prawns, Grilled Sea Bass, Sangria",
+        "data5": "Live Music: Friday & Saturday Evenings"
+      }
+    ],
+    "gyms": [
+      {
+        "componentTypeId": 2,
+        "subComponentTypeId": 201,
+        "title": "Olympus Elite Wellness & Crossfit",
+        "subtitle": "State-of-the-Art Fitness Arena & Thermal Spa",
+        "rating": 4.9,
+        "distance": "0.5 km",
+        "address": "8 Brigade Towers, 3rd Floor",
+        "timings": "5:30 AM - 10:30 PM",
+        "imageLink": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
+        "data1": "Timings: 5:30 AM - 10:30 PM",
+        "data2": "Phone: +91 98765 22001",
+        "data3": "Day Pass: ₹500 (Free for Hotel Guests)",
+        "data4": "Amenities: Steam Room, Cryo Recovery, Personal Trainers",
+        "data5": "Equipments: Hammer Strength & Technogym"
+      },
+      {
+        "componentTypeId": 2,
+        "subComponentTypeId": 202,
+        "title": "Prana Yoga & Meditation Shala",
+        "subtitle": "Traditional Hatha & Vinyasa Yoga Sessions",
+        "rating": 4.9,
+        "distance": "1.1 km",
+        "address": "22 Crescent Road, High Grounds",
+        "timings": "6:00 AM - 8:00 PM",
+        "imageLink": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
+        "data1": "Timings: 6:00 AM - 8:00 PM",
+        "data2": "Phone: +91 98765 22002",
+        "data3": "Session Fee: ₹400 / session",
+        "data4": "Disciplines: Sound Bath, Pranayama, Ashtanga",
+        "data5": "Mats & Props: Provided Complimentary"
+      }
+    ],
+    "takeaways": [
+      {
+        "componentTypeId": 3,
+        "subComponentTypeId": 301,
+        "title": "Artisan Woodfired Crust Co.",
+        "subtitle": "Handcrafted Neapolitan Sourdough Pizzas",
+        "rating": 4.7,
+        "distance": "0.4 km",
+        "address": "Corner 5th Main, Indiranagar Link Rd",
+        "timings": "11:30 AM - Midnight",
+        "imageLink": "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&q=80",
+        "data1": "Timings: 11:30 AM - 12:00 AM",
+        "data2": "Phone: +91 98765 33001",
+        "data3": "Avg Prep Time: 15 Minutes",
+        "data4": "Best Picks: Truffle Burrata Pizza, San Marzano Margherita",
+        "data5": "Packaging: 100% Eco-Friendly Biodegradable"
+      },
+      {
+        "componentTypeId": 3,
+        "subComponentTypeId": 302,
+        "title": "Bao & Dim Sum Express",
+        "subtitle": "Steamed Gourmet Baos, Potstickers & Boba",
+        "rating": 4.8,
+        "distance": "0.7 km",
+        "address": "15 Church Street",
+        "timings": "12:00 PM - 11:00 PM",
+        "imageLink": "https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?w=800&q=80",
+        "data1": "Timings: 12:00 PM - 11:00 PM",
+        "data2": "Phone: +91 98765 33002",
+        "data3": "Avg Prep Time: 10 Minutes",
+        "data4": "Best Picks: Crispy Tofu Bao, Prawn Hargow, Thai Iced Tea",
+        "data5": "Drive-through Pickup: Yes"
+      }
+    ],
+    "homeDelivery": [
+      {
+        "componentTypeId": 4,
+        "subComponentTypeId": 401,
+        "title": "Gourmet Express Room Drop",
+        "subtitle": "Curated Multi-Restaurant Express Room Delivery",
+        "rating": 4.9,
+        "distance": "Direct to Room",
+        "address": "In-House Concierge Delivery Desk",
+        "timings": "24/7 Service",
+        "imageLink": "https://images.unsplash.com/photo-1526367790999-0150786686a2?w=800&q=80",
+        "data1": "Availability: 24 Hours / 7 Days",
+        "data2": "Concierge Hotline: Ext. 104",
+        "data3": "Avg Delivery Time: 25 - 35 mins",
+        "data4": "Delivery Fee: Zero Charge for Hotel Guests",
+        "data5": "Payment: Charge directly to Room Folio"
+      },
+      {
+        "componentTypeId": 4,
+        "subComponentTypeId": 402,
+        "title": "Green Basket Organics & Essentials",
+        "subtitle": "Farm Fresh Fruits, Snacks & Travel Essentials",
+        "rating": 4.8,
+        "distance": "1.2 km",
+        "address": "Richmond Town Commercial Hub",
+        "timings": "7:00 AM - 10:00 PM",
+        "imageLink": "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80",
+        "data1": "Timings: 7:00 AM - 10:00 PM",
+        "data2": "WhatsApp Order: +91 98765 44002",
+        "data3": "Avg Delivery Time: 20 mins to Lobby",
+        "data4": "Products: Fresh Berries, Artisan Cheese, Toiletries",
+        "data5": "Min Order: ₹300"
+      }
+    ],
+    "touristLandmarks": [
+      {
+        "title": "Bengaluru Palace & Gardens",
+        "subtitle": "Tudor-Style Royal Palace Built in 1887",
+        "rating": 4.7,
+        "distance": "3.2 km",
+        "address": "Vasanth Nagar, Bengaluru, Karnataka 560052",
+        "timings": "10:00 AM - 5:30 PM",
+        "imageLink": "https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=800&q=80",
+        "data1": "Entry Fee: ₹250 (Indian) / ₹500 (Foreign)",
+        "data2": "Audio Guide: Available in 7 Languages",
+        "data3": "Avg Visit Duration: 2 Hours",
+        "data4": "Key Highlights: Stained Glass Windows, Durbar Hall",
+        "data5": "Best Time: 10:30 AM or 3:30 PM"
+      },
+      {
+        "title": "Cubbon Park & Botanical Walkway",
+        "subtitle": "300-Acre Lush Green Historic Park & Heritage Promenade",
+        "rating": 4.8,
+        "distance": "1.4 km",
+        "address": "Kasturba Road, Sampangi Rama Nagara, Bengaluru 560001",
+        "timings": "6:00 AM - 7:00 PM (Closed to traffic on Sundays)",
+        "imageLink": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&q=80",
+        "data1": "Entry Fee: Free Admission",
+        "data2": "Best Activity: Morning Jogging, Photography & Bird Watching",
+        "data3": "Avg Visit Duration: 1.5 Hours",
+        "data4": "Nearby Attractions: State Central Library, Vidhana Soudha",
+        "data5": "Pet Friendly: Permitted on Weekends"
+      }
+    ],
+    "emergencyServices": [
+      {
+        "title": "Manipal Hospital 24/7 Emergency Care",
+        "subtitle": "Super-Specialty Tertiary Hospital & Trauma Center",
+        "rating": 4.8,
+        "distance": "2.1 km",
+        "address": "98 HAL Old Airport Road, Kodihalli, Bengaluru 560017",
+        "timings": "Open 24 Hours / 365 Days",
+        "imageLink": "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&q=80",
+        "data1": "Emergency Hotline: 080 2502 4444",
+        "data2": "Ambulance Response: Dedicated 10-Minute Rapid Response",
+        "data3": "ICU & Cardiac Care: Level-1 Certified",
+        "data4": "International Patient Desk: English, French, Arabic speaking staff",
+        "data5": "Cashless Insurance: TPA & Global Insurances Accepted"
+      },
+      {
+        "title": "Apollo 24/7 Pharmacy & Day Clinic",
+        "subtitle": "Certified Prescription Medicines & First Aid",
+        "rating": 4.9,
+        "distance": "0.4 km",
+        "address": "29 Residency Road, Opposite Hotel Entrance",
+        "timings": "Open 24/7",
+        "imageLink": "https://images.unsplash.com/photo-1576602976047-174e57a47881?w=800&q=80",
+        "data1": "Contact Phone: 080 2221 5566",
+        "data2": "Home / Room Delivery: Within 15 Minutes",
+        "data3": "Services: Blood Pressure, Glucose Check, O2 Cans",
+        "data4": "Doctor on Call: Video Consultation Available",
+        "data5": "Payment: All Cards, UPI & Cash Accepted"
+      }
+    ]
+  }
+}
