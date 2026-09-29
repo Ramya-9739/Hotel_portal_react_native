@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const HotelProperty = require("../models/hotelProperty.model");
 const { sendSuccess, sendError } = require("../utils/responseHelper");
 
@@ -6,7 +7,7 @@ const getAll = async (req, res) => {
   try {
     const { hotelAdminId } = req.query;
     const filter = hotelAdminId ? { hotelAdminId } : {};
-    const items = await HotelProperty.find(filter);
+    const items = await HotelProperty.find(filter).sort({ createdAt: -1 });
     sendSuccess(res, items);
   } catch (err) {
     sendError(res, err.message);
@@ -15,7 +16,14 @@ const getAll = async (req, res) => {
 
 const getById = async (req, res) => {
   try {
-    const item = await HotelProperty.findById(req.params.id);
+    const { id } = req.params;
+    let item = null;
+    if (mongoose.isValidObjectId(id)) {
+      item = await HotelProperty.findById(id);
+    }
+    if (!item) {
+      item = await HotelProperty.findOne({ hotelPropertyId: id });
+    }
     if (!item) return sendError(res, "Not found", 404);
     sendSuccess(res, item);
   } catch (err) {
@@ -34,10 +42,20 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    const item = await HotelProperty.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const { id } = req.params;
+    let item = null;
+    if (mongoose.isValidObjectId(id)) {
+      item = await HotelProperty.findByIdAndUpdate(id, req.body, {
+        new: true,
+        runValidators: true,
+      });
+    }
+    if (!item) {
+      item = await HotelProperty.findOneAndUpdate({ hotelPropertyId: id }, req.body, {
+        new: true,
+        runValidators: true,
+      });
+    }
     if (!item) return sendError(res, "Not found", 404);
     sendSuccess(res, item);
   } catch (err) {
@@ -47,9 +65,15 @@ const update = async (req, res) => {
 
 const remove = async (req, res) => {
   try {
-    const item = await HotelProperty.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    let item = null;
+    if (mongoose.isValidObjectId(id)) {
+      item = await HotelProperty.findByIdAndDelete(id);
+    }
+    if (!item) {
+      item = await HotelProperty.findOneAndDelete({ hotelPropertyId: id });
+    }
     if (!item) return sendError(res, "Not found", 404);
-    // ---- DUMMY: cascade-delete HotelPictures/DisplayComponents for this property if desired ----
     sendSuccess(res, { deleted: true });
   } catch (err) {
     sendError(res, err.message);

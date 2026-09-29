@@ -156,41 +156,47 @@ export default function HomeScreen({
   const loadData = async () => {
     setIsSyncing(true);
     try {
+      // 1. Fetch live hotels from MongoDB
       const hRes = await apiService.fetchHotels();
-      if (hRes && hRes.data && hRes.data.length > 0) {
+      let currentActive = activeHotel;
+      if (hRes && hRes.success && Array.isArray(hRes.data) && hRes.data.length > 0) {
         setHotelsList(hRes.data);
-      }
-
-      const result = await syncService.loadInitialData();
-      if (result && result.grouped) {
-        setGroupedComponents(result.grouped);
-        if (result.grouped.center) {
-          setSelectedComponent(result.grouped.center);
+        const curId = activeHotel?.hotelPropertyId || activeHotel?.id || activeHotel?._id;
+        const match = hRes.data.find(
+          (h) => h.hotelPropertyId === curId || h.id === curId || h._id === curId
+        );
+        currentActive = match || hRes.data[0];
+        if (onHotelChange && (!activeHotel || activeHotel.id !== currentActive.id)) {
+          onHotelChange(currentActive);
         }
-        setSyncStatus({
-          source: result.source === 'backend_server' ? 'Live MongoDB (hotel_portal)' : 'Internal SQLite Cache',
-          timestamp: new Date().toLocaleTimeString(),
-          isDatabaseReady: true,
-        });
       }
 
-      // Also refresh nearby places for active hotel
-      if (activeHotel && (activeHotel.latitude != null || activeHotel.lat != null)) {
-        setIsScanningNearby(true);
-        setScanProgressText('Updating nearby places for hotel coordinates...');
-        activeHotelService.populateAllNearby(activeHotel, 5000, (label, curr, total) => {
-          setScanProgressText(`Scanning nearby ${label} (${curr}/${total})...`);
-        }).then((updated) => {
-          setIsScanningNearby(false);
-          setScanProgressText('');
-          if (updated && onHotelChange) onHotelChange(updated);
-        }).catch(() => {
-          setIsScanningNearby(false);
-          setScanProgressText('');
-        });
+      // 2. Sync all components from MongoDB for active hotel
+      if (currentActive) {
+        const syncedHotel = await activeHotelService.syncComponentsFromBackend(currentActive);
+        if (syncedHotel && onHotelChange) {
+          onHotelChange(syncedHotel);
+        }
       }
+
+      // 3. Fetch components for quadrant display
+      const propId = currentActive?.hotelPropertyId || currentActive?.id || '1000000001';
+      const compRes = await apiService.fetchDisplayComponents({ hotelPropertyId: propId });
+      if (compRes && compRes.success && Array.isArray(compRes.data)) {
+        const grouped = syncService.groupComponents(compRes.data);
+        setGroupedComponents(grouped);
+        if (grouped.center) {
+          setSelectedComponent(grouped.center);
+        }
+      }
+
+      setSyncStatus({
+        source: 'Live MongoDB (hotelApiDb)',
+        timestamp: new Date().toLocaleTimeString(),
+        isDatabaseReady: true,
+      });
     } catch (err) {
-      console.warn('[HomeScreen] Load error:', err);
+      console.error('[HomeScreen] loadData error:', err.message);
     } finally {
       setIsSyncing(false);
     }

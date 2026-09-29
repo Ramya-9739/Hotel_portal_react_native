@@ -1074,10 +1074,12 @@ export default function AdminDashboardScreen({
           distance: formFields.distance,
           hotelDistance: formFields.distance,
           passPrice: formFields.price || '₹1,500 / day pass',
+          price: formFields.price || '₹1,500 / day pass',
           rating: parseFloat(formFields.rating) || 4.8,
           imageLink: formFields.imageLink,
           availability: formFields.availability,
           timings: formFields.timings || '6:00 AM - 10:00 PM Daily',
+          hotelPropertyId: currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id || '1000000001',
         };
         if (modalMode === 'create') {
           const res = await apiService.createGym(payload);
@@ -1101,6 +1103,39 @@ export default function AdminDashboardScreen({
           }
           showToast(`Updated gym "${formFields.title}"!`);
         }
+      } else if (modalCategory === 'pools' || modalCategory === 'swimming_pools') {
+        const payload = {
+          title: formFields.title,
+          subtitle: formFields.subtitle,
+          location: formFields.location,
+          address: formFields.location,
+          distance: formFields.distance,
+          hotelDistance: formFields.distance,
+          price: formFields.price || 'Complimentary for Resident Guests',
+          rating: parseFloat(formFields.rating) || 4.9,
+          imageLink: formFields.imageLink,
+          availability: formFields.availability,
+          timings: formFields.timings || '6:00 AM - 9:00 PM Daily',
+          hotelPropertyId: currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id || '1000000001',
+        };
+        if (modalMode === 'create') {
+          const res = await apiService.createSwimmingPool(payload);
+          const itemToSave = (res && res.data) ? res.data : { ...payload, id: `pool-${Date.now()}` };
+          const updatedHotel = activeHotelService.addPlaceToActiveHotel('pools', itemToSave);
+          if (updatedHotel) {
+            setCurrentActiveHotel(updatedHotel);
+            if (onSetActiveHotel) onSetActiveHotel(updatedHotel);
+          }
+          showToast(`Created swimming pool "${formFields.title}"!`);
+        } else if (editingItem) {
+          await apiService.updateSwimmingPool(editingItem.id, payload);
+          const updatedHotel = activeHotelService.updatePlaceInActiveHotel('pools', editingItem.id, payload);
+          if (updatedHotel) {
+            setCurrentActiveHotel(updatedHotel);
+            if (onSetActiveHotel) onSetActiveHotel(updatedHotel);
+          }
+          showToast(`Updated swimming pool "${formFields.title}"!`);
+        }
       } else if (modalCategory === 'takeaway') {
         const payload = {
           title: formFields.title,
@@ -1110,10 +1145,13 @@ export default function AdminDashboardScreen({
           distance: formFields.distance,
           hotelDistance: formFields.distance,
           minOrder: formFields.price || 'Min ₹400',
+          price: formFields.price || 'Min ₹400',
           rating: parseFloat(formFields.rating) || 4.8,
           imageLink: formFields.imageLink,
           availability: formFields.availability,
           takeawayTime: formFields.timeEstimate || '15 mins ready',
+          timings: formFields.timeEstimate || '15 mins ready',
+          hotelPropertyId: currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id || '1000000001',
         };
         if (modalMode === 'create') {
           const res = await apiService.createTakeaway(payload);
@@ -1146,10 +1184,13 @@ export default function AdminDashboardScreen({
           radius: formFields.distance || '5 km',
           distance: formFields.distance || '5 km',
           deliveryFee: formFields.price || 'Free Suite Delivery',
+          price: formFields.price || 'Free Suite Delivery',
           rating: parseFloat(formFields.rating) || 4.8,
           imageLink: formFields.imageLink,
           availability: formFields.availability,
           deliveryTime: formFields.timeEstimate || '25-30 mins',
+          timings: formFields.timeEstimate || '25-30 mins',
+          hotelPropertyId: currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id || '1000000001',
         };
         if (modalMode === 'create') {
           const res = await apiService.createHomeDelivery(payload);
@@ -1175,6 +1216,7 @@ export default function AdminDashboardScreen({
         }
       }
       setItemModalVisible(false);
+      loadAllAdminData();
     } catch (err) {
       showToast('Error saving item: ' + err.message, 'error');
     } finally {
@@ -1204,6 +1246,9 @@ export default function AdminDashboardScreen({
         await apiService.deleteGym(item.id);
         setGyms((prev) => prev.filter((g) => g.id !== item.id));
         activeHotelService.deletePlaceFromActiveHotel('gyms', item.id);
+      } else if (category === 'pools' || category === 'swimming_pools') {
+        await apiService.deleteSwimmingPool(item.id);
+        activeHotelService.deletePlaceFromActiveHotel('pools', item.id);
       } else if (category === 'takeaway') {
         await apiService.deleteTakeaway(item.id);
         setTakeaway((prev) => prev.filter((t) => t.id !== item.id));
@@ -1219,6 +1264,7 @@ export default function AdminDashboardScreen({
         if (onSetActiveHotel) onSetActiveHotel(cur);
       }
       showToast(`Deleted "${itemName}" successfully!`);
+      loadAllAdminData();
     } catch (err) {
       showToast('Failed to delete: ' + err.message, 'error');
     } finally {

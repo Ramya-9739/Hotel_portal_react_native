@@ -1,12 +1,16 @@
+const mongoose = require("mongoose");
 const DisplayComponent = require("../models/displayComponent.model");
 const { sendSuccess, sendError } = require("../utils/responseHelper");
 
-// GET /display-components?hotelPropertyId=xxx  (parentKeyId filter)
+// GET /display-components?hotelPropertyId=xxx&category=xxx&componentTypeId=xxx
 const getAll = async (req, res) => {
   try {
-    const { hotelPropertyId } = req.query;
-    const filter = hotelPropertyId ? { hotelPropertyId } : {};
-    const items = await DisplayComponent.find(filter);
+    const { hotelPropertyId, category, componentTypeId } = req.query;
+    const filter = {};
+    if (hotelPropertyId) filter.hotelPropertyId = hotelPropertyId;
+    if (category) filter.category = category;
+    if (componentTypeId) filter.componentTypeId = Number(componentTypeId);
+    const items = await DisplayComponent.find(filter).sort({ createdAt: -1 });
     sendSuccess(res, items);
   } catch (err) {
     sendError(res, err.message);
@@ -16,7 +20,11 @@ const getAll = async (req, res) => {
 // GET /display-components/:id
 const getById = async (req, res) => {
   try {
-    const item = await DisplayComponent.findById(req.params.id);
+    const { id } = req.params;
+    let item = null;
+    if (mongoose.isValidObjectId(id)) {
+      item = await DisplayComponent.findById(id);
+    }
     if (!item) return sendError(res, "Not found", 404);
     sendSuccess(res, item);
   } catch (err) {
@@ -27,10 +35,6 @@ const getById = async (req, res) => {
 // POST /display-components
 const create = async (req, res) => {
   try {
-    // ---- DUMMY: if req.file present, upload to S3 first and set imageLink ----
-    // const imageLink = req.file
-    //   ? await uploadToS3(req.body.hotelPropertyId, "components", req.file.originalname, req.file.buffer, req.file.mimetype)
-    //   : req.body.imageLink;
     const item = await DisplayComponent.create(req.body);
     sendSuccess(res, item, 201);
   } catch (err) {
@@ -41,10 +45,14 @@ const create = async (req, res) => {
 // PUT /display-components/:id
 const update = async (req, res) => {
   try {
-    const item = await DisplayComponent.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const { id } = req.params;
+    let item = null;
+    if (mongoose.isValidObjectId(id)) {
+      item = await DisplayComponent.findByIdAndUpdate(id, req.body, {
+        new: true,
+        runValidators: true,
+      });
+    }
     if (!item) return sendError(res, "Not found", 404);
     sendSuccess(res, item);
   } catch (err) {
@@ -55,9 +63,12 @@ const update = async (req, res) => {
 // DELETE /display-components/:id
 const remove = async (req, res) => {
   try {
-    const item = await DisplayComponent.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    let item = null;
+    if (mongoose.isValidObjectId(id)) {
+      item = await DisplayComponent.findByIdAndDelete(id);
+    }
     if (!item) return sendError(res, "Not found", 404);
-    // ---- DUMMY: also delete image from S3 via deleteFromS3(key) if imageLink set ----
     sendSuccess(res, { deleted: true });
   } catch (err) {
     sendError(res, err.message);

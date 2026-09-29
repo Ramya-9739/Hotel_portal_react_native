@@ -334,13 +334,115 @@ class ActiveHotelService {
       const { apiService } = await import('./apiService.js');
       const res = await apiService.fetchHotels();
       if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
-        if (!this.activeHotel || !this.activeHotel.name) {
-          this.setActiveHotel(res.data[0]);
-        }
+        this.customHotels = res.data;
+        const currentId = this.activeHotel?.hotelPropertyId || this.activeHotel?.id || this.activeHotel?._id;
+        const match = res.data.find(
+          (h) => h.hotelPropertyId === currentId || h.id === currentId || h._id === currentId
+        );
+        const selected = match || res.data[0];
+        this.setActiveHotel(selected);
+        await this.syncComponentsFromBackend(selected);
       }
     } catch (e) {
-      // Backend offline or starting up
+      console.warn('[ActiveHotelService] syncFromBackend error:', e.message);
     }
+  }
+
+  async syncComponentsFromBackend(hotel = null) {
+    const target = hotel || this.activeHotel;
+    if (!target) return null;
+    const propId = target.hotelPropertyId || target.id || target._id;
+    try {
+      const { apiService } = await import('./apiService.js');
+      const [compRes, subRes] = await Promise.all([
+        apiService.fetchDisplayComponents({ hotelPropertyId: propId }),
+        apiService.fetchDisplaySubComponents(propId),
+      ]);
+
+      const updatedNearby = { ...(target.nearby || {}) };
+
+      if (compRes && compRes.success && Array.isArray(compRes.data)) {
+        compRes.data.forEach((comp) => {
+          const cat = comp.category || 'facilities';
+          if (!Array.isArray(updatedNearby[cat])) {
+            updatedNearby[cat] = [];
+          }
+          const existingIdx = updatedNearby[cat].findIndex((p) => p.id === comp.id || p._id === comp.id);
+          const mappedItem = {
+            id: comp.id,
+            _id: comp.id,
+            title: comp.title,
+            name: comp.title,
+            subtitle: comp.subtitle || comp.shortDescription || '',
+            desc: comp.subtitle || comp.shortDescription || '',
+            category: comp.category,
+            tag: (comp.category || 'FACILITY').toUpperCase(),
+            location: comp.location || '',
+            address: comp.location || '',
+            distance: comp.hotelDistance || comp.distance || 'Near Hotel',
+            rating: comp.customerRatings || comp.rating || 4.8,
+            imageLink: comp.imageLink || '',
+            timings: comp.timing || comp.timings || '',
+            price: comp.price || '',
+            availability: comp.availability || 'Available',
+            data1: comp.data1 || '',
+            data2: comp.data2 || '',
+            data3: comp.data3 || '',
+            data4: comp.data4 || '',
+            data5: comp.data5 || '',
+          };
+          if (existingIdx >= 0) {
+            updatedNearby[cat][existingIdx] = mappedItem;
+          } else {
+            updatedNearby[cat].unshift(mappedItem);
+          }
+        });
+      }
+
+      if (subRes && subRes.success && Array.isArray(subRes.data)) {
+        const typeToCat = {
+          1: 'dining',
+          2: 'gyms',
+          3: 'takeaways',
+          4: 'homeDelivery',
+          5: 'touristPlaces',
+        };
+        subRes.data.forEach((sub) => {
+          const cat = typeToCat[sub.componentTypeId] || 'facilities';
+          if (!Array.isArray(updatedNearby[cat])) {
+            updatedNearby[cat] = [];
+          }
+          const existingIdx = updatedNearby[cat].findIndex((p) => p.id === sub._id || p._id === sub._id);
+          if (existingIdx < 0) {
+            updatedNearby[cat].push({
+              id: sub._id,
+              _id: sub._id,
+              title: sub.title,
+              name: sub.title,
+              subtitle: sub.subTitle || '',
+              desc: sub.subTitle || '',
+              category: cat,
+              tag: cat.toUpperCase(),
+              imageLink: sub.imageLink || '',
+              data1: sub.data1 || '',
+              data2: sub.data2 || '',
+              data3: sub.data3 || '',
+              data4: sub.data4 || '',
+              data5: sub.data5 || '',
+              location: sub.data5 || '',
+              rating: 4.9,
+              availability: 'Available',
+            });
+          }
+        });
+      }
+
+      const refreshedHotel = { ...target, nearby: updatedNearby };
+      return this.setActiveHotel(refreshedHotel);
+    } catch (err) {
+      console.warn('[ActiveHotelService] syncComponentsFromBackend error:', err.message);
+    }
+    return target;
   }
 
   subscribe(listener) {
@@ -849,30 +951,22 @@ class ActiveHotelService {
 
     this.setActiveHotel(updatedHotel);
 
-    // Sync with MongoDB backend as DisplaySubComponent asynchronously
-    import('./apiService.js').then(({ apiService }) => {
-      const typeMap = {
-        dining: 1,
-        restaurants: 1,
-        gyms: 2,
-        pools: 2,
-        takeaways: 3,
-        shopping: 3,
-        homeDelivery: 4,
-        delivery: 4,
-        transportation: 4,
-        touristPlaces: 5,
-        tourist: 5,
-        hospitals: 2,
-        pharmacies: 2,
-      };
-      const compTypeId = typeMap[categoryKey] || 5;
-      const subTypeId = parseInt(newPlace.id.slice(-3), 10) || 501;
-      const propId = updatedHotel.hotelPropertyId || updatedHotel.id || '1000000001';
-
-      apiService.createDisplaySubComponent(newPlace, compTypeId, subTypeId, propId).catch((err) => {
-        console.warn('[ActiveHotelService] Sub-component backend sync error:', err.message);
-      });
+    // Sync with MongoDB backend as DisplayComponent
+    import('./apiService.js').then(async ({ apiService }) => {
+      try {
+        const propId = updatedHotel.hotelPropertyId || updatedHotel.id || '1000000001';
+        const res = await apiService.createDisplayComponent({
+          ...placeData,
+          category: categoryKey,
+          hotelPropertyId: propId,
+        });
+        if (res && res.success && res.data) {
+          newPlace.id = res.data.id;
+          newPlace._id = res.data.id;
+        }
+      } catch (err) {
+        console.error('[ActiveHotelService] MongoDB createDisplayComponent error:', err.message);
+      }
     }).catch(() => { });
 
     return updatedHotel;
@@ -882,7 +976,6 @@ class ActiveHotelService {
     if (!this.activeHotel || !this.activeHotel.nearby) return null;
     const updatedHotel = { ...this.activeHotel };
     if (Array.isArray(updatedHotel.nearby[categoryKey])) {
-      const target = updatedHotel.nearby[categoryKey].find((p) => String(p.id) === String(placeId));
       updatedHotel.nearby[categoryKey] = updatedHotel.nearby[categoryKey].filter((p) => String(p.id) !== String(placeId));
 
       const hIndex = this.customHotels.findIndex((h) => h.id === updatedHotel.id);
@@ -896,11 +989,13 @@ class ActiveHotelService {
       }
       this.setActiveHotel(updatedHotel);
 
-      if (target && target._id) {
-        import('./apiService.js').then(({ apiService }) => {
-          apiService.deleteDisplaySubComponent(target._id).catch(() => { });
-        }).catch(() => { });
-      }
+      import('./apiService.js').then(async ({ apiService }) => {
+        try {
+          await apiService.deleteDisplayComponent(placeId);
+        } catch (err) {
+          console.error('[ActiveHotelService] MongoDB delete error:', err.message);
+        }
+      }).catch(() => { });
     }
     return updatedHotel;
   }
@@ -934,11 +1029,13 @@ class ActiveHotelService {
       }
       this.setActiveHotel(updatedHotel);
 
-      if (merged._id) {
-        import('./apiService.js').then(({ apiService }) => {
-          apiService.updateDisplaySubComponent(merged._id, merged).catch(() => { });
-        }).catch(() => { });
-      }
+      import('./apiService.js').then(async ({ apiService }) => {
+        try {
+          await apiService.updateDisplayComponent(placeId, updatedPlaceData);
+        } catch (err) {
+          console.error('[ActiveHotelService] MongoDB update error:', err.message);
+        }
+      }).catch(() => { });
       return updatedHotel;
     }
     return null;

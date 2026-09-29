@@ -4,8 +4,7 @@
 // Manages admin credentials, bearer token sessions, and user state.
 // =============================================================================
 
-import { Platform } from 'react-native';
-
+// const AUTH_TOKEN_KEY = '@hotel_portal_admin_token';
 const AUTH_TOKEN_KEY = '@hotel_portal_admin_token';
 const AUTH_USER_KEY = '@hotel_portal_admin_user';
 
@@ -13,7 +12,7 @@ const getHost = () => {
   if (typeof window !== 'undefined' && window.location && window.location.hostname) {
     return window.location.hostname;
   }
-  return '192.168.1.6';
+  return 'localhost';
 };
 
 const AUTH_API_URL = `http://${getHost()}:3000/api/hotel-admins`;
@@ -30,7 +29,7 @@ class AuthService {
    * Hydrates token & user from persistent storage on app launch
    */
   initFromStorage() {
-    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+    if (typeof window !== 'undefined' && window.localStorage) {
       try {
         const storedToken = window.localStorage.getItem(AUTH_TOKEN_KEY);
         const storedUser = window.localStorage.getItem(AUTH_USER_KEY);
@@ -105,6 +104,10 @@ class AuthService {
         const receivedToken = json?.data?.token || json?.token;
         if (response.ok && (receivedToken || json?.success || json?.status === 'success')) {
           this.token = receivedToken || ('admin-session-token-' + Date.now());
+          try {
+            const { apiService } = await import('./apiService.js');
+            apiService.setAuthToken(this.token);
+          } catch (e) {}
           this.currentUser = json?.data?.user || json?.user || {
             id: 'admin-001',
             username: userTrim,
@@ -135,7 +138,7 @@ class AuthService {
       }
 
       // Persist to web local storage
-      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+      if (typeof window !== 'undefined' && window.localStorage) {
         try {
           window.localStorage.setItem(AUTH_TOKEN_KEY, this.token);
           window.localStorage.setItem(AUTH_USER_KEY, JSON.stringify(this.currentUser));
@@ -172,7 +175,7 @@ class AuthService {
       this.token = null;
       this.currentUser = null;
 
-      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+      if (typeof window !== 'undefined' && window.localStorage) {
         try {
           window.localStorage.removeItem(AUTH_TOKEN_KEY);
           window.localStorage.removeItem(AUTH_USER_KEY);
