@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
     "test:isolation": "vitest run test/isolation.test.ts"
   },
   "dependencies": {
