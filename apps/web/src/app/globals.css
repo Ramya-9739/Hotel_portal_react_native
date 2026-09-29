@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --radius-xl: 12px;
+  --radius-full: 999px;
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Fraunces', serif;
+}
+
+@layer base {
+  :root {
+    --background: #FAF8F5;
+    --foreground: #1B1B1F;
+    --muted: #EFECE6;
+    --muted-foreground: #5B5B66;
+    --border: #E7E3DC;
+    --brand: #0F5C5C;
+    --brand-foreground: #FFFFFF;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: #121212;
+      --foreground: #E0E0E0;
+      --muted: #2A2A2A;
+      --muted-foreground: #A0A0A0;
+      --border: #333333;
+      --brand: #4DB6AC;
+      --brand-foreground: #121212;
+    }
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
+  
+  /* WCAG 2.2 AA Focus Rings */
+  *:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+  
+  /* Tap targets for accessibility */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

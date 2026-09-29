@@ -1,40 +1,7 @@
-# Dependencies
 node_modules/
-package-lock.json
-
-# Environment Variables & Secrets
+.DS_Store
 .env
-.env.*
-!.env.example
-
-# Expo & Build Artifacts
-.expo/
 dist/
 build/
-web-build/
-
-# Backups & Temporary Directories
-backend_backup/
-
-# Temporary / Scratch scripts & files
-check_google.js
-extract_base64.js
-fetch_*.js
-find_*.js
-follow_redirects.js
-probe_photos.js
-search_images.js
-img*.jpg
-kg.html
-scratch_google.html
-admin.html
-
-# Operating System Files
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+.next/
+cdk.out/

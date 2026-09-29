@@ -1,26 +1,24 @@
 {
-  "name": "hotel-portal-app",
+  "name": "hotel-portal-monorepo",
   "version": "1.0.0",
-  "main": "App.js",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
-    "dev": "expo start --web --offline",
-    "start": "expo start --offline",
-    "android": "expo start --android --offline",
-    "ios": "expo start --ios --offline",
-    "web": "expo start --web --offline",
-    "server": "node backend/server.js"
+    "dev:db": "docker compose up -d",
+    "stop:db": "docker compose down",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test",
+    "test:isolation": "pnpm --filter @hotel-portal/api run test:isolation"
   },
-  "dependencies": {
-    "@expo/metro-runtime": "~4.0.1",
-    "expo": "~52.0.0",
-    "mongodb": "^7.6.0",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-native": "0.76.7",
-    "react-native-web": "~0.19.13"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.25.2"
-  },
-  "private": true
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "@swc/core",
+      "esbuild",
+      "unrs-resolver"
+    ]
+  }
 }
