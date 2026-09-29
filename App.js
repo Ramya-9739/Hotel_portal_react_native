@@ -42,8 +42,9 @@ export default function App() {
       if (hash.toLowerCase().includes('hospital')) return 'hospitals';
       if (hash.toLowerCase().includes('pharmac')) return 'pharmacies';
       if (hash.toLowerCase().includes('gym')) return 'gyms';
+      if (hash.toLowerCase().includes('admin')) return 'admin';
     }
-    return 'admin';
+    return 'guest';
   });
   const [selectedGym, setSelectedGym] = useState(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(authService.isAuthenticated());
@@ -104,8 +105,8 @@ export default function App() {
         ) {
           setCurrentView('gyms');
         } else {
-          // Default on initial start is Admin Login/Dashboard
-          setCurrentView('admin');
+          // Default on initial start is Guest Portal
+          setCurrentView('guest');
         }
       };
 

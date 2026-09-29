@@ -149,12 +149,33 @@ class AuthService {
 
       this.notify();
       return { success: true, user: this.currentUser, token: this.token };
+    } else if (userTrim === 'client' && passTrim === 'client123') {
+      this.token = 'client-session-token-' + Date.now();
+      this.currentUser = {
+        id: 'client-001',
+        username: 'client',
+        name: 'Hotel Manager',
+        email: 'manager@hotelportal.com',
+        role: 'clientadmin',
+      };
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+        try {
+          window.localStorage.setItem(AUTH_TOKEN_KEY, this.token);
+          window.localStorage.setItem(AUTH_USER_KEY, JSON.stringify(this.currentUser));
+        } catch (e) { }
+      }
+      this.notify();
+      return { success: true, user: this.currentUser, token: this.token };
     } else {
       return {
         success: false,
         error: 'Invalid administrator credentials. Try admin / admin123',
       };
     }
+  }
+
+  isSuperAdmin() {
+    return this.currentUser?.role === 'superadmin';
   }
 
   /**

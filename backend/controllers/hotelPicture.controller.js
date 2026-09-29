@@ -1,5 +1,5 @@
 const HotelPicture = require("../models/hotelPicture.model");
-const { uploadToS3 } = require("../utils/s3Helper"); // import deleteFromS3 too once remove() uses it
+const { uploadToS3, generatePresignedUrl } = require("../utils/s3Helper"); // import deleteFromS3 too once remove() uses it
 const { sendSuccess, sendError } = require("../utils/responseHelper");
 
 // GET /hotel-pictures?hotelPropertyId=xxx  (parentKeyId filter)
@@ -56,4 +56,22 @@ const remove = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getById, create, remove };
+const getPresignedUrl = async (req, res) => {
+  try {
+    const { hotelPropertyId, fileName, mimeType } = req.body;
+    if (!hotelPropertyId || !fileName || !mimeType) {
+      return sendError(res, "hotelPropertyId, fileName, and mimeType are required", 400);
+    }
+    const data = await generatePresignedUrl(
+      hotelPropertyId,
+      "pictures",
+      `${Date.now()}-${fileName}`,
+      mimeType
+    );
+    sendSuccess(res, data);
+  } catch (err) {
+    sendError(res, err.message);
+  }
+};
+
+module.exports = { getAll, getById, create, remove, getPresignedUrl };
