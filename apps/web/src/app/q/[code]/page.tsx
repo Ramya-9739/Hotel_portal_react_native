@@ -12,5 +12,5 @@ export default async function QrRedirectPage({ params }: { params: Promise<{ cod
   // Simulated redirect logic
   const resolvedSlug = "mysuru-heritage-lodge"
   
-  redirect(`/h/${resolvedSlug}?source=qr_${params.code}`)
+  redirect(`/h/${resolvedSlug}?source=qr_${code}`)
 }

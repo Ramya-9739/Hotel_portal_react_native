@@ -119,7 +119,7 @@ export default function GuestPortalPage({ params }: { params: Promise<{ slug: st
                 <BottomSheetHeader>
                   <BottomSheetTitle>{place.name}</BottomSheetTitle>
                   <div className="flex gap-2 items-center mt-2">
-                    <Badge variant={place.status}>{place.status === 'open' ? 'Open' : place.status === 'closed' ? 'Closed' : 'Closing Soon'}</Badge>
+                    <Badge variant={place.status}>{(place.status as string) === 'open' ? 'Open' : (place.status as string) === 'closed' ? 'Closed' : 'Closing Soon'}</Badge>
                     <span className="text-sm text-muted-foreground">{place.hours}</span>
                   </div>
                 </BottomSheetHeader>
