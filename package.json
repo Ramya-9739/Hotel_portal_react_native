@@ -11,6 +11,7 @@
     "server": "node backend/server.js"
   },
   "dependencies": {
+    "@babel/runtime": "^8.0.5",
     "@expo/metro-runtime": "~4.0.1",
     "expo": "~52.0.0",
     "mongodb": "^7.6.0",

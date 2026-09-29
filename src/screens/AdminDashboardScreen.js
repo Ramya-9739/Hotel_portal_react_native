@@ -258,96 +258,73 @@ export default function AdminDashboardScreen({
         const remainingSlots = 8 - hotelImages.length;
         const toUpload = files.slice(0, remainingSlots);
 
-        toUpload.forEach((file) => {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            const rawDataUrl = event?.target?.result;
-            if (!rawDataUrl) return;
-            const unique10DigitId = generate10DigitId();
-            const cleanName = (file.name || 'Property Image').replace(/\.[^/.]+$/, '');
+        toUpload.forEach(async (file) => {
+          const unique10DigitId = generate10DigitId();
+          const cleanName = (file.name || 'Property Image').replace(/\.[^/.]+$/, '');
+          const curHotelId = currentActiveHotel?.id || 'default-hotel';
 
-            const addUploadedImage = (finalUrl) => {
-              setHotelImages((prev) => {
-                if (prev.length >= 8) return prev;
-                const newSlot = {
-                  id: unique10DigitId,
-                  url: finalUrl,
-                  name: file.name,
-                  caption: cleanName,
+          const addUploadedImage = (finalUrl) => {
+            setHotelImages((prev) => {
+              if (prev.length >= 8) return prev;
+              const newSlot = {
+                id: unique10DigitId,
+                url: finalUrl,
+                name: file.name,
+                caption: cleanName,
+              };
+              const updatedList = [...prev, newSlot];
+
+              setHotelConfigForm((f) => ({
+                ...f,
+                imageLink: f.imageLink || finalUrl,
+              }));
+
+              const cur = activeHotelService.getActiveHotel();
+              if (cur) {
+                const updatedHotel = {
+                  ...cur,
+                  images: updatedList.map((img) => (typeof img === 'object' && img?.url ? img.url : img)),
+                  imageObjects: updatedList,
+                  imageLink: updatedList[0]?.url || cur.imageLink,
                 };
-                const updatedList = [...prev, newSlot];
-
-                // Auto-sync hero image link in form
-                setHotelConfigForm((f) => ({
-                  ...f,
-                  imageLink: f.imageLink || finalUrl,
-                }));
-
-                // If active hotel is already configured, immediately sync new images to active hotel
-                const cur = activeHotelService.getActiveHotel();
-                if (cur) {
-                  const updatedHotel = {
-                    ...cur,
-                    images: updatedList.map((img) => (typeof img === 'object' && img?.url ? img.url : img)),
-                    imageObjects: updatedList,
-                    imageLink: updatedList[0]?.url || cur.imageLink,
-                  };
-                  activeHotelService.saveAndActivateHotel(updatedHotel);
-                  setCurrentActiveHotel(updatedHotel);
-                }
-
-                return updatedList;
-              });
-              showToast(`✅ Uploaded "${file.name}"!`, 'success');
-            };
-
-            // Use browser Image element (not React Native Image component)
-            try {
-              const htmlImg = (typeof window !== 'undefined' && window.Image)
-                ? new window.Image()
-                : (typeof document !== 'undefined' ? document.createElement('img') : null);
-
-              if (!htmlImg) {
-                addUploadedImage(rawDataUrl);
-                return;
+                activeHotelService.saveAndActivateHotel(updatedHotel);
+                setCurrentActiveHotel(updatedHotel);
               }
 
-              htmlImg.onload = () => {
-                try {
-                  const canvas = document.createElement('canvas');
-                  const maxDim = 1200;
-                  let w = htmlImg.naturalWidth || htmlImg.width || 800;
-                  let h = htmlImg.naturalHeight || htmlImg.height || 600;
-                  if (w > maxDim || h > maxDim) {
-                    if (w > h) {
-                      h = Math.round((h * maxDim) / w);
-                      w = maxDim;
-                    } else {
-                      w = Math.round((w * maxDim) / h);
-                      h = maxDim;
-                    }
-                  }
-                  canvas.width = w;
-                  canvas.height = h;
-                  const ctx = canvas.getContext('2d');
-                  ctx.drawImage(htmlImg, 0, 0, w, h);
-                  const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
-                  addUploadedImage(compressedUrl);
-                } catch (canvasErr) {
-                  addUploadedImage(rawDataUrl);
-                }
-              };
-
-              htmlImg.onerror = () => {
-                addUploadedImage(rawDataUrl);
-              };
-
-              htmlImg.src = rawDataUrl;
-            } catch (err) {
-              addUploadedImage(rawDataUrl);
-            }
+              return updatedList;
+            });
+            showToast(`✅ Uploaded "${file.name}"!`, 'success');
           };
-          reader.readAsDataURL(file);
+
+          try {
+            showToast(`Generating secure upload link for ${file.name}...`, 'info');
+            const presignedRes = await apiService.getPresignedUrl(curHotelId, file.name, file.type);
+            
+            if (presignedRes.success && presignedRes.data) {
+              const { uploadUrl, fileUrl } = presignedRes.data;
+              
+              showToast(`Uploading ${file.name} to secure storage...`, 'info');
+              const uploadRes = await apiService.uploadFileToS3(uploadUrl, file);
+              
+              if (uploadRes.success) {
+                addUploadedImage(fileUrl);
+              } else {
+                throw new Error(uploadRes.error || 'Upload failed');
+              }
+            } else {
+              throw new Error(presignedRes.error || 'Failed to get upload URL');
+            }
+          } catch (err) {
+            console.warn('S3 Upload Error, falling back to local base64:', err);
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              const rawDataUrl = event?.target?.result;
+              if (rawDataUrl) {
+                addUploadedImage(rawDataUrl);
+              }
+            };
+            reader.readAsDataURL(file);
+          }
         });
       };
       input.click();
@@ -952,7 +929,7 @@ export default function AdminDashboardScreen({
     setFormFields({
       title: '',
       subtitle: '',
-      location: activeHotel?.city || '',
+      location: currentActiveHotel?.city || '',
       distance: '0.8 km from Hotel',
       price:
         category === 'hotels'
@@ -2079,13 +2056,15 @@ export default function AdminDashboardScreen({
           </Text>
         </View>
         <View style={styles.headerButtonsRow}>
-          <TouchableOpacity
-            style={styles.createItemBtn}
-            onPress={() => handleOpenCreateModal('hotels')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.createItemBtnText}>➕ Add New Hotel</Text>
-          </TouchableOpacity>
+          {authService.isSuperAdmin() && (
+            <TouchableOpacity
+              style={styles.createItemBtn}
+              onPress={() => handleOpenCreateModal('hotels')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.createItemBtnText}>➕ Add New Hotel</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             style={styles.addBtn}
             onPress={() => setActiveTab('payments')}

@@ -9,6 +9,7 @@ const hotelAdminSchema = new mongoose.Schema(
     adminContactNumber: { type: String },
     adminAddress: { type: String },
     adminEmail: { type: String },
+    role: { type: String, enum: ["superadmin", "clientadmin"], default: "clientadmin" },
   },
   { timestamps: true }
 );

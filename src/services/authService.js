@@ -88,45 +88,51 @@ class AuthService {
       };
     }
 
-    if (userTrim === 'admin' && passTrim === 'admin123') {
-      try {
-        console.log(`[AuthService] Logging in admin at ${AUTH_API_URL}/login`);
-        const response = await fetch(`${AUTH_API_URL}/login`, {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ username: userTrim, password: passTrim }),
-        });
+    try {
+      console.log(`[AuthService] Logging in user at ${AUTH_API_URL}/login`);
+      const response = await fetch(`${AUTH_API_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: userTrim, password: passTrim }),
+      });
 
-        const json = await response.json();
-        const receivedToken = json?.data?.token || json?.token;
-        if (response.ok && (receivedToken || json?.success || json?.status === 'success')) {
-          this.token = receivedToken || ('admin-session-token-' + Date.now());
+      const json = await response.json();
+      const receivedToken = json?.data?.token || json?.token;
+      
+      if (response.ok && (receivedToken || json?.success || json?.status === 'success')) {
+        this.token = receivedToken;
+        try {
+          const { apiService } = await import('./apiService.js');
+          apiService.setAuthToken(this.token);
+        } catch (e) {}
+        this.currentUser = json?.data?.user || json?.user;
+        
+        // Persist to web local storage
+        if (typeof window !== 'undefined' && window.localStorage) {
           try {
-            const { apiService } = await import('./apiService.js');
-            apiService.setAuthToken(this.token);
-          } catch (e) {}
-          this.currentUser = json?.data?.user || json?.user || {
-            id: 'admin-001',
-            username: userTrim,
-            name: 'Hotel General Manager & Concierge Director',
-            email: 'admin@hotelportal.com',
-            role: 'superadmin',
-          };
-        } else {
-          this.token = 'admin-session-token-' + Date.now();
-          this.currentUser = {
-            id: 'admin-001',
-            username: 'admin',
-            name: 'Hotel General Manager & Concierge Director',
-            email: 'admin@hotelportal.com',
-            role: 'superadmin',
-          };
+            window.localStorage.setItem(AUTH_TOKEN_KEY, this.token);
+            window.localStorage.setItem(AUTH_USER_KEY, JSON.stringify(this.currentUser));
+          } catch (e) {
+            console.warn('[AuthService] LocalStorage save error:', e);
+          }
         }
-      } catch (err) {
-        console.warn('[AuthService] Backend server not reachable, creating authenticated offline session:', err.message);
+        
+        this.notify();
+        return { success: true, user: this.currentUser, token: this.token };
+      } else {
+        return {
+          success: false,
+          error: json?.message || 'Invalid administrator credentials.',
+        };
+      }
+    } catch (err) {
+      console.warn('[AuthService] Backend server not reachable, creating authenticated offline session:', err.message);
+      
+      // Fallback for offline usage
+      if (userTrim === 'admin' && passTrim === 'admin123') {
         this.token = 'admin-session-token-' + Date.now();
         this.currentUser = {
           id: 'admin-001',
@@ -134,6 +140,20 @@ class AuthService {
           name: 'Hotel General Manager & Concierge Director',
           email: 'admin@hotelportal.com',
           role: 'superadmin',
+        };
+      } else if (userTrim === 'client' && passTrim === 'client123') {
+        this.token = 'client-session-token-' + Date.now();
+        this.currentUser = {
+          id: 'client-001',
+          username: 'client',
+          name: 'Hotel Manager',
+          email: 'client@hotelportal.com',
+          role: 'clientadmin',
+        };
+      } else {
+        return {
+          success: false,
+          error: 'Backend is offline and offline credentials did not match.',
         };
       }
 
@@ -149,12 +169,11 @@ class AuthService {
 
       this.notify();
       return { success: true, user: this.currentUser, token: this.token };
-    } else {
-      return {
-        success: false,
-        error: 'Invalid administrator credentials. Try admin / admin123',
-      };
     }
+  }
+
+  isSuperAdmin() {
+    return this.currentUser?.role === 'superadmin';
   }
 
   /**

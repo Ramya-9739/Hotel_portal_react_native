@@ -656,6 +656,41 @@ class ApiService {
     }
   }
 
+  async getPresignedUrl(hotelPropertyId, fileName, mimeType) {
+    try {
+      const response = await fetch(`${BASE_URL}/api/hotel-pictures/presigned-url`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ hotelPropertyId, fileName, mimeType }),
+      });
+      const json = await response.json();
+      if (response.ok && (json.success || json.status === 'success')) {
+        return { success: true, data: json.data };
+      }
+      return { success: false, error: json.message };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  async uploadFileToS3(uploadUrl, file) {
+    try {
+      const response = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type,
+        },
+        body: file,
+      });
+      if (response.ok) {
+        return { success: true };
+      }
+      return { success: false, error: 'Upload failed' };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
   async resetAllData() {
     console.log('[REST API] Reset called');
     return { success: true };
