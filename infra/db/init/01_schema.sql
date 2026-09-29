@@ -159,23 +159,30 @@ CREATE POLICY org_super_admin ON organizations
 
 CREATE POLICY org_client_admin ON organizations
   FOR SELECT USING (current_app_role() = 'client_admin' AND id = current_app_tenant());
+-- Guest has NO read access to organizations table
 
-CREATE POLICY org_guest ON organizations
-  FOR SELECT USING (current_app_role() = 'guest'); -- guest accesses public properties, but may need org brand colors
+-- Create a view for public property brands to safely expose colors/logos
+CREATE VIEW public_property_brands AS
+SELECT p.slug AS property_slug, o.brand_primary_color, o.logo_key
+FROM properties p
+JOIN organizations o ON p.organization_id = o.id
+WHERE p.status = 'published';
 
 -- 2. Users
 CREATE POLICY users_super_admin ON users
   FOR ALL USING (current_app_role() = 'super_admin');
 
 CREATE POLICY users_client_admin ON users
-  FOR SELECT USING (current_app_role() = 'client_admin' AND organization_id = current_app_tenant());
+  FOR ALL USING (current_app_role() = 'client_admin' AND organization_id = current_app_tenant())
+  WITH CHECK (current_app_role() = 'client_admin' AND organization_id = current_app_tenant());
 
 -- 3. Properties
 CREATE POLICY properties_super_admin ON properties
   FOR ALL USING (current_app_role() = 'super_admin');
 
 CREATE POLICY properties_client_admin ON properties
-  FOR ALL USING (current_app_role() = 'client_admin' AND organization_id = current_app_tenant());
+  FOR ALL USING (current_app_role() = 'client_admin' AND organization_id = current_app_tenant())
+  WITH CHECK (current_app_role() = 'client_admin' AND organization_id = current_app_tenant());
 
 CREATE POLICY properties_guest ON properties
   FOR SELECT USING (current_app_role() = 'guest' AND status = 'published');
@@ -185,12 +192,13 @@ CREATE POLICY places_super_admin ON places
   FOR ALL USING (current_app_role() = 'super_admin');
 
 CREATE POLICY places_client_admin ON places
-  FOR ALL USING (current_app_role() = 'client_admin' AND organization_id = current_app_tenant());
+  FOR ALL USING (current_app_role() = 'client_admin' AND organization_id = current_app_tenant())
+  WITH CHECK (current_app_role() = 'client_admin' AND organization_id = current_app_tenant());
 
 CREATE POLICY places_guest ON places
   FOR SELECT USING (
     current_app_role() = 'guest' AND 
-    organization_id IN (SELECT organization_id FROM properties WHERE status = 'published')
+    id IN (SELECT place_id FROM property_places WHERE property_id IN (SELECT id FROM properties WHERE status = 'published'))
   );
 
 -- 5. Property_places
@@ -199,6 +207,10 @@ CREATE POLICY prop_places_super_admin ON property_places
 
 CREATE POLICY prop_places_client_admin ON property_places
   FOR ALL USING (
+    current_app_role() = 'client_admin' AND 
+    property_id IN (SELECT id FROM properties WHERE organization_id = current_app_tenant())
+  )
+  WITH CHECK (
     current_app_role() = 'client_admin' AND 
     property_id IN (SELECT id FROM properties WHERE organization_id = current_app_tenant())
   );
@@ -217,6 +229,10 @@ CREATE POLICY qr_client_admin ON qr_codes
   FOR ALL USING (
     current_app_role() = 'client_admin' AND 
     property_id IN (SELECT id FROM properties WHERE organization_id = current_app_tenant())
+  )
+  WITH CHECK (
+    current_app_role() = 'client_admin' AND 
+    property_id IN (SELECT id FROM properties WHERE organization_id = current_app_tenant())
   );
 
 -- 7. Scan Events
@@ -230,7 +246,10 @@ CREATE POLICY scan_client_admin ON scan_events
   );
 
 CREATE POLICY scan_guest_insert ON scan_events
-  FOR INSERT WITH CHECK (current_app_role() = 'guest'); -- guest can insert scan events
+  FOR INSERT WITH CHECK (
+    current_app_role() = 'guest' AND
+    property_id IN (SELECT id FROM properties WHERE status = 'published')
+  );
 
 -- 8. Audit Log
 CREATE POLICY audit_super_admin ON audit_log
@@ -239,20 +258,9 @@ CREATE POLICY audit_super_admin ON audit_log
 CREATE POLICY audit_client_admin ON audit_log
   FOR SELECT USING (current_app_role() = 'client_admin' AND organization_id = current_app_tenant());
 
--- Create a specific DB user for the API and grant access
--- (Assuming we will run init scripts as a superuser to set up the DB, but then use this user)
-DO
-$do$
-BEGIN
-   IF NOT EXISTS (
-      SELECT FROM pg_catalog.pg_roles
-      WHERE  rolname = 'api_user') THEN
-      CREATE ROLE api_user LOGIN PASSWORD 'api_pass';
-   END IF;
-END
-$do$;
+-- API user is created via 00_roles.sh to avoid hardcoded passwords
 
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO api_user;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO api_user;
-
--- Ensure RLS is enforced even for api_user, since it's not a superuser
+-- Also grant on views
+GRANT ALL PRIVILEGES ON public_property_brands TO api_user;
