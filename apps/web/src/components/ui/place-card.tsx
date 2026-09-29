@@ -70,10 +70,6 @@ export function PlaceCard({
           )}
         </div>
       </div>
-      
-      <button className="absolute inset-0 outline-none" aria-label={`View details for ${name}`}>
-        <span className="sr-only">View Details</span>
-      </button>
     </div>
   )
 }

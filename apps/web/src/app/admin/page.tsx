@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { MapPin, Image as ImageIcon, Settings, Users, QrCode } from "lucide-react"
 
 export default function AdminDashboardPage() {
-  const [activeTab, setActiveTab] = useState("properties")
+  // const [activeTab, setActiveTab] = useState("properties")
 
   return (
     <div className="min-h-screen bg-muted/30 flex">
@@ -37,7 +37,7 @@ export default function AdminDashboardPage() {
         <div className="p-6 flex-1 overflow-auto">
            {/* Tabbed Editor Demo */}
            <div className="bg-background rounded-xl border shadow-sm p-6 max-w-5xl">
-             <h2 className="text-xl font-semibold mb-6">Edit "Taj West End"</h2>
+             <h2 className="text-xl font-semibold mb-6">Edit &quot;Taj West End&quot;</h2>
              <Tabs defaultValue="details" className="w-full">
                <TabsList className="mb-6">
                  <TabsTrigger value="details">Details</TabsTrigger>

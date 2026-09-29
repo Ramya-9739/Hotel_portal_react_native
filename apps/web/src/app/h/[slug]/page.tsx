@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, use } from "react"
 import { dummyHotel } from "@/lib/dummy-data"
 import { Button } from "@/components/ui/button"
 import { Chip } from "@/components/ui/chip"
@@ -16,7 +16,9 @@ import {
 } from "@/components/ui/bottom-sheet"
 import { PhoneCall, Navigation, Wifi, Map as MapIcon, ShieldAlert, Globe } from "lucide-react"
 
-export default function GuestPortalPage({ params }: { params: { slug: string } }) {
+export default function GuestPortalPage({ params }: { params: Promise<{ slug: string }> }) {
+  const resolvedParams = use(params);
+  const slug = resolvedParams.slug; // eslint-disable-line @typescript-eslint/no-unused-vars
   const [activeCategory, setActiveCategory] = useState("all")
   
   // Group places by category
@@ -102,7 +104,7 @@ export default function GuestPortalPage({ params }: { params: { slug: string } }
           {dummyHotel.places.filter(p => activeCategory === 'all' || p.category === activeCategory).map(place => (
             <BottomSheet key={place.id}>
               <BottomSheetTrigger asChild>
-                <div className="cursor-pointer shrink-0">
+                <button className="cursor-pointer shrink-0 text-left outline-none">
                   <PlaceCard 
                     name={place.name}
                     distanceText={place.distanceText}
@@ -110,7 +112,7 @@ export default function GuestPortalPage({ params }: { params: { slug: string } }
                     imageUrl={place.imageUrl}
                     status={place.status}
                   />
-                </div>
+                </button>
               </BottomSheetTrigger>
               <BottomSheetContent>
                 <img src={place.imageUrl} alt={place.name} className="w-full h-48 object-cover rounded-xl mt-4" />
