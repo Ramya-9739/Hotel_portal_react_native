@@ -75,23 +75,47 @@ export class DisplayComponent {
     urgentClinic = '',
     nearbyShopping = '',
     nearbyDining = '',
+    hotelPropertyId = '1000000001',
+    price = '',
+    priceRange = '',
+    passPrice = '',
+    minOrder = '',
+    deliveryFee = '',
+    timings = '',
+    availability = 'Available',
+    data1 = '',
+    data2 = '',
+    data3 = '',
+    data4 = '',
+    data5 = '',
+    cuisine = '',
+    takeaway = false,
+    homeDelivery = false,
   }) {
     this.id = id || `${componentType}-${title.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
     this.title = String(title);
-    this.subtitle = String(subtitle);
+    this.subtitle = String(subtitle || shortDescription || '');
+    this.subTitle = this.subtitle;
     this.imageLink = String(imageLink);
     this.likes = parseInt(likes, 10) || 0;
-    this.shortDescription = String(shortDescription);
+    this.shortDescription = String(shortDescription || subtitle || '');
+    this.description = this.shortDescription;
     this.componentType = parseInt(componentType, 10) || 1;
+    this.componentTypeId = this.componentType;
     this.customerRatings = parseFloat(customerRatings) || 0.0;
+    this.rating = this.customerRatings;
     this.priority = parseInt(priority, 10) || 0;
     this.externalUrl = String(externalUrl || '');
-    this.timing = String(timing || '');
+    this.link = this.externalUrl;
+    this.timing = String(timing || timings || '');
+    this.timings = this.timing;
     this.offer = String(offer || '');
     this.location = String(location || '');
+    this.address = this.location;
     this.additionalInfo = String(additionalInfo || '');
     this.category = String(category || '');
     this.hotelDistance = String(hotelDistance || '');
+    this.distance = this.hotelDistance;
     this.driveTime = String(driveTime || '');
     this.walkTime = String(walkTime || '');
     this.metroStation = String(metroStation || '');
@@ -103,6 +127,21 @@ export class DisplayComponent {
     this.urgentClinic = String(urgentClinic || '');
     this.nearbyShopping = String(nearbyShopping || '');
     this.nearbyDining = String(nearbyDining || '');
+    this.hotelPropertyId = String(hotelPropertyId || '1000000001');
+    this.price = String(price || priceRange || passPrice || minOrder || deliveryFee || '');
+    this.priceRange = String(priceRange || this.price || '');
+    this.passPrice = String(passPrice || this.price || '');
+    this.minOrder = String(minOrder || this.price || '');
+    this.deliveryFee = String(deliveryFee || this.price || '');
+    this.availability = String(availability || 'Available');
+    this.data1 = String(data1 || '');
+    this.data2 = String(data2 || '');
+    this.data3 = String(data3 || '');
+    this.data4 = String(data4 || '');
+    this.data5 = String(data5 || '');
+    this.cuisine = String(cuisine || '');
+    this.takeaway = Boolean(takeaway);
+    this.homeDelivery = Boolean(homeDelivery);
   }
 
   /**
@@ -156,23 +195,25 @@ export class DisplayComponent {
    * Deserializes a JSON object received from REST API
    */
   static fromJson(json) {
+    if (!json) return null;
     return new DisplayComponent({
       id: json.id || json._id,
       title: json.title,
-      subtitle: json.subtitle,
-      imageLink: json.imageLink || json.image_link || json.image,
+      subtitle: json.subtitle || json.subTitle || json.shortDescription || json.description || '',
+      imageLink: json.imageLink || json.image_link || json.image || '',
       likes: json.likes,
-      shortDescription: json.shortDescription || json.short_description || json.description,
-      componentType: json.componentType !== undefined ? json.componentType : json.component_type,
-      customerRatings: json.customerRatings !== undefined ? json.customerRatings : json.rating,
+      shortDescription: json.shortDescription || json.short_description || json.description || json.subtitle || json.subTitle || '',
+      componentType: json.componentTypeId !== undefined ? json.componentTypeId : (json.componentType !== undefined ? json.componentType : json.component_type),
+      customerRatings: json.customerRatings !== undefined ? json.customerRatings : (json.rating !== undefined ? json.rating : 4.8),
       priority: json.priority !== undefined ? json.priority : 0,
-      externalUrl: json.externalUrl || json.external_url || json.url || json.website || '',
-      timing: json.timing || json.hours || '',
+      externalUrl: json.externalUrl || json.external_url || json.url || json.website || json.link || '',
+      timing: json.timing || json.timings || json.hours || '',
+      timings: json.timings || json.timing || json.hours || '',
       offer: json.offer || json.discount || '',
-      location: json.location || '',
+      location: json.location || json.address || '',
       additionalInfo: json.additionalInfo || json.additional_info || '',
       category: json.category || '',
-      hotelDistance: json.hotelDistance || json.hotel_distance || '',
+      hotelDistance: json.hotelDistance || json.hotel_distance || json.distance || '',
       driveTime: json.driveTime || json.drive_time || '',
       walkTime: json.walkTime || json.walk_time || '',
       metroStation: json.metroStation || json.metro_station || '',
@@ -184,6 +225,21 @@ export class DisplayComponent {
       urgentClinic: json.urgentClinic || json.urgent_clinic || '',
       nearbyShopping: json.nearbyShopping || json.nearby_shopping || '',
       nearbyDining: json.nearbyDining || json.nearby_dining || '',
+      hotelPropertyId: json.hotelPropertyId || '1000000001',
+      price: json.price || json.priceRange || json.passPrice || json.minOrder || json.deliveryFee || '',
+      priceRange: json.priceRange || json.price || '',
+      passPrice: json.passPrice || json.price || '',
+      minOrder: json.minOrder || json.price || '',
+      deliveryFee: json.deliveryFee || json.price || '',
+      availability: json.availability || 'Available',
+      data1: json.data1 || '',
+      data2: json.data2 || '',
+      data3: json.data3 || '',
+      data4: json.data4 || '',
+      data5: json.data5 || '',
+      cuisine: json.cuisine || '',
+      takeaway: Boolean(json.takeaway),
+      homeDelivery: Boolean(json.homeDelivery),
     });
   }
 

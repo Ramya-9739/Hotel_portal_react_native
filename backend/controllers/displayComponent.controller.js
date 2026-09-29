@@ -9,7 +9,22 @@ const getAll = async (req, res) => {
   try {
     const { hotelPropertyId, category, componentTypeId } = req.query;
     const filter = {};
-    if (category) filter.category = category;
+    if (category) {
+      const c = String(category).toLowerCase();
+      if (c === 'dining' || c === 'restaurants' || c === 'restaurant') {
+        filter.category = { $in: ['dining', 'restaurants', 'restaurant'] };
+      } else if (c === 'takeaway' || c === 'takeaways') {
+        filter.category = { $in: ['takeaway', 'takeaways'] };
+      } else if (c === 'pools' || c === 'swimming_pools' || c === 'pool') {
+        filter.category = { $in: ['pools', 'swimming_pools', 'pool'] };
+      } else if (c === 'delivery' || c === 'homedelivery' || c === 'home_delivery') {
+        filter.category = { $in: ['delivery', 'homeDelivery', 'home_delivery', 'homedelivery'] };
+      } else if (c === 'gyms' || c === 'gym' || c === 'fitness' || c === 'wellness') {
+        filter.category = { $in: ['gyms', 'gym', 'wellness', 'fitness'] };
+      } else {
+        filter.category = category;
+      }
+    }
     if (componentTypeId) filter.componentTypeId = Number(componentTypeId);
 
     if (hotelPropertyId) {
@@ -80,6 +95,9 @@ const create = async (req, res) => {
     }
     if (!body.hotelPropertyId) {
       body.hotelPropertyId = '1000000001';
+    }
+    if (!body.subTitle && body.subtitle) {
+      body.subTitle = body.subtitle;
     }
     const item = await DisplayComponent.create(body);
     sendSuccess(res, item, 201);

@@ -22,7 +22,7 @@ const displayComponentSchema = new mongoose.Schema(
     data4: { type: String },
     data5: { type: String },
   },
-  { timestamps: true }
+  { timestamps: true, strict: false }
 );
 
 module.exports = mongoose.model("DisplayComponent", displayComponentSchema);
