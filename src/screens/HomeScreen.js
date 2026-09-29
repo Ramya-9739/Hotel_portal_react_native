@@ -114,13 +114,12 @@ export default function HomeScreen({
     isDatabaseReady: true,
   });
 
-  // Automatically search real nearby places when active hotel coordinates are set but nearby is empty
+  // Raw Live Display Components from MongoDB
+  const [rawComponents, setRawComponents] = useState([]);
+
+  // Automatically ensure nearby places are hydrated from activeHotelService
   useEffect(() => {
     if (!activeHotel) return;
-    const lat = activeHotel.latitude != null ? activeHotel.latitude : activeHotel.lat;
-    const lng = activeHotel.longitude != null ? activeHotel.longitude : activeHotel.lng;
-    if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) return;
-
     const nearby = activeHotel.nearby || {};
     const totalCount =
       (nearby.touristPlaces?.length || 0) +
@@ -131,22 +130,12 @@ export default function HomeScreen({
       (nearby.gyms?.length || 0) +
       (nearby.takeaways?.length || 0);
 
-    if (totalCount === 0 && !isScanningNearby) {
-      setIsScanningNearby(true);
-      setScanProgressText('Scanning real nearby places around hotel GPS coordinates...');
-      activeHotelService.populateAllNearby(activeHotel, 5000, (label, curr, total) => {
-        setScanProgressText(`Scanning nearby ${label} (${curr}/${total})...`);
-      }).then((updated) => {
-        setIsScanningNearby(false);
-        setScanProgressText('');
+    if (totalCount === 0) {
+      activeHotelService.syncComponentsFromBackend(activeHotel).then((updated) => {
         if (updated && onHotelChange) onHotelChange(updated);
-      }).catch((e) => {
-        console.warn('[HomeScreen] Auto nearby search error:', e);
-        setIsScanningNearby(false);
-        setScanProgressText('');
-      });
+      }).catch(console.warn);
     }
-  }, [activeHotel?.id, activeHotel?.latitude, activeHotel?.longitude]);
+  }, [activeHotel?.id, activeHotel?.hotelPropertyId]);
 
   // Load components from Backend on mount
   useEffect(() => {
@@ -183,6 +172,7 @@ export default function HomeScreen({
       const propId = currentActive?.hotelPropertyId || currentActive?.id || '1000000001';
       const compRes = await apiService.fetchDisplayComponents({ hotelPropertyId: propId });
       if (compRes && compRes.success && Array.isArray(compRes.data)) {
+        setRawComponents(compRes.data);
         const grouped = syncService.groupComponents(compRes.data);
         setGroupedComponents(grouped);
         if (grouped.center) {
@@ -244,11 +234,38 @@ export default function HomeScreen({
     setBookingModalVisible(true);
   };
 
-  // All bottom section data comes from active hotel's nearby object
-  // No fallback to hardcoded dummy data arrays
+  // Helper to map a raw DisplayComponent from MongoDB to guest table schema
+  const mapCompToGuestItem = (comp, defaultTag, defaultCat) => ({
+    id: comp.id,
+    _id: comp.id,
+    title: comp.title,
+    name: comp.title,
+    subtitle: comp.subtitle || comp.shortDescription || '',
+    desc: comp.subtitle || comp.shortDescription || '',
+    componentType: 5,
+    tag: comp.tag || defaultTag,
+    category: defaultCat,
+    location: comp.location || `${activeHotel?.city || 'Local Area'}`,
+    address: comp.location || `${activeHotel?.city || 'Local Area'}`,
+    distance: comp.hotelDistance || comp.distance || 'Near Hotel',
+    hotelDistance: comp.hotelDistance || comp.distance || 'Near Hotel',
+    rating: comp.customerRatings || comp.rating || 4.85,
+    timing: comp.timing || comp.timings || 'Daily Hours',
+    timings: comp.timing || comp.timings || 'Daily Hours',
+    price: comp.price || '',
+    offer: comp.offer || 'Resident Privilege Available',
+    additionalInfo: comp.additionalInfo || comp.subtitle || comp.shortDescription || '',
+    imageLink: comp.imageLink || '',
+    data1: comp.data1 || '',
+    data2: comp.data2 || '',
+    data3: comp.data3 || '',
+    data4: comp.data4 || '',
+    data5: comp.data5 || '',
+  });
 
   const hotelGyms = useMemo(() => {
-    return (activeHotel && activeHotel.nearby && activeHotel.nearby.gyms ? activeHotel.nearby.gyms : []).map((g) => ({
+    const rawList = rawComponents.filter((c) => c.category === 'gyms').map((c) => mapCompToGuestItem(c, 'GYM & WELLNESS', 'Wellness & Gyms'));
+    const nearbyList = (activeHotel && activeHotel.nearby && activeHotel.nearby.gyms ? activeHotel.nearby.gyms : []).map((g) => ({
       ...g,
       componentType: 5,
       tag: g.tag || 'GYM & WELLNESS',
@@ -256,10 +273,22 @@ export default function HomeScreen({
       latitude: g.latitude != null ? g.latitude : g.lat,
       longitude: g.longitude != null ? g.longitude : g.lng,
     }));
-  }, [activeHotel]);
+    // Merge without duplicates
+    const seen = new Set();
+    const merged = [];
+    [...rawList, ...nearbyList].forEach((item) => {
+      const key = (item.title || item.name || '').toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        merged.push(item);
+      }
+    });
+    return merged;
+  }, [activeHotel, rawComponents]);
 
   const hotelPools = useMemo(() => {
-    return (activeHotel && activeHotel.nearby && activeHotel.nearby.pools ? activeHotel.nearby.pools : []).map((p) => ({
+    const rawList = rawComponents.filter((c) => c.category === 'pools' || c.category === 'swimming_pools').map((c) => mapCompToGuestItem(c, 'SWIMMING POOL', 'Swimming Pools'));
+    const nearbyList = (activeHotel && activeHotel.nearby && activeHotel.nearby.pools ? activeHotel.nearby.pools : []).map((p) => ({
       ...p,
       componentType: 5,
       tag: p.tag || 'SWIMMING POOL',
@@ -272,10 +301,21 @@ export default function HomeScreen({
       offer: p.offer || 'Resident Access Available',
       additionalInfo: p.additionalInfo || 'Swimming Pool',
     }));
-  }, [activeHotel]);
+    const seen = new Set();
+    const merged = [];
+    [...rawList, ...nearbyList].forEach((item) => {
+      const key = (item.title || item.name || '').toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        merged.push(item);
+      }
+    });
+    return merged;
+  }, [activeHotel, rawComponents]);
 
   const hotelDining = useMemo(() => {
-    return (activeHotel && activeHotel.nearby && activeHotel.nearby.dining ? activeHotel.nearby.dining : []).map((d) => ({
+    const rawList = rawComponents.filter((c) => c.category === 'dining' || c.category === 'restaurants' || c.componentType === 1).map((c) => mapCompToGuestItem(c, 'BISTRO & DINING', 'Bistros & Dining'));
+    const nearbyList = (activeHotel && activeHotel.nearby && (activeHotel.nearby.dining || activeHotel.nearby.restaurants) ? (activeHotel.nearby.dining || activeHotel.nearby.restaurants) : []).map((d) => ({
       ...d,
       componentType: 5,
       tag: d.tag || 'BISTRO & DINING',
@@ -283,10 +323,21 @@ export default function HomeScreen({
       latitude: d.latitude != null ? d.latitude : d.lat,
       longitude: d.longitude != null ? d.longitude : d.lng,
     }));
-  }, [activeHotel]);
+    const seen = new Set();
+    const merged = [];
+    [...rawList, ...nearbyList].forEach((item) => {
+      const key = (item.title || item.name || '').toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        merged.push(item);
+      }
+    });
+    return merged;
+  }, [activeHotel, rawComponents]);
 
   const hotelTakeaway = useMemo(() => {
-    return (activeHotel && activeHotel.nearby && activeHotel.nearby.takeaways ? activeHotel.nearby.takeaways : []).map((t) => ({
+    const rawList = rawComponents.filter((c) => c.category === 'takeaways' || c.category === 'takeaway' || c.componentType === 3).map((c) => mapCompToGuestItem(c, 'EXPRESS TAKEAWAY', 'Express Takeaway'));
+    const nearbyList = (activeHotel && activeHotel.nearby && activeHotel.nearby.takeaways ? activeHotel.nearby.takeaways : []).map((t) => ({
       ...t,
       componentType: 5,
       tag: t.tag || 'EXPRESS TAKEAWAY',
@@ -294,7 +345,57 @@ export default function HomeScreen({
       latitude: t.latitude != null ? t.latitude : t.lat,
       longitude: t.longitude != null ? t.longitude : t.lng,
     }));
-  }, [activeHotel]);
+    const seen = new Set();
+    const merged = [];
+    [...rawList, ...nearbyList].forEach((item) => {
+      const key = (item.title || item.name || '').toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        merged.push(item);
+      }
+    });
+    return merged;
+  }, [activeHotel, rawComponents]);
+
+  const hotelDelivery = useMemo(() => {
+    const rawList = rawComponents.filter((c) => c.category === 'homeDelivery' || c.category === 'delivery' || c.componentType === 4).map((c) => mapCompToGuestItem(c, 'SUITE DELIVERY', 'Home Delivery'));
+    const nearbyList = (activeHotel && activeHotel.nearby && activeHotel.nearby.homeDelivery ? activeHotel.nearby.homeDelivery : []).map((t) => ({
+      ...t,
+      componentType: 5,
+      tag: t.tag || 'SUITE DELIVERY',
+      category: 'Home Delivery',
+    }));
+    const seen = new Set();
+    const merged = [];
+    [...rawList, ...nearbyList].forEach((item) => {
+      const key = (item.title || item.name || '').toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        merged.push(item);
+      }
+    });
+    return merged;
+  }, [activeHotel, rawComponents]);
+
+  const hotelFacilities = useMemo(() => {
+    const rawList = rawComponents.filter((c) => c.category === 'facilities' || (!['gyms', 'pools', 'dining', 'restaurants', 'takeaways', 'homeDelivery'].includes(c.category) && c.componentType === 5)).map((c) => mapCompToGuestItem(c, 'FACILITY', 'Facilities'));
+    const nearbyList = (activeHotel && activeHotel.nearby && activeHotel.nearby.facilities ? activeHotel.nearby.facilities : []).map((f) => ({
+      ...f,
+      componentType: 5,
+      tag: f.tag || 'FACILITY',
+      category: 'Facilities',
+    }));
+    const seen = new Set();
+    const merged = [];
+    [...rawList, ...nearbyList].forEach((item) => {
+      const key = (item.title || item.name || '').toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        merged.push(item);
+      }
+    });
+    return merged;
+  }, [activeHotel, rawComponents]);
 
   const hotelHospitals = useMemo(() => {
     return (activeHotel?.nearby?.hospitals || []).map((h) => ({
@@ -340,8 +441,10 @@ export default function HomeScreen({
       ...hotelPools,
       ...hotelDining,
       ...hotelTakeaway,
+      ...hotelDelivery,
+      ...hotelFacilities,
     ];
-  }, [hotelHospitals, hotelPharmacies, hotelGyms, hotelPools, hotelDining, hotelTakeaway]);
+  }, [hotelHospitals, hotelPharmacies, hotelGyms, hotelPools, hotelDining, hotelTakeaway, hotelDelivery, hotelFacilities]);
 
   const currentBottomItems = useMemo(() => {
     if (bottomCategory === 'hospitals') return hotelHospitals;
@@ -350,8 +453,10 @@ export default function HomeScreen({
     if (bottomCategory === 'pools') return hotelPools;
     if (bottomCategory === 'cafes' || bottomCategory === 'dining') return hotelDining;
     if (bottomCategory === 'takeaway') return hotelTakeaway;
+    if (bottomCategory === 'delivery') return hotelDelivery;
+    if (bottomCategory === 'facilities') return hotelFacilities;
     return allBottomItems;
-  }, [bottomCategory, hotelHospitals, hotelPharmacies, hotelGyms, hotelPools, hotelDining, hotelTakeaway, allBottomItems]);
+  }, [bottomCategory, hotelHospitals, hotelPharmacies, hotelGyms, hotelPools, hotelDining, hotelTakeaway, hotelDelivery, hotelFacilities, allBottomItems]);
 
   const bottomFilterTabs = useMemo(() => {
     const tabs = [
@@ -362,13 +467,15 @@ export default function HomeScreen({
       { id: 'pools', label: 'Swimming Pools', icon: 'pool', count: hotelPools.length },
       { id: 'cafes', label: 'Bistros & Dining', icon: 'cafe', count: hotelDining.length },
       { id: 'takeaway', label: 'Express Takeaway', icon: 'takeaway', count: hotelTakeaway.length },
+      { id: 'delivery', label: 'Suite Delivery', icon: 'delivery', count: hotelDelivery.length },
+      { id: 'facilities', label: 'Hotel Facilities', icon: 'facilities', count: hotelFacilities.length },
     ];
     return tabs;
-  }, [allBottomItems.length, hotelHospitals.length, hotelPharmacies.length, hotelGyms.length, hotelPools.length, hotelDining.length, hotelTakeaway.length]);
-
+  }, [allBottomItems.length, hotelHospitals.length, hotelPharmacies.length, hotelGyms.length, hotelPools.length, hotelDining.length, hotelTakeaway.length, hotelDelivery.length, hotelFacilities.length]);
 
   // Unconfigured Hotel Fallback Screen
-  if (!activeHotel || !activeHotel.name) {
+  const activeHotelName = activeHotel?.name || activeHotel?.title || activeHotel?.hotelName;
+  if (!activeHotel || !activeHotelName) {
     return (
       <View style={styles.unconfiguredContainer}>
         <View style={styles.unconfiguredCard}>

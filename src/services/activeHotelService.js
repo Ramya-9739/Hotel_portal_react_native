@@ -340,8 +340,26 @@ class ActiveHotelService {
           (h) => h.hotelPropertyId === currentId || h.id === currentId || h._id === currentId
         );
         const selected = match || res.data[0];
-        this.setActiveHotel(selected);
-        await this.syncComponentsFromBackend(selected);
+        const seed = buildInitialSeedHotel();
+        const mergedHotel = {
+          ...seed,
+          ...this.activeHotel,
+          ...selected,
+          name: selected.name || selected.title || selected.hotelName || this.activeHotel?.name || seed.name,
+          title: selected.title || selected.name || selected.hotelName || this.activeHotel?.title || seed.title,
+          address: selected.address || selected.hotelAddress || this.activeHotel?.address || seed.address,
+          city: selected.city || this.activeHotel?.city || seed.city,
+          location: selected.location || selected.city || this.activeHotel?.location || seed.location,
+          id: selected.id || selected.hotelPropertyId || selected._id,
+          hotelPropertyId: selected.hotelPropertyId || selected.id,
+          nearby: {
+            ...seed.nearby,
+            ...(this.activeHotel?.nearby || {}),
+            ...(selected.nearby || {}),
+          },
+        };
+        this.setActiveHotel(mergedHotel);
+        await this.syncComponentsFromBackend(mergedHotel);
       }
     } catch (e) {
       console.warn('[ActiveHotelService] syncFromBackend error:', e.message);
@@ -364,10 +382,6 @@ class ActiveHotelService {
       if (compRes && compRes.success && Array.isArray(compRes.data)) {
         compRes.data.forEach((comp) => {
           const cat = comp.category || 'facilities';
-          if (!Array.isArray(updatedNearby[cat])) {
-            updatedNearby[cat] = [];
-          }
-          const existingIdx = updatedNearby[cat].findIndex((p) => p.id === comp.id || p._id === comp.id);
           const mappedItem = {
             id: comp.id,
             _id: comp.id,
@@ -380,6 +394,7 @@ class ActiveHotelService {
             location: comp.location || '',
             address: comp.location || '',
             distance: comp.hotelDistance || comp.distance || 'Near Hotel',
+            hotelDistance: comp.hotelDistance || comp.distance || 'Near Hotel',
             rating: comp.customerRatings || comp.rating || 4.8,
             imageLink: comp.imageLink || '',
             timings: comp.timing || comp.timings || '',
@@ -391,11 +406,22 @@ class ActiveHotelService {
             data4: comp.data4 || '',
             data5: comp.data5 || '',
           };
-          if (existingIdx >= 0) {
-            updatedNearby[cat][existingIdx] = mappedItem;
-          } else {
-            updatedNearby[cat].unshift(mappedItem);
-          }
+
+          const targetCats = (cat === 'dining' || cat === 'restaurants')
+            ? ['dining', 'restaurants']
+            : [cat];
+
+          targetCats.forEach((c) => {
+            if (!Array.isArray(updatedNearby[c])) {
+              updatedNearby[c] = [];
+            }
+            const existingIdx = updatedNearby[c].findIndex((p) => p.id === comp.id || p._id === comp.id);
+            if (existingIdx >= 0) {
+              updatedNearby[c][existingIdx] = mappedItem;
+            } else {
+              updatedNearby[c].unshift(mappedItem);
+            }
+          });
         });
       }
 

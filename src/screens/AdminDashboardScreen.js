@@ -38,10 +38,12 @@ const ADMIN_TABS = [
   { id: 'places_manager', label: 'Nearby Places & Categories', icon: '📍' },
   { id: 'overview', label: 'Dashboard Overview', icon: '📊' },
   { id: 'hotels', label: 'Hotels Directory', icon: '🏢' },
-  { id: 'restaurants', label: 'Restaurants', icon: '🍽️' },
+  { id: 'restaurants', label: 'Restaurants & Dining', icon: '🍽️' },
   { id: 'gyms', label: 'Gyms & Wellness', icon: '🏋️' },
+  { id: 'pools', label: 'Swimming Pools', icon: '🏊' },
   { id: 'takeaway', label: 'Takeaway Partners', icon: '🥡' },
   { id: 'delivery', label: 'Home Delivery', icon: '🛵' },
+  { id: 'facilities', label: 'Hotel Facilities & Services', icon: '🛎️' },
   { id: 'payments', label: 'Hotel Payment Config', icon: '💳' },
   { id: 'availability', label: 'Availability Matrix', icon: '⚡' },
 ];
@@ -550,7 +552,9 @@ export default function AdminDashboardScreen({
 
     const heroImageUrl = finalImageUrls[0] || hotelConfigForm.imageLink.trim() || '';
 
-    const saved = activeHotelService.saveAndActivateHotel({
+    const cur = activeHotelService.getActiveHotel() || {};
+
+    const hotelPayload = {
       ...cur,
       name: hotelConfigForm.name.trim(),
       title: hotelConfigForm.name.trim(),
@@ -567,12 +571,26 @@ export default function AdminDashboardScreen({
       pricePerNight: hotelConfigForm.pricePerNight.trim() || '',
       rating: parseFloat(hotelConfigForm.rating) || null,
       nearby: cur.nearby || undefined,
-    });
+    };
+
+    const saved = activeHotelService.saveAndActivateHotel(hotelPayload);
+
+    // Save directly to MongoDB backend via apiService
+    try {
+      const propId = saved.hotelPropertyId || saved.id || cur.hotelPropertyId || cur.id;
+      if (propId && !String(propId).startsWith('hotel-')) {
+        await apiService.updateHotel(propId, saved);
+      } else {
+        await apiService.createHotel(saved);
+      }
+    } catch (e) {
+      console.warn('[AdminDashboard] MongoDB saveHotel warning:', e.message);
+    }
 
     setCurrentActiveHotel(saved);
     if (onSetActiveHotel) onSetActiveHotel(saved);
 
-    showToast('"' + saved.name + '" saved as active hotel!', 'success');
+    showToast('"' + saved.name + '" saved to MongoDB & activated!', 'success');
 
     // Trigger nearby scan ONLY if coordinates valid AND no places exist yet
     const hasAnyPlaces = Object.values(saved.nearby || {}).some((arr) => Array.isArray(arr) && arr.length > 0);
@@ -765,8 +783,10 @@ export default function AdminDashboardScreen({
   const [hotels, setHotels] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
   const [gyms, setGyms] = useState([]);
+  const [pools, setPools] = useState([]);
   const [takeaway, setTakeaway] = useState([]);
   const [homeDelivery, setHomeDelivery] = useState([]);
+  const [facilities, setFacilities] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [summary, setSummary] = useState(null);
 
@@ -865,6 +885,12 @@ export default function AdminDashboardScreen({
         setGyms(gRes.data);
       }
 
+      // 4b. Swimming Pools
+      const pRes = await apiService.fetchSwimmingPools();
+      if (pRes && pRes.data && pRes.data.length > 0) {
+        setPools(pRes.data);
+      }
+
       // 5. Takeaway
       const tRes = await apiService.fetchTakeaway();
       if (tRes && tRes.data && tRes.data.length > 0) {
@@ -875,6 +901,12 @@ export default function AdminDashboardScreen({
       const dRes = await apiService.fetchHomeDelivery();
       if (dRes && dRes.data && dRes.data.length > 0) {
         setHomeDelivery(dRes.data);
+      }
+
+      // 6b. Hotel Facilities & Services
+      const fRes = await apiService.fetchFacilities();
+      if (fRes && fRes.data && fRes.data.length > 0) {
+        setFacilities(fRes.data);
       }
 
       // 7. Bookings
@@ -929,6 +961,10 @@ export default function AdminDashboardScreen({
           ? '₹₹₹₹'
           : category === 'gyms'
           ? '₹1,500 / day pass'
+          : (category === 'pools' || category === 'swimming_pools')
+          ? 'Resident Access Available'
+          : category === 'facilities'
+          ? 'Complimentary'
           : category === 'takeaway'
           ? 'Min ₹400'
           : 'Free Suite Delivery',
@@ -940,6 +976,10 @@ export default function AdminDashboardScreen({
           ? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80'
           : category === 'gyms'
           ? 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80'
+          : (category === 'pools' || category === 'swimming_pools')
+          ? 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=800&q=80'
+          : category === 'facilities'
+          ? 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80'
           : category === 'takeaway'
           ? 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80'
           : 'https://images.unsplash.com/photo-1526367790999-0150786686a2?w=800&q=80',
@@ -1035,11 +1075,13 @@ export default function AdminDashboardScreen({
           distance: formFields.distance,
           hotelDistance: formFields.distance,
           priceRange: formFields.price || '₹₹₹₹',
+          price: formFields.price || '₹₹₹₹',
           rating: parseFloat(formFields.rating) || 4.8,
           imageLink: formFields.imageLink,
           availability: formFields.availability,
           takeaway: formFields.takeawayEnabled,
           homeDelivery: formFields.homeDeliveryEnabled,
+          hotelPropertyId: currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id || '1000000001',
         };
         if (modalMode === 'create') {
           const res = await apiService.createRestaurant(payload);
@@ -1116,11 +1158,13 @@ export default function AdminDashboardScreen({
           imageLink: formFields.imageLink,
           availability: formFields.availability,
           timings: formFields.timings || '6:00 AM - 9:00 PM Daily',
+          category: 'pools',
           hotelPropertyId: currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id || '1000000001',
         };
         if (modalMode === 'create') {
           const res = await apiService.createSwimmingPool(payload);
           const itemToSave = (res && res.data) ? res.data : { ...payload, id: `pool-${Date.now()}` };
+          setPools((prev) => [itemToSave, ...prev]);
           const updatedHotel = activeHotelService.addPlaceToActiveHotel('pools', itemToSave);
           if (updatedHotel) {
             setCurrentActiveHotel(updatedHotel);
@@ -1129,6 +1173,9 @@ export default function AdminDashboardScreen({
           showToast(`Created swimming pool "${formFields.title}"!`);
         } else if (editingItem) {
           await apiService.updateSwimmingPool(editingItem.id, payload);
+          setPools((prev) =>
+            prev.map((p) => (p.id === editingItem.id ? { ...p, ...payload } : p))
+          );
           const updatedHotel = activeHotelService.updatePlaceInActiveHotel('pools', editingItem.id, payload);
           if (updatedHotel) {
             setCurrentActiveHotel(updatedHotel);
@@ -1214,6 +1261,44 @@ export default function AdminDashboardScreen({
           }
           showToast(`Updated delivery partner "${formFields.title}"!`);
         }
+      } else if (modalCategory === 'facilities') {
+        const payload = {
+          title: formFields.title,
+          subtitle: formFields.subtitle,
+          location: formFields.location,
+          address: formFields.location,
+          distance: formFields.distance || 'On-Property',
+          hotelDistance: formFields.distance || 'On-Property',
+          price: formFields.price || 'Complimentary',
+          rating: parseFloat(formFields.rating) || 4.9,
+          imageLink: formFields.imageLink,
+          availability: formFields.availability,
+          timings: formFields.timings || '24/7 Service',
+          category: 'facilities',
+          hotelPropertyId: currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id || '1000000001',
+        };
+        if (modalMode === 'create') {
+          const res = await apiService.createFacility(payload);
+          const itemToSave = (res && res.data) ? res.data : { ...payload, id: `fac-${Date.now()}` };
+          setFacilities((prev) => [itemToSave, ...prev]);
+          const updatedHotel = activeHotelService.addPlaceToActiveHotel('facilities', itemToSave);
+          if (updatedHotel) {
+            setCurrentActiveHotel(updatedHotel);
+            if (onSetActiveHotel) onSetActiveHotel(updatedHotel);
+          }
+          showToast(`Created facility "${formFields.title}"!`);
+        } else if (editingItem) {
+          await apiService.updateFacility(editingItem.id, payload);
+          setFacilities((prev) =>
+            prev.map((f) => (f.id === editingItem.id ? { ...f, ...payload } : f))
+          );
+          const updatedHotel = activeHotelService.updatePlaceInActiveHotel('facilities', editingItem.id, payload);
+          if (updatedHotel) {
+            setCurrentActiveHotel(updatedHotel);
+            if (onSetActiveHotel) onSetActiveHotel(updatedHotel);
+          }
+          showToast(`Updated facility "${formFields.title}"!`);
+        }
       }
       setItemModalVisible(false);
       loadAllAdminData();
@@ -1248,6 +1333,7 @@ export default function AdminDashboardScreen({
         activeHotelService.deletePlaceFromActiveHotel('gyms', item.id);
       } else if (category === 'pools' || category === 'swimming_pools') {
         await apiService.deleteSwimmingPool(item.id);
+        setPools((prev) => prev.filter((p) => p.id !== item.id));
         activeHotelService.deletePlaceFromActiveHotel('pools', item.id);
       } else if (category === 'takeaway') {
         await apiService.deleteTakeaway(item.id);
@@ -1257,6 +1343,10 @@ export default function AdminDashboardScreen({
         await apiService.deleteHomeDelivery(item.id);
         setHomeDelivery((prev) => prev.filter((d) => d.id !== item.id));
         activeHotelService.deletePlaceFromActiveHotel('homeDelivery', item.id);
+      } else if (category === 'facilities') {
+        await apiService.deleteFacility(item.id);
+        setFacilities((prev) => prev.filter((f) => f.id !== item.id));
+        activeHotelService.deletePlaceFromActiveHotel('facilities', item.id);
       }
       const cur = activeHotelService.getActiveHotel();
       if (cur) {
@@ -2285,6 +2375,78 @@ export default function AdminDashboardScreen({
   );
 
   // ===========================================================================
+  // RENDER TAB: SWIMMING POOLS (CRUD)
+  // ===========================================================================
+  const renderPoolsTab = () => (
+    <View style={styles.tabContentContainer}>
+      <View style={styles.sectionHeaderRow}>
+        <View>
+          <Text style={styles.sectionTitle}>🏊 SWIMMING POOLS ({pools.length})</Text>
+          <Text style={styles.sectionSub}>Infinity pools, heated wellness water, and poolside cabanas</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.createItemBtn}
+          onPress={() => handleOpenCreateModal('pools')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.createItemBtnText}>➕ Add Swimming Pool</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.itemsTable}>
+        {pools.map((p) => {
+          const isAvail = p.availability === 'Available' || !p.availability;
+          return (
+            <View key={p.id} style={styles.tableCard}>
+              <Image source={{ uri: p.imageLink || 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=800&q=80' }} style={styles.itemThumb} />
+              <View style={styles.tableInfoCol}>
+                <View style={styles.tableTitleRow}>
+                  <Text style={styles.tableItemTitle}>{p.title || p.name}</Text>
+                  <Text style={styles.tablePrice}>{p.price || 'Resident Access'}</Text>
+                </View>
+                <Text style={styles.tableItemSub}>
+                  ⏱️ {p.timings || p.timing || '6:00 AM - 9:00 PM'} • 📍 {p.location || 'Hotel Courtyard'} • ★ {p.rating || 4.9}
+                </Text>
+                <Text style={styles.facilitiesText}>
+                  {p.subtitle || p.shortDescription || 'Heated infinity pool with poolside loungers'}
+                </Text>
+              </View>
+
+              <View style={styles.tableActionsCol}>
+                <TouchableOpacity
+                  style={[styles.availToggleBtn, isAvail ? styles.availGreenBtn : styles.availRedBtn]}
+                  onPress={() => handleToggleAvailability('pools', p)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.availToggleText}>
+                    {isAvail ? '🟢 Available' : '🔴 Not Available'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.editItemBtn}
+                  onPress={() => handleOpenEditModal('pools', p)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.editItemBtnText}>✏️ Edit</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.deleteItemBtn}
+                  onPress={() => handleDeleteItem('pools', p)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.deleteItemBtnText}>🗑️ Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+
+  // ===========================================================================
   // RENDER TAB: TAKEAWAY (CRUD)
   // ===========================================================================
   const renderTakeawayTab = () => (
@@ -2423,8 +2585,77 @@ export default function AdminDashboardScreen({
   );
 
   // ===========================================================================
-  // RENDER TAB: HOTEL PAYMENT METHODS
+  // RENDER TAB: HOTEL FACILITIES & SERVICES (CRUD)
   // ===========================================================================
+  const renderFacilitiesTab = () => (
+    <View style={styles.tabContentContainer}>
+      <View style={styles.sectionHeaderRow}>
+        <View>
+          <Text style={styles.sectionTitle}>🛎️ HOTEL FACILITIES & SERVICES ({facilities.length})</Text>
+          <Text style={styles.sectionSub}>Spa, concierge, chauffeur, salons, business suites & amenities</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.createItemBtn}
+          onPress={() => handleOpenCreateModal('facilities')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.createItemBtnText}>➕ Add Hotel Facility</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.itemsTable}>
+        {facilities.map((f) => {
+          const isAvail = f.availability === 'Available' || !f.availability;
+          return (
+            <View key={f.id} style={styles.tableCard}>
+              <Image source={{ uri: f.imageLink || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80' }} style={styles.itemThumb} />
+              <View style={styles.tableInfoCol}>
+                <View style={styles.tableTitleRow}>
+                  <Text style={styles.tableItemTitle}>{f.title || f.name}</Text>
+                  <Text style={styles.tablePrice}>{f.price || 'Complimentary'}</Text>
+                </View>
+                <Text style={styles.tableItemSub}>
+                  ⏱️ {f.timings || '24/7 Available'} • 📍 {f.location || 'On Property'} • ★ {f.rating || 4.9}
+                </Text>
+                <Text style={styles.facilitiesText}>
+                  {f.subtitle || f.shortDescription || 'Exclusive hotel facility & guest experience'}
+                </Text>
+              </View>
+
+              <View style={styles.tableActionsCol}>
+                <TouchableOpacity
+                  style={[styles.availToggleBtn, isAvail ? styles.availGreenBtn : styles.availRedBtn]}
+                  onPress={() => handleToggleAvailability('facilities', f)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.availToggleText}>
+                    {isAvail ? '🟢 Available' : '🔴 Not Available'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.editItemBtn}
+                  onPress={() => handleOpenEditModal('facilities', f)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.editItemBtnText}>✏️ Edit</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.deleteItemBtn}
+                  onPress={() => handleDeleteItem('facilities', f)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.deleteItemBtnText}>🗑️ Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+
   // ===========================================================================
   // RENDER TAB: HOTEL PAYMENT METHODS (VERTICAL LAYOUT)
   // ===========================================================================
@@ -3817,8 +4048,10 @@ export default function AdminDashboardScreen({
           {activeTab === 'hotels' && renderHotelsTab()}
           {activeTab === 'restaurants' && renderRestaurantsTab()}
           {activeTab === 'gyms' && renderGymsTab()}
+          {activeTab === 'pools' && renderPoolsTab()}
           {activeTab === 'takeaway' && renderTakeawayTab()}
           {activeTab === 'delivery' && renderDeliveryTab()}
+          {activeTab === 'facilities' && renderFacilitiesTab()}
           {activeTab === 'payments' && renderPaymentsTab()}
           {activeTab === 'availability' && renderAvailabilityTab()}
         </ScrollView>

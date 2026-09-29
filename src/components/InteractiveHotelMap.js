@@ -125,6 +125,15 @@ export default function InteractiveHotelMap({
     }
   };
 
+  // Direct Google Maps URL dynamically resolved from hotel coordinates or location search
+  const safeHotelName = hotelName || DEFAULT_HOTEL.name;
+  const safeHotelAddress = hotelAddress || DEFAULT_HOTEL.address;
+  const directMapsUrl =
+    googleMapsUrl ||
+    (validLat && validLng
+      ? `https://www.google.com/maps/search/?api=1&query=${validLat},${validLng}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(safeHotelName + ' ' + safeHotelAddress)}`);
+
   // HTML content for Leaflet map with direct Google Maps launch on click
   const mapHtml = `
     <!DOCTYPE html>
@@ -189,10 +198,10 @@ export default function InteractiveHotelMap({
         <div id="map"></div>
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <script>
-          var hotelLat = ${initialLat};
-          var hotelLng = ${initialLng};
-          var hotelTitle = ${JSON.stringify(hotelName)};
-          var directMapsUrl = ${JSON.stringify(DIRECT_GOOGLE_MAPS_URL)};
+          var hotelLat = ${Number(currentLat || validLat || DEFAULT_HOTEL.lat)};
+          var hotelLng = ${Number(currentLng || validLng || DEFAULT_HOTEL.lng)};
+          var hotelTitle = ${JSON.stringify(safeHotelName)};
+          var directMapsUrl = ${JSON.stringify(directMapsUrl)};
           
           var map = L.map('map', {
             zoomControl: true,
@@ -216,7 +225,7 @@ export default function InteractiveHotelMap({
             draggable: false
           }).addTo(map);
 
-          var safeAddress = "${hotelAddress ? hotelAddress.replace(/"/g, '\\"').replace(/'/g, "\\'") : ''}";
+          var safeAddress = ${JSON.stringify(safeHotelAddress)};
           var popupContent = '<div style="padding:2px 0;"><b>' + hotelTitle + '</b><br><span style="color:#CBD5E1;font-size:10px;">' + safeAddress + '</span></div>';
           marker.bindPopup(popupContent).openPopup();
 
