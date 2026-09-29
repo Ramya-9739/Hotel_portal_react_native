@@ -30,6 +30,7 @@ export function buildServer() {
   });
 
   app.register(publicRoutes);
+  app.register(import('./routes/admin'));
 
   // Global Error Handler
   app.setErrorHandler((error, request, reply) => {
