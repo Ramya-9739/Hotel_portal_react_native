@@ -306,30 +306,6 @@ export default function App() {
           />
         )}
       </View>
-
-      {/* Persistent Quick-Switch Floating Pill (Web) */}
-      {Platform.OS === 'web' && (
-        <View style={styles.floatingNavPill}>
-          <TouchableOpacity
-            style={[styles.floatingPillBtn, currentView === 'guest' && styles.floatingPillBtnActive]}
-            onPress={switchToGuest}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.floatingPillText, currentView === 'guest' && styles.floatingPillTextActive]}>
-              🌐 Guest Portal
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.floatingPillBtn, currentView === 'admin' && styles.floatingPillBtnActive]}
-            onPress={switchToAdmin}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.floatingPillText, currentView === 'admin' && styles.floatingPillTextActive]}>
-              ⚙️ Admin Console
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </SafeAreaView>
   );
 }

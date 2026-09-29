@@ -674,7 +674,7 @@ export default function AdminDashboardScreen({
     setPlaceModalVisible(true);
   };
 
-  const handleSaveNewPlace = () => {
+  const handleSaveNewPlace = async () => {
     if (!newPlaceForm.title.trim()) {
       showToast('Place Title / Name is required!', 'error');
       return;
@@ -707,35 +707,68 @@ export default function AdminDashboardScreen({
       data5: newPlaceForm.data5.trim(),
     };
 
-    if (editingPlaceId) {
-      const updated = activeHotelService.updatePlaceInActiveHotel(targetCat, editingPlaceId, placeData);
-      if (updated) {
-        setCurrentActiveHotel(updated);
-        if (onSetActiveHotel) onSetActiveHotel(updated);
+    setIsLoading(true);
+    try {
+      if (editingPlaceId) {
+        try {
+          await apiService.updateDisplayComponent(editingPlaceId, placeData);
+        } catch (e) {
+          console.warn('[AdminDashboard] updateDisplayComponent failed:', e.message);
+        }
+        const updated = activeHotelService.updatePlaceInActiveHotel(targetCat, editingPlaceId, placeData);
+        if (updated) {
+          setCurrentActiveHotel(updated);
+          if (onSetActiveHotel) onSetActiveHotel(updated);
+        }
         setSelectedPlaceCategory(targetCat);
         setPlaceModalVisible(false);
         setEditingPlaceId(null);
         showToast(`✅ Updated "${placeData.title}" in ${targetCat}!`, 'success');
-      }
-    } else {
-      const updated = activeHotelService.addPlaceToActiveHotel(targetCat, placeData);
-      if (updated) {
-        setCurrentActiveHotel(updated);
-        if (onSetActiveHotel) onSetActiveHotel(updated);
+      } else {
+        let savedDoc = null;
+        try {
+          const propId = currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id || '1000000001';
+          const res = await apiService.createDisplayComponent({
+            ...placeData,
+            hotelPropertyId: propId,
+          });
+          if (res && res.success && res.data) {
+            savedDoc = res.data;
+          }
+        } catch (e) {
+          console.warn('[AdminDashboard] createDisplayComponent failed:', e.message);
+        }
+        const itemToSave = savedDoc ? { ...placeData, id: savedDoc.id, _id: savedDoc.id } : placeData;
+        const updated = activeHotelService.addPlaceToActiveHotel(targetCat, itemToSave);
+        if (updated) {
+          setCurrentActiveHotel(updated);
+          if (onSetActiveHotel) onSetActiveHotel(updated);
+        }
         setSelectedPlaceCategory(targetCat);
         setPlaceModalVisible(false);
-        showToast(`✅ Added "${placeData.title}" to ${targetCat}!`, 'success');
+        showToast(`✅ Saved & Created "${placeData.title}" in ${targetCat}!`, 'success');
       }
+      await loadAllAdminData();
+    } catch (err) {
+      showToast('Error saving place: ' + err.message, 'error');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleDeletePlace = (categoryKey, placeId, placeTitle) => {
+  const handleDeletePlace = async (categoryKey, placeId, placeTitle) => {
+    try {
+      await apiService.deleteDisplayComponent(placeId);
+    } catch (e) {
+      console.warn('[AdminDashboard] deleteDisplayComponent failed:', e.message);
+    }
     const updated = activeHotelService.deletePlaceFromActiveHotel(categoryKey, placeId);
     if (updated) {
       setCurrentActiveHotel(updated);
       if (onSetActiveHotel) onSetActiveHotel(updated);
       showToast(`🗑️ Removed "${placeTitle || 'Place'}" from ${categoryKey}.`, 'info');
     }
+    loadAllAdminData();
   };
 
   const handleCreateCustomCategory = () => {
@@ -1058,6 +1091,7 @@ export default function AdminDashboardScreen({
           availability: formFields.availability,
           takeaway: formFields.takeawayEnabled,
           homeDelivery: formFields.homeDeliveryEnabled,
+          timings: formFields.timings || '12:00 PM - 11:30 PM',
           hotelPropertyId: currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id || '1000000001',
         };
         if (modalMode === 'create') {
@@ -3619,12 +3653,16 @@ export default function AdminDashboardScreen({
       modalCategory === 'hotels'
         ? 'Hotel Property'
         : modalCategory === 'restaurants'
-        ? 'Restaurant'
+        ? 'Restaurant & Dining'
         : modalCategory === 'gyms'
-        ? 'Fitness Center'
+        ? 'Gym & Wellness'
+        : (modalCategory === 'pools' || modalCategory === 'swimming_pools')
+        ? 'Swimming Pool'
         : modalCategory === 'takeaway'
         ? 'Takeaway Partner'
-        : 'Home Delivery Service';
+        : (modalCategory === 'delivery' || modalCategory === 'homeDelivery')
+        ? 'Home / Suite Delivery'
+        : 'Hotel Facility & Service';
 
     return (
       <Modal
@@ -3642,7 +3680,7 @@ export default function AdminDashboardScreen({
                   {isEdit ? `✏️ Edit ${catLabel}` : `➕ Add New ${catLabel}`}
                 </Text>
                 <Text style={styles.modalHeaderSub}>
-                  Changes persist directly to MongoDB ({modalCategory} collection)
+                  Persists to MongoDB & updates Guest Portal immediately ({modalCategory})
                 </Text>
               </View>
               <TouchableOpacity
@@ -3652,6 +3690,42 @@ export default function AdminDashboardScreen({
                 <Text style={styles.modalCloseText}>✕</Text>
               </TouchableOpacity>
             </View>
+
+            {/* Category Selector Tabs when Creating */}
+            {!isEdit && (
+              <View style={styles.modalCategoryPicker}>
+                <Text style={styles.formCategoryPickerLabel}>SELECT COMPONENT CATEGORY:</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryChipsScroll}>
+                  {[
+                    { key: 'restaurants', label: '🍽️ Dining', defaultPrice: '₹₹₹₹' },
+                    { key: 'gyms', label: '🏋️ Gym & Fitness', defaultPrice: '₹1,500 / day pass' },
+                    { key: 'pools', label: '🏊 Swimming Pool', defaultPrice: 'Resident Access Available' },
+                    { key: 'facilities', label: '🛎️ Facility / Service', defaultPrice: 'Complimentary' },
+                    { key: 'takeaway', label: '🥡 Takeaway', defaultPrice: 'Min ₹400' },
+                    { key: 'delivery', label: '🛵 Room Delivery', defaultPrice: 'Free Suite Delivery' },
+                    { key: 'hotels', label: '🏨 Hotel Property', defaultPrice: '₹8,500 / night' },
+                  ].map((cat) => {
+                    const isSelected = modalCategory === cat.key;
+                    return (
+                      <TouchableOpacity
+                        key={cat.key}
+                        style={[styles.categoryChip, isSelected && styles.categoryChipActive]}
+                        onPress={() => {
+                          setModalCategory(cat.key);
+                          if (!formFields.price || formFields.price.includes('₹') || formFields.price.includes('Free') || formFields.price.includes('Complimentary')) {
+                            setFormFields((prev) => ({ ...prev, price: cat.defaultPrice }));
+                          }
+                        }}
+                      >
+                        <Text style={[styles.categoryChipText, isSelected && styles.categoryChipTextActive]}>
+                          {cat.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
 
             {/* Modal Body / Scrollable Form */}
             <ScrollView
@@ -3718,12 +3792,16 @@ export default function AdminDashboardScreen({
                     {modalCategory === 'hotels'
                       ? 'Price / Night'
                       : modalCategory === 'restaurants'
-                      ? 'Price Range'
+                      ? 'Price Range / Cost for Two'
                       : modalCategory === 'gyms'
-                      ? 'Day Pass Rate'
+                      ? 'Day Pass / Membership Rate'
+                      : (modalCategory === 'pools' || modalCategory === 'swimming_pools')
+                      ? 'Pool Pass Rate / Access Fee'
                       : modalCategory === 'takeaway'
-                      ? 'Min Order'
-                      : 'Delivery Fee'}
+                      ? 'Min Order Value'
+                      : (modalCategory === 'delivery' || modalCategory === 'homeDelivery')
+                      ? 'Delivery Fee'
+                      : 'Service Fee / Access (e.g. Complimentary)'}
                   </Text>
                   <TextInput
                     style={styles.formInput}
@@ -3824,12 +3902,12 @@ export default function AdminDashboardScreen({
                 </View>
               )}
 
-              {modalCategory === 'gyms' && (
+              {(modalCategory === 'gyms' || modalCategory === 'pools' || modalCategory === 'swimming_pools' || modalCategory === 'facilities' || modalCategory === 'restaurants') && (
                 <View style={styles.catSpecificBlock}>
                   <Text style={styles.formLabel}>Operating Hours / Timings</Text>
                   <TextInput
                     style={styles.formInput}
-                    placeholder="e.g. 6:00 AM - 11:00 PM Daily"
+                    placeholder="e.g. 6:00 AM - 10:00 PM Daily"
                     placeholderTextColor="#64748B"
                     value={formFields.timings}
                     onChangeText={(text) => setFormFields({ ...formFields, timings: text })}
@@ -3949,6 +4027,14 @@ export default function AdminDashboardScreen({
         </View>
 
         <View style={styles.adminHeaderRight}>
+          <TouchableOpacity
+            style={styles.addComponentHeaderBtn}
+            onPress={() => handleOpenCreateModal('restaurants')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.addComponentHeaderBtnText}>✨ + Add Component</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.guestPortalBtn}
             onPress={() => {
@@ -4083,6 +4169,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  addComponentHeaderBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#E2C082',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#F6E05E',
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  addComponentHeaderBtnText: {
+    color: '#0A0F1D',
+    fontSize: 11,
+    fontWeight: '900',
   },
   guestPortalBtn: {
     paddingVertical: 6,
@@ -5272,6 +5374,49 @@ const styles = StyleSheet.create({
     color: '#CBD5E1',
     fontSize: 14,
     fontWeight: '700',
+  },
+  modalCategoryPicker: {
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 8,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  formCategoryPickerLabel: {
+    color: '#E2C082',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  categoryChipsScroll: {
+    flexDirection: 'row',
+  },
+  categoryChip: {
+    paddingVertical: 5,
+    paddingHorizontal: 11,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    marginRight: 6,
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  categoryChipActive: {
+    backgroundColor: 'rgba(226, 192, 130, 0.25)',
+    borderColor: '#E2C082',
+  },
+  categoryChipText: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  categoryChipTextActive: {
+    color: '#F8FAFC',
+    fontWeight: '800',
   },
   modalScrollView: {
     maxHeight: 520,

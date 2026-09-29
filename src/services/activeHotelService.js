@@ -977,23 +977,26 @@ class ActiveHotelService {
 
     this.setActiveHotel(updatedHotel);
 
-    // Sync with MongoDB backend as DisplayComponent
-    import('./apiService.js').then(async ({ apiService }) => {
-      try {
-        const propId = updatedHotel.hotelPropertyId || updatedHotel.id || '1000000001';
-        const res = await apiService.createDisplayComponent({
-          ...placeData,
-          category: categoryKey,
-          hotelPropertyId: propId,
-        });
-        if (res && res.success && res.data) {
-          newPlace.id = res.data.id;
-          newPlace._id = res.data.id;
+    // Sync with MongoDB backend as DisplayComponent if not already created
+    const alreadySaved = Boolean(placeData._id || (placeData.id && String(placeData.id).length === 24 && !String(placeData.id).includes('-')));
+    if (!alreadySaved) {
+      import('./apiService.js').then(async ({ apiService }) => {
+        try {
+          const propId = updatedHotel.hotelPropertyId || updatedHotel.id || '1000000001';
+          const res = await apiService.createDisplayComponent({
+            ...placeData,
+            category: categoryKey,
+            hotelPropertyId: propId,
+          });
+          if (res && res.success && res.data) {
+            newPlace.id = res.data.id;
+            newPlace._id = res.data.id;
+          }
+        } catch (err) {
+          console.error('[ActiveHotelService] MongoDB createDisplayComponent error:', err.message);
         }
-      } catch (err) {
-        console.error('[ActiveHotelService] MongoDB createDisplayComponent error:', err.message);
-      }
-    }).catch(() => { });
+      }).catch(() => { });
+    }
 
     return updatedHotel;
   }
