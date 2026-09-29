@@ -50,12 +50,12 @@ interface Place {
 
 // ─── Rich mock data ───────────────────────────────────────────────────────────
 const MOCK_ATTRACTIONS: Place[] = [
-  { id: "a1", name: "Bangalore Palace", category: "Attractions", distanceText: "1.5 km", durationText: "5 min drive", status: "open", address: "Vasanth Nagar, Bengaluru", hours: "Mon–Sun 10 AM – 5:30 PM", description: "A stunning palace built in 1878 inspired by Windsor Castle." },
-  { id: "a2", name: "Cubbon Park", category: "Attractions", distanceText: "2.1 km", durationText: "8 min drive", status: "open", address: "Kasturba Rd, Bengaluru", hours: "6 AM – 6 PM daily" },
-  { id: "a3", name: "Visvesvaraya Museum", category: "Attractions", distanceText: "2.4 km", durationText: "9 min drive", status: "open", address: "Kasturba Rd, Bengaluru", hours: "10 AM – 5 PM, closed Mon" },
-  { id: "a4", name: "Lalbagh Botanical Garden", category: "Attractions", distanceText: "4.2 km", durationText: "15 min drive", status: "open", address: "Mavalli, Bengaluru" },
-  { id: "a5", name: "HAL Aerospace Museum", category: "Attractions", distanceText: "8.0 km", durationText: "25 min drive", status: "closed", address: "HAL Airport Rd, Bengaluru", hours: "9 AM – 5 PM, closed Mon" },
-  { id: "a6", name: "Chinnaswamy Stadium", category: "Attractions", distanceText: "2.0 km", durationText: "7 min drive", status: "closing_soon", address: "MG Road, Bengaluru" },
+  { id: "a1", name: "Bangalore Palace", category: "Attractions", distanceText: "1.5 km", durationText: "5 min drive", status: "open", address: "Vasanth Nagar, Bengaluru", hours: "Mon–Sun 10 AM – 5:30 PM", description: "A stunning palace built in 1878 inspired by Windsor Castle.", imageUrl: "https://images.unsplash.com/photo-1593693397690-362a06bf4d13?auto=format&fit=crop&q=80&w=400&h=300" },
+  { id: "a2", name: "Cubbon Park", category: "Attractions", distanceText: "2.1 km", durationText: "8 min drive", status: "open", address: "Kasturba Rd, Bengaluru", hours: "6 AM – 6 PM daily", imageUrl: "https://images.unsplash.com/photo-1589136777351-fdc9c9cb1669?auto=format&fit=crop&q=80&w=400&h=300" },
+  { id: "a3", name: "Visvesvaraya Museum", category: "Attractions", distanceText: "2.4 km", durationText: "9 min drive", status: "open", address: "Kasturba Rd, Bengaluru", hours: "10 AM – 5 PM, closed Mon", imageUrl: "https://images.unsplash.com/photo-1566324209587-5742c38cc017?auto=format&fit=crop&q=80&w=400&h=300" },
+  { id: "a4", name: "Lalbagh Botanical Garden", category: "Attractions", distanceText: "4.2 km", durationText: "15 min drive", status: "open", address: "Mavalli, Bengaluru", imageUrl: "https://images.unsplash.com/photo-1580196656754-3e9114d59a7f?auto=format&fit=crop&q=80&w=400&h=300" },
+  { id: "a5", name: "HAL Aerospace Museum", category: "Attractions", distanceText: "8.0 km", durationText: "25 min drive", status: "closed", address: "HAL Airport Rd, Bengaluru", hours: "9 AM – 5 PM, closed Mon", imageUrl: "https://images.unsplash.com/photo-1614271810578-8d4eecb0e8b3?auto=format&fit=crop&q=80&w=400&h=300" },
+  { id: "a6", name: "Chinnaswamy Stadium", category: "Attractions", distanceText: "2.0 km", durationText: "7 min drive", status: "closing_soon", address: "MG Road, Bengaluru", imageUrl: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&q=80&w=400&h=300" },
 ]
 
 const MOCK_SHOPPING: Place[] = [
@@ -397,6 +397,7 @@ export function GuestDashboardClient({ hotel }: { hotel: Hotel }) {
                             distanceText={place.distanceText}
                             durationText={place.durationText}
                             status={place.status}
+                            imageUrl={place.imageUrl}
                           />
                         </button>
                       </BottomSheetTrigger>

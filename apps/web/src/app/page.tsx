@@ -18,14 +18,14 @@ export default function HomePage() {
           <span className="font-semibold text-[16px]">Around Me</span>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/super" className="hidden sm:flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/super/login" className="hidden sm:flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground transition-colors">
             <Shield className="h-3.5 w-3.5" /> Platform
           </Link>
           <Link
-            href="/admin"
+            href="/admin/login"
             className="ml-4 inline-flex h-9 items-center rounded-xl bg-brand px-4 text-[13px] font-medium text-brand-foreground hover:bg-brand/90 transition-colors"
           >
-            Admin Dashboard
+            Admin Sign In
           </Link>
         </div>
       </header>
@@ -50,10 +50,10 @@ export default function HomePage() {
             <QrCode className="h-5 w-5" /> Try Guest Portal Demo
           </Link>
           <Link
-            href="/admin"
+            href="/admin/login"
             className="inline-flex h-12 items-center gap-2 rounded-xl border border-border px-6 text-[15px] font-medium text-foreground hover:bg-muted transition-colors"
           >
-            <Building2 className="h-5 w-5" /> Open Admin Dashboard
+            <Building2 className="h-5 w-5" /> Client Login
           </Link>
         </div>
       </main>
@@ -63,8 +63,8 @@ export default function HomePage() {
         <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { href: "/h/taj-west-end", icon: MapPin, label: "Guest Portal", desc: "Taj West End demo" },
-            { href: "/admin", icon: Building2, label: "Admin Panel", desc: "Manage properties & places" },
-            { href: "/super", icon: Shield, label: "Platform Admin", desc: "Super-admin view" },
+            { href: "/admin/login", icon: Building2, label: "Client Login", desc: "Manage properties & places" },
+            { href: "/super/login", icon: Shield, label: "Super Admin", desc: "Platform management view" },
           ].map(({ href, icon: Icon, label, desc }) => (
             <Link key={href} href={href} className="group flex items-center gap-3 rounded-2xl border border-border p-4 hover:bg-muted/50 transition-colors">
               <div className="h-10 w-10 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
