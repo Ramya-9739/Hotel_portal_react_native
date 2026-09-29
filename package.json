@@ -19,6 +19,12 @@
       "@swc/core",
       "esbuild",
       "unrs-resolver"
+    ],
+    "approvedBuilds": [
+      "@parcel/watcher",
+      "@swc/core",
+      "esbuild",
+      "unrs-resolver"
     ]
   }
 }

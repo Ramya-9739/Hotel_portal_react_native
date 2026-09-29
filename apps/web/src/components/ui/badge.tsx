@@ -12,9 +12,9 @@ const badgeVariants = cva(
         secondary:
           "border-transparent bg-muted text-foreground",
         outline: "text-foreground",
-        open: "border-transparent bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-        closed: "border-transparent bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-        closing_soon: "border-transparent bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+        open: "border-transparent bg-[var(--status-open-bg)] text-[var(--status-open)]",
+        closed: "border-transparent bg-[var(--status-closed-bg)] text-[var(--status-closed)]",
+        closing_soon: "border-transparent bg-[var(--status-soon-bg)] text-[var(--status-soon)]",
       },
     },
     defaultVariants: {

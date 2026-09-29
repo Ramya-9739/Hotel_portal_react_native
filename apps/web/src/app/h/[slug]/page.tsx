@@ -1,52 +1,18 @@
-import { notFound } from 'next/navigation';
-import { GuestPortalClient } from './client-page';
-import { Metadata } from 'next';
+import { GuestDashboardClient } from "./_components/guest-dashboard-client"
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const resolvedParams = await params;
-  const slug = resolvedParams.slug;
-  const res = await fetch(`http://127.0.0.1:3001/public/properties/${slug}`, {
-    next: { revalidate: 60 } // Cache for 60 seconds
-  });
-  
-  if (!res.ok) {
-    return {
-      title: 'Not Found'
-    };
+export default function GuestPortalPage({
+  params,
+}: {
+  params: { slug: string }
+}) {
+  // In a real app we'd fetch the hotel data here based on params.slug.
+  // Using static demo data for layout implementation.
+  const hotel = {
+    id: "h_1",
+    name: "Taj West End",
+    address: "25, Race Course Rd, Bengaluru, Karnataka",
+    imageUrl: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=256&h=256",
   }
-  
-  const data = await res.json();
-  
-  return {
-    title: data.property.name,
-    description: data.property.tagline
-  };
-}
 
-export default async function GuestPortalPage({ params }: { params: Promise<{ slug: string }> }) {
-  const resolvedParams = await params;
-  const slug = resolvedParams.slug;
-  
-  // Fetch property data from the API
-  const res = await fetch(`http://127.0.0.1:3001/public/properties/${slug}`, {
-    next: { revalidate: 60 } // Cache for 60 seconds
-  });
-  
-  if (!res.ok) {
-    if (res.status === 404) {
-      notFound();
-    }
-    // Handle other errors gracefully
-    throw new Error('Failed to load property');
-  }
-  
-  const data = await res.json();
-
-  return (
-    <GuestPortalClient 
-      property={data.property} 
-      brand={data.brand}
-      places={data.places} 
-    />
-  );
+  return <GuestDashboardClient hotel={hotel} />
 }

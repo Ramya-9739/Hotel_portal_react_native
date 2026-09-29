@@ -90,6 +90,12 @@ describe('Tenant Isolation Tests (RLS)', () => {
 
   describe('Guest Role', () => {
     it('Drafts are invisible to guests', async () => {
+      // Clean up previous runs
+      await executeAsTenant(TAJ_ORG_ID, 'client_admin', 
+        `DELETE FROM properties WHERE slug = $1`,
+        ['taj-secret']
+      );
+
       // First, Taj admin creates a draft property
       await executeAsTenant(TAJ_ORG_ID, 'client_admin', 
         `INSERT INTO properties (organization_id, name, slug, status) VALUES ($1, $2, $3, $4)`,

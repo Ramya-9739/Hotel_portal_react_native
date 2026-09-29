@@ -27,17 +27,25 @@ export interface ChipProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof chipVariants> {
   selected?: boolean
+  count?: number
 }
 
 const Chip = React.forwardRef<HTMLButtonElement, ChipProps>(
-  ({ className, variant, size, selected, ...props }, ref) => {
+  ({ className, variant, size, selected, count, children, ...props }, ref) => {
     return (
       <button
         ref={ref}
         className={cn(chipVariants({ variant: selected ? "selected" : variant, size, className }))}
         aria-pressed={selected}
         {...props}
-      />
+      >
+        {children}
+        {count !== undefined && (
+          <span className="ml-2 inline-flex items-center justify-center rounded-full bg-black/10 px-1.5 py-0.5 text-xs font-semibold text-foreground opacity-80">
+            {count}
+          </span>
+        )}
+      </button>
     )
   }
 )

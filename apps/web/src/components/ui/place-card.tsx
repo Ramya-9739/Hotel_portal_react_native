@@ -24,12 +24,12 @@ export function PlaceCard({
   return (
     <div
       className={cn(
-        "group relative flex w-[260px] flex-col overflow-hidden rounded-xl border bg-background shadow-sm transition-all hover:shadow-md focus-within:ring-2 focus-within:ring-brand focus-within:ring-offset-2",
+        "group relative flex w-[156px] shrink-0 flex-col overflow-hidden rounded-[12px] bg-background shadow-sm transition-all focus-within:ring-2 focus-within:ring-brand focus-within:ring-offset-2",
         className
       )}
       {...props}
     >
-      <div className="relative aspect-video w-full overflow-hidden bg-muted">
+      <div className="relative h-[84px] w-full overflow-hidden bg-muted rounded-[12px]">
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -37,38 +37,30 @@ export function PlaceCard({
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-            No Image
-          </div>
-        )}
-        {status && (
-          <div className="absolute right-2 top-2">
-            <Badge variant={status}>
-              {status === "open" ? "Open" : status === "closed" ? "Closed" : "Closing soon"}
-            </Badge>
+          <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground uppercase tracking-widest">
+            No Photo
           </div>
         )}
       </div>
       
-      <div className="flex flex-col gap-2 p-4">
-        <h3 className="line-clamp-2 text-base font-semibold leading-tight text-foreground">
+      <div className="flex flex-col gap-1 p-2">
+        <h3 className="line-clamp-2 text-sm font-semibold leading-tight text-foreground">
           {name}
         </h3>
         
-        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-auto">
-          {distanceText && (
-            <div className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              <span>{distanceText}</span>
-            </div>
-          )}
-          {durationText && (
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              <span>{durationText}</span>
-            </div>
-          )}
-        </div>
+        {(distanceText || durationText) && (
+          <p className="text-[12px] text-muted-foreground truncate">
+            {distanceText}{distanceText && durationText ? ' · ' : ''}{durationText}
+          </p>
+        )}
+
+        {status && (
+          <div className="mt-1">
+            <Badge variant={status} className="px-1.5 py-0 rounded-[4px] text-[10px] font-medium leading-4">
+              {status === "open" ? "Open" : status === "closed" ? "Closed" : "Closes soon"}
+            </Badge>
+          </div>
+        )}
       </div>
     </div>
   )
