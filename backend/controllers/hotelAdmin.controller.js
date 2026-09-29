@@ -23,11 +23,12 @@ const login = async (req, res) => {
     }
     // ---- DUMMY: adjust payload/claims as needed ----
     const token = jwt.sign(
-      { hotelAdminId: admin.hotelAdminId, username: admin.username },
+      { hotelAdminId: admin.hotelAdminId, username: admin.username, role: admin.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRY }
     );
-    sendSuccess(res, { token });
+    const { password: _, ...safeAdmin } = admin.toObject();
+    sendSuccess(res, { token, user: safeAdmin });
   } catch (err) {
     sendError(res, err.message);
   }
