@@ -257,7 +257,6 @@ const styles = StyleSheet.create({
     ...Platform.select({
       web: {
         boxShadow: '0 8px 30px rgba(0, 0, 0, 0.45)',
-        animation: 'portalFadeIn 0.5s ease both',
       },
     }),
   },
@@ -366,11 +365,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     justifyContent: 'space-between',
-    ...Platform.select({
-      web: {
-        animation: 'portalFadeIn 0.6s ease both',
-      },
-    }),
   },
   heroImageStyle: {
     borderRadius: 9,

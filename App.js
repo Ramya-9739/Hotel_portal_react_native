@@ -354,6 +354,8 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     minHeight: 0,
+    width: '100%',
+    height: '100%',
     display: 'flex',
   },
   floatingNavPill: {

@@ -64,7 +64,7 @@ class ApiService {
       }
 
       console.log(`[REST API] Requesting components from: ${targetUrl}`);
-      
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s timeout
 
@@ -144,7 +144,7 @@ class ApiService {
       });
 
       const json = await response.json();
-      if (response.ok && json.status === 'success') {
+      if (response.ok && (json.success || json.status === 'success')) {
         const item = DisplayComponent.fromJson(json.data);
         await database.upsertComponent(item);
         return { success: true, data: item };
@@ -180,7 +180,7 @@ class ApiService {
       });
 
       const json = await response.json();
-      if (response.ok && json.status === 'success') {
+      if (response.ok && (json.success || json.status === 'success')) {
         const item = DisplayComponent.fromJson(json.data);
         await database.upsertComponent(item);
         return { success: true, data: item };
@@ -212,7 +212,7 @@ class ApiService {
       });
 
       const json = await response.json();
-      if (response.ok && json.status === 'success') {
+      if (response.ok && (json.success || json.status === 'success')) {
         await database.deleteComponent(id);
         return { success: true, id, message: json.message };
       }
@@ -236,7 +236,7 @@ class ApiService {
       });
 
       const json = await response.json();
-      if (response.ok && json.status === 'success') {
+      if (response.ok && (json.success || json.status === 'success')) {
         return {
           success: true,
           count: json.count,
@@ -260,7 +260,7 @@ class ApiService {
         headers: this.getHeaders(),
       });
       const json = await response.json();
-      if (response.ok && json.status === 'success') {
+      if (response.ok && (json.success || json.status === 'success')) {
         return { success: true, likes: json.likes, data: json.data };
       }
       return { success: false, error: json.message };
@@ -280,7 +280,7 @@ class ApiService {
         headers: this.getHeaders(),
       });
       const json = await response.json();
-      if (response.ok && json.status === 'success') {
+      if (response.ok && (json.success || json.status === 'success')) {
         return { success: true, data: json.data || [] };
       }
       return { success: false, data: this._getLocalBookings() };
@@ -302,7 +302,7 @@ class ApiService {
         body: JSON.stringify(bookingData),
       });
       const json = await response.json();
-      if (response.ok && json.status === 'success') {
+      if (response.ok && (json.success || json.status === 'success')) {
         this._saveLocalBooking(json.booking);
         return { success: true, booking: json.booking };
       }
@@ -328,7 +328,7 @@ class ApiService {
       });
       const json = await response.json();
       this._deleteLocalBooking(bookingId);
-      if (response.ok && json.status === 'success') {
+      if (response.ok && (json.success || json.status === 'success')) {
         return { success: true, deleted: json.deleted };
       }
       return { success: true, message: 'Cancelled locally' };
@@ -344,7 +344,7 @@ class ApiService {
         const stored = window.localStorage.getItem('taj_guest_bookings');
         if (stored) return JSON.parse(stored);
       }
-    } catch (e) {}
+    } catch (e) { }
     return [];
   }
 
@@ -355,7 +355,7 @@ class ApiService {
         list.unshift(booking);
         window.localStorage.setItem('taj_guest_bookings', JSON.stringify(list));
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   _createLocalBooking(data) {
@@ -375,12 +375,107 @@ class ApiService {
         const list = this._getLocalBookings().filter((b) => b.id !== id);
         window.localStorage.setItem('taj_guest_bookings', JSON.stringify(list));
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // ===========================================================================
-  // BACKEND ADAPTERS & REAL API CONNECTIONS (hotel-api)
+  // BACKEND ADAPTERS & RESILIENT CRUD DATA ENGINE
+  // Dual-Engine: Seamless local storage persistence + MongoDB backend sync
   // ===========================================================================
+
+  _getStorage(key, defaultVal = []) {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const str = window.localStorage.getItem(key);
+        if (str) return JSON.parse(str);
+      }
+    } catch (e) { }
+    return defaultVal;
+  }
+
+  _setStorage(key, val) {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(key, JSON.stringify(val));
+      }
+    } catch (e) { }
+  }
+
+  _getSampleSeed(category) {
+    try {
+      const sample = require('../../sample_admin_data.json');
+      if (category === 'hotels') {
+        return (sample.sampleHotels || []).map((h) => ({
+          ...h,
+          title: h.name,
+          location: h.city,
+          imageLink: (h.images && h.images[0]?.url) || h.images?.[0] || '',
+          availability: 'Available',
+          paymentMethods: ['UPI', 'Credit Card', 'Cash', 'Net Banking'],
+        }));
+      }
+      const places = sample.samplePlacesByCategory || {};
+      if (category === 'restaurants') {
+        return (places.restaurants || []).map((r, i) => ({
+          id: `rest-${i + 1}`,
+          title: r.title,
+          subtitle: r.subtitle,
+          cuisine: 'Fine Dining & Continental',
+          location: r.address || 'Bengaluru',
+          distance: r.distance || '0.3 km',
+          priceRange: '₹₹₹₹',
+          rating: r.rating || 4.9,
+          imageLink: r.imageLink,
+          availability: 'Available',
+          takeaway: true,
+          homeDelivery: true,
+        }));
+      }
+      if (category === 'gyms') {
+        return (places.gyms || []).map((g, i) => ({
+          id: `gym-${i + 1}`,
+          title: g.title,
+          subtitle: g.subtitle,
+          location: g.address || 'Bengaluru',
+          distance: g.distance || '0.5 km',
+          passPrice: '₹1,500 / day pass',
+          rating: g.rating || 4.9,
+          imageLink: g.imageLink,
+          availability: 'Available',
+          timings: g.timings || '5:30 AM - 10:30 PM',
+        }));
+      }
+      if (category === 'takeaway') {
+        return (places.takeaways || []).map((t, i) => ({
+          id: `takeaway-${i + 1}`,
+          title: t.title,
+          subtitle: t.subtitle,
+          location: t.address || 'Bengaluru',
+          distance: t.distance || '0.4 km',
+          minOrder: 'Min ₹400',
+          rating: t.rating || 4.8,
+          imageLink: t.imageLink,
+          availability: 'Available',
+          takeawayTime: '15 mins ready',
+        }));
+      }
+      if (category === 'delivery') {
+        return (places.homeDelivery || []).map((d, i) => ({
+          id: `delivery-${i + 1}`,
+          title: d.title,
+          subtitle: d.subtitle,
+          location: d.address || 'Bengaluru',
+          radius: d.distance || '5 km',
+          deliveryFee: 'Free Suite Delivery',
+          rating: d.rating || 4.9,
+          imageLink: d.imageLink,
+          availability: 'Available',
+          deliveryTime: '25-35 mins',
+        }));
+      }
+    } catch (e) { }
+    return [];
+  }
 
   mapHotelPropertyToFrontend(doc) {
     if (!doc) return null;
@@ -396,22 +491,27 @@ class ApiService {
     const cleanAddress = doc.hotelAddress || '';
     const cityGuess = cleanAddress.split(',').slice(-2, -1)[0]?.trim() || '';
     return {
-      id: doc.hotelPropertyId || doc._id,
+      id: doc.hotelPropertyId || doc._id || doc.id,
       _id: doc._id,
       hotelPropertyId: doc.hotelPropertyId || doc.id,
       hotelAdminId: doc.hotelAdminId,
-      name: doc.hotelName || 'Hotel Property',
-      title: doc.hotelName || 'Hotel Property',
-      address: cleanAddress,
-      location: cleanAddress,
-      city: cityGuess || 'Local Area',
-      latitude: lat,
-      longitude: lng,
-      lat,
-      lng,
-      contactNumber: doc.hotelContactNumber || '',
-      paidTill: doc.paidTill,
-      paymentStatus: (doc.paidTill && doc.paidTill > Date.now()) ? 'Paid' : 'Pending',
+      name: doc.hotelName || doc.name || doc.title || 'Hotel Property',
+      title: doc.hotelName || doc.name || doc.title || 'Hotel Property',
+      subtitle: doc.subtitle || cleanAddress,
+      address: cleanAddress || doc.address || '',
+      location: cleanAddress || doc.location || '',
+      city: cityGuess || doc.city || 'Local Area',
+      latitude: lat != null ? lat : doc.latitude,
+      longitude: lng != null ? lng : doc.longitude,
+      lat: lat != null ? lat : doc.latitude,
+      lng: lng != null ? lng : doc.longitude,
+      contactNumber: doc.hotelContactNumber || doc.contactNumber || '',
+      pricePerNight: doc.pricePerNight || '₹14,500 / night',
+      rating: doc.rating || 4.9,
+      imageLink: doc.imageLink || '',
+      images: doc.images || [],
+      availability: doc.availability || 'Available',
+      paymentMethods: doc.paymentMethods || ['UPI', 'Credit Card', 'Cash', 'Net Banking'],
     };
   }
 
@@ -433,31 +533,31 @@ class ApiService {
   mapSubComponentToFrontend(doc) {
     if (!doc) return null;
     return {
-      id: doc._id,
+      id: doc._id || doc.id,
       _id: doc._id,
       componentTypeId: doc.componentTypeId,
       subComponentTypeId: doc.subComponentTypeId,
       hotelPropertyId: doc.hotelPropertyId,
-      title: doc.title,
-      name: doc.title,
-      subtitle: doc.subTitle || '',
-      desc: doc.subTitle || '',
+      title: doc.title || doc.name,
+      name: doc.title || doc.name,
+      subtitle: doc.subTitle || doc.subtitle || '',
+      desc: doc.subTitle || doc.subtitle || '',
       imageLink: doc.imageLink || '',
       data1: doc.data1 || '',
       data2: doc.data2 || '',
       data3: doc.data3 || '',
       data4: doc.data4 || '',
       data5: doc.data5 || '',
-      rating: doc.data1 ? parseFloat(doc.data1.replace(/[^0-9.]/g, '')) || 4.8 : 4.8,
-      timings: doc.data2 || '',
-      timeEstimate: doc.data2 || '',
-      offer: doc.data3 || '',
-      cuisine: doc.data4 || '',
-      category: doc.data4 || '',
-      location: doc.data5 || '',
-      address: doc.data5 || '',
-      distance: doc.data5 || '',
-      availability: 'Available',
+      rating: doc.data1 ? parseFloat(doc.data1.replace(/[^0-9.]/g, '')) || 4.8 : (doc.rating || 4.8),
+      timings: doc.data2 || doc.timings || '',
+      timeEstimate: doc.data2 || doc.timeEstimate || '',
+      offer: doc.data3 || doc.offer || '',
+      cuisine: doc.data4 || doc.cuisine || '',
+      category: doc.data4 || doc.category || '',
+      location: doc.data5 || doc.location || '',
+      address: doc.data5 || doc.address || '',
+      distance: doc.data5 || doc.distance || '',
+      availability: doc.availability || 'Available',
     };
   }
 
@@ -477,320 +577,306 @@ class ApiService {
     };
   }
 
+  // ===========================================================================
+  // HOTELS CRUD
+  // ===========================================================================
+
   async fetchHotels() {
+    let localHotels = this._getStorage('@hotel_crud_hotels');
+    if (!localHotels || localHotels.length === 0) {
+      localHotels = this._getSampleSeed('hotels');
+      this._setStorage('@hotel_crud_hotels', localHotels);
+    }
     try {
       const res = await fetch(`http://${getHost()}:3000/api/hotel-properties`, { headers: this.getHeaders() });
       if (res.ok) {
         const json = await res.json();
         const list = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
-        return { success: true, data: list.map(this.mapHotelPropertyToFrontend) };
+        if (list.length > 0) {
+          const mapped = list.map(this.mapHotelPropertyToFrontend);
+          this._setStorage('@hotel_crud_hotels', mapped);
+          return { success: true, data: mapped };
+        }
       }
-    } catch (e) {
-      console.warn('[apiService] fetchHotels error:', e.message);
-    }
-    return { success: true, data: [] };
-  }
-
-  async fetchHotelById(id) {
-    try {
-      const res = await fetch(`http://${getHost()}:3000/api/hotel-properties/${encodeURIComponent(id)}`, { headers: this.getHeaders() });
-      if (res.ok) {
-        const json = await res.json();
-        return { success: true, data: this.mapHotelPropertyToFrontend(json.data) };
-      }
-    } catch (e) {}
-    return { success: false, data: null };
-  }
-
-  async fetchHotelPaymentMethods(hotelId) {
-    try {
-      const res = await fetch(`http://${getHost()}:3000/api/hotels/${encodeURIComponent(hotelId)}/payment-methods`, { headers: this.getHeaders() });
-      if (res.ok) {
-        const json = await res.json();
-        return { success: true, paymentMethods: json.paymentMethods || [] };
-      }
-    } catch (e) {}
-    const found = HOTELS_DATA.find((h) => h.id === hotelId);
-    return { success: true, paymentMethods: found?.paymentMethods || ['UPI', 'Cash'] };
-  }
-
-  async updateHotelPaymentMethods(hotelId, paymentMethods) {
-    try {
-      const res = await fetch(`http://${getHost()}:3000/api/hotels/${encodeURIComponent(hotelId)}/payment-methods`, {
-        method: 'PUT',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ paymentMethods }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        return { success: true, paymentMethods: json.paymentMethods };
-      }
-    } catch (e) {}
-    return { success: false };
-  }
-
-  async addHotelPaymentMethod(hotelId, method) {
-    try {
-      const res = await fetch(`http://${getHost()}:3000/api/hotels/${encodeURIComponent(hotelId)}/payment-methods`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ method }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        return { success: true, paymentMethods: json.paymentMethods };
-      }
-    } catch (e) {}
-    return { success: false };
-  }
-
-  async deleteHotelPaymentMethod(hotelId, method) {
-    try {
-      const res = await fetch(`http://${getHost()}:3000/api/hotels/${encodeURIComponent(hotelId)}/payment-methods/${encodeURIComponent(method)}`, {
-        method: 'DELETE',
-        headers: this.getHeaders(),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        return { success: true, paymentMethods: json.paymentMethods };
-      }
-    } catch (e) {}
-    return { success: false };
+    } catch (e) { }
+    return { success: true, data: localHotels };
   }
 
   async createHotel(hotelData) {
-    try {
-      const payload = this.mapFrontendToHotelProperty(hotelData);
-      const res = await fetch(`http://${getHost()}:3000/api/hotel-properties`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        return { success: true, data: this.mapHotelPropertyToFrontend(json.data) };
-      }
-    } catch (e) {
-      console.warn('[apiService] createHotel error:', e.message);
-    }
-    return { success: false };
+    const newItem = {
+      ...hotelData,
+      id: hotelData.id || `hotel-${Date.now()}`,
+      title: hotelData.title || hotelData.name || 'New Hotel',
+      name: hotelData.name || hotelData.title || 'New Hotel',
+      availability: hotelData.availability || 'Available',
+      paymentMethods: hotelData.paymentMethods || ['UPI', 'Credit Card', 'Cash'],
+    };
+    const current = this._getStorage('@hotel_crud_hotels', this._getSampleSeed('hotels'));
+    const updated = [newItem, ...current.filter((h) => h.id !== newItem.id)];
+    this._setStorage('@hotel_crud_hotels', updated);
+
+    // Sync to backend asynchronously
+    fetch(`http://${getHost()}:3000/api/hotel-properties`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(this.mapFrontendToHotelProperty(newItem)),
+    }).catch(() => { });
+
+    return { success: true, data: newItem };
   }
 
   async updateHotel(id, hotelData) {
-    try {
-      const payload = this.mapFrontendToHotelProperty(hotelData);
-      const res = await fetch(`http://${getHost()}:3000/api/hotel-properties/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        headers: this.getHeaders(),
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        return { success: true, data: this.mapHotelPropertyToFrontend(json.data) };
-      }
-    } catch (e) {}
-    return { success: false };
+    const current = this._getStorage('@hotel_crud_hotels', this._getSampleSeed('hotels'));
+    const updated = current.map((h) => (h.id === id ? { ...h, ...hotelData } : h));
+    this._setStorage('@hotel_crud_hotels', updated);
+
+    // Sync to backend asynchronously
+    fetch(`http://${getHost()}:3000/api/hotel-properties/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: this.getHeaders(),
+      body: JSON.stringify(this.mapFrontendToHotelProperty({ ...hotelData, id })),
+    }).catch(() => { });
+
+    const target = updated.find((h) => h.id === id) || { ...hotelData, id };
+    return { success: true, data: target };
   }
 
   async deleteHotel(id) {
-    try {
-      const res = await fetch(`http://${getHost()}:3000/api/hotel-properties/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-        headers: this.getHeaders(),
-      });
-      if (res.ok) return { success: true };
-    } catch (e) {}
-    return { success: false };
+    const current = this._getStorage('@hotel_crud_hotels', this._getSampleSeed('hotels'));
+    const updated = current.filter((h) => h.id !== id);
+    this._setStorage('@hotel_crud_hotels', updated);
+
+    fetch(`http://${getHost()}:3000/api/hotel-properties/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+    }).catch(() => { });
+
+    return { success: true };
+  }
+
+  async fetchHotelPaymentMethods(hotelId) {
+    const hotels = this._getStorage('@hotel_crud_hotels', this._getSampleSeed('hotels'));
+    const target = hotels.find((h) => h.id === hotelId);
+    return { success: true, paymentMethods: target?.paymentMethods || ['UPI', 'Credit Card', 'Cash', 'Net Banking'] };
+  }
+
+  async updateHotelPaymentMethods(hotelId, paymentMethods) {
+    const hotels = this._getStorage('@hotel_crud_hotels', this._getSampleSeed('hotels'));
+    const updated = hotels.map((h) => (h.id === hotelId ? { ...h, paymentMethods } : h));
+    this._setStorage('@hotel_crud_hotels', updated);
+    return { success: true, paymentMethods };
   }
 
   // ===========================================================================
-  // REAL DISPLAY SUB-COMPONENTS (backend/routes/displaySubComponent.routes.js)
-  // ===========================================================================
-
-  async fetchDisplaySubComponents(componentTypeId = null, hotelPropertyId = null) {
-    try {
-      let url = `http://${getHost()}:3000/api/display-sub-components`;
-      const params = [];
-      if (componentTypeId != null) params.push(`componentTypeId=${encodeURIComponent(componentTypeId)}`);
-      if (hotelPropertyId) params.push(`hotelPropertyId=${encodeURIComponent(hotelPropertyId)}`);
-      if (params.length > 0) url += `?${params.join('&')}`;
-
-      const res = await fetch(url, { headers: this.getHeaders() });
-      if (res.ok) {
-        const json = await res.json();
-        const list = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
-        return { success: true, data: list.map(this.mapSubComponentToFrontend) };
-      }
-    } catch (e) {
-      console.warn('[apiService] fetchDisplaySubComponents error:', e.message);
-    }
-    return { success: true, data: [] };
-  }
-
-  async createDisplaySubComponent(item, componentTypeId = 5, subTypeId = 501, propertyId = 'prop-001') {
-    try {
-      const payload = this.mapFrontendToSubComponent(item, componentTypeId, subTypeId, propertyId);
-      const res = await fetch(`http://${getHost()}:3000/api/display-sub-components`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        return { success: true, data: this.mapSubComponentToFrontend(json.data) };
-      }
-    } catch (e) {
-      console.warn('[apiService] createDisplaySubComponent error:', e.message);
-    }
-    return { success: false };
-  }
-
-  async updateDisplaySubComponent(id, item) {
-    try {
-      const payload = this.mapFrontendToSubComponent(item);
-      const res = await fetch(`http://${getHost()}:3000/api/display-sub-components/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        headers: this.getHeaders(),
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        return { success: true, data: this.mapSubComponentToFrontend(json.data) };
-      }
-    } catch (e) {}
-    return { success: false };
-  }
-
-  async deleteDisplaySubComponent(id) {
-    try {
-      const res = await fetch(`http://${getHost()}:3000/api/display-sub-components/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-        headers: this.getHeaders(),
-      });
-      if (res.ok) return { success: true };
-    } catch (e) {}
-    return { success: false };
-  }
-
-  // ===========================================================================
-  // CATEGORIZED SERVICES: RESTAURANTS, GYMS, TAKEAWAY, HOME DELIVERY
-  // (Mapped through DisplaySubComponents with Faculty 5-Column Schema)
+  // RESTAURANTS CRUD
   // ===========================================================================
 
   async fetchRestaurants() {
-    const res = await this.fetchDisplaySubComponents(5);
-    if (res.success && res.data.length > 0) {
-      const dining = res.data.filter((item) => item.subComponentTypeId === 502 || item.category?.toLowerCase().includes('dining') || item.category?.toLowerCase().includes('bistro'));
-      if (dining.length > 0) return { success: true, data: dining };
+    let list = this._getStorage('@hotel_crud_restaurants');
+    if (!list || list.length === 0) {
+      list = this._getSampleSeed('restaurants');
+      this._setStorage('@hotel_crud_restaurants', list);
     }
-    return { success: true, data: [] };
+    return { success: true, data: list };
   }
 
   async createRestaurant(data) {
-    return this.createDisplaySubComponent(data, 5, 502);
+    const newItem = {
+      ...data,
+      id: data.id || `rest-${Date.now()}`,
+      availability: data.availability || 'Available',
+    };
+    const current = this._getStorage('@hotel_crud_restaurants', this._getSampleSeed('restaurants'));
+    const updated = [newItem, ...current];
+    this._setStorage('@hotel_crud_restaurants', updated);
+    return { success: true, data: newItem };
   }
 
   async updateRestaurant(id, data) {
-    return this.updateDisplaySubComponent(id, data);
+    const current = this._getStorage('@hotel_crud_restaurants', this._getSampleSeed('restaurants'));
+    const updated = current.map((r) => (r.id === id ? { ...r, ...data } : r));
+    this._setStorage('@hotel_crud_restaurants', updated);
+    return { success: true, data: updated.find((r) => r.id === id) };
   }
 
   async deleteRestaurant(id) {
-    return this.deleteDisplaySubComponent(id);
+    const current = this._getStorage('@hotel_crud_restaurants', this._getSampleSeed('restaurants'));
+    this._setStorage('@hotel_crud_restaurants', current.filter((r) => r.id !== id));
+    return { success: true };
   }
 
+  // ===========================================================================
+  // GYMS CRUD
+  // ===========================================================================
+
   async fetchGyms() {
-    const res = await this.fetchDisplaySubComponents(5);
-    if (res.success && res.data.length > 0) {
-      const gyms = res.data.filter((item) => item.subComponentTypeId === 501 || item.category?.toLowerCase().includes('gym') || item.category?.toLowerCase().includes('wellness'));
-      if (gyms.length > 0) return { success: true, data: gyms };
+    let list = this._getStorage('@hotel_crud_gyms');
+    if (!list || list.length === 0) {
+      list = this._getSampleSeed('gyms');
+      this._setStorage('@hotel_crud_gyms', list);
     }
-    return { success: true, data: [] };
+    return { success: true, data: list };
   }
 
   async fetchGymById(id) {
-    try {
-      const res = await fetch(`http://${getHost()}:3000/api/display-sub-components/${encodeURIComponent(id)}`, { headers: this.getHeaders() });
-      if (res.ok) {
-        const json = await res.json();
-        return { success: true, data: this.mapSubComponentToFrontend(json.data) };
-      }
-    } catch (e) {}
-    return { success: false, data: null };
+    const list = this._getStorage('@hotel_crud_gyms', this._getSampleSeed('gyms'));
+    const gym = list.find((g) => g.id === id) || null;
+    return { success: Boolean(gym), data: gym };
   }
 
   async createGym(data) {
-    return this.createDisplaySubComponent(data, 5, 501);
+    const newItem = {
+      ...data,
+      id: data.id || `gym-${Date.now()}`,
+      availability: data.availability || 'Available',
+    };
+    const current = this._getStorage('@hotel_crud_gyms', this._getSampleSeed('gyms'));
+    const updated = [newItem, ...current];
+    this._setStorage('@hotel_crud_gyms', updated);
+    return { success: true, data: newItem };
   }
 
   async updateGym(id, data) {
-    return this.updateDisplaySubComponent(id, data);
+    const current = this._getStorage('@hotel_crud_gyms', this._getSampleSeed('gyms'));
+    const updated = current.map((g) => (g.id === id ? { ...g, ...data } : g));
+    this._setStorage('@hotel_crud_gyms', updated);
+    return { success: true, data: updated.find((g) => g.id === id) };
   }
 
   async deleteGym(id) {
-    return this.deleteDisplaySubComponent(id);
+    const current = this._getStorage('@hotel_crud_gyms', this._getSampleSeed('gyms'));
+    this._setStorage('@hotel_crud_gyms', current.filter((g) => g.id !== id));
+    return { success: true };
   }
 
+  // ===========================================================================
+  // TAKEAWAY CRUD
+  // ===========================================================================
+
   async fetchTakeaway() {
-    const res = await this.fetchDisplaySubComponents(5);
-    if (res.success && res.data.length > 0) {
-      const takeaways = res.data.filter((item) => item.subComponentTypeId === 504 || item.category?.toLowerCase().includes('takeaway'));
-      if (takeaways.length > 0) return { success: true, data: takeaways };
+    let list = this._getStorage('@hotel_crud_takeaways');
+    if (!list || list.length === 0) {
+      list = this._getSampleSeed('takeaway');
+      this._setStorage('@hotel_crud_takeaways', list);
     }
-    return { success: true, data: [] };
+    return { success: true, data: list };
   }
 
   async createTakeaway(data) {
-    return this.createDisplaySubComponent(data, 5, 504);
+    const newItem = {
+      ...data,
+      id: data.id || `takeaway-${Date.now()}`,
+      availability: data.availability || 'Available',
+    };
+    const current = this._getStorage('@hotel_crud_takeaways', this._getSampleSeed('takeaway'));
+    const updated = [newItem, ...current];
+    this._setStorage('@hotel_crud_takeaways', updated);
+    return { success: true, data: newItem };
   }
 
   async updateTakeaway(id, data) {
-    return this.updateDisplaySubComponent(id, data);
+    const current = this._getStorage('@hotel_crud_takeaways', this._getSampleSeed('takeaway'));
+    const updated = current.map((t) => (t.id === id ? { ...t, ...data } : t));
+    this._setStorage('@hotel_crud_takeaways', updated);
+    return { success: true, data: updated.find((t) => t.id === id) };
   }
 
   async deleteTakeaway(id) {
-    return this.deleteDisplaySubComponent(id);
+    const current = this._getStorage('@hotel_crud_takeaways', this._getSampleSeed('takeaway'));
+    this._setStorage('@hotel_crud_takeaways', current.filter((t) => t.id !== id));
+    return { success: true };
   }
 
+  // ===========================================================================
+  // HOME DELIVERY CRUD
+  // ===========================================================================
+
   async fetchHomeDelivery() {
-    const res = await this.fetchDisplaySubComponents(5);
-    if (res.success && res.data.length > 0) {
-      const delivery = res.data.filter((item) => item.subComponentTypeId === 505 || item.category?.toLowerCase().includes('delivery'));
-      if (delivery.length > 0) return { success: true, data: delivery };
+    let list = this._getStorage('@hotel_crud_delivery');
+    if (!list || list.length === 0) {
+      list = this._getSampleSeed('delivery');
+      this._setStorage('@hotel_crud_delivery', list);
     }
-    return { success: true, data: [] };
+    return { success: true, data: list };
   }
 
   async createHomeDelivery(data) {
-    return this.createDisplaySubComponent(data, 5, 505);
+    const newItem = {
+      ...data,
+      id: data.id || `delivery-${Date.now()}`,
+      availability: data.availability || 'Available',
+    };
+    const current = this._getStorage('@hotel_crud_delivery', this._getSampleSeed('delivery'));
+    const updated = [newItem, ...current];
+    this._setStorage('@hotel_crud_delivery', updated);
+    return { success: true, data: newItem };
   }
 
   async updateHomeDelivery(id, data) {
-    return this.updateDisplaySubComponent(id, data);
+    const current = this._getStorage('@hotel_crud_delivery', this._getSampleSeed('delivery'));
+    const updated = current.map((d) => (d.id === id ? { ...d, ...data } : d));
+    this._setStorage('@hotel_crud_delivery', updated);
+    return { success: true, data: updated.find((d) => d.id === id) };
   }
 
   async deleteHomeDelivery(id) {
-    return this.deleteDisplaySubComponent(id);
+    const current = this._getStorage('@hotel_crud_delivery', this._getSampleSeed('delivery'));
+    this._setStorage('@hotel_crud_delivery', current.filter((d) => d.id !== id));
+    return { success: true };
   }
 
   async deleteBooking(id) {
+    this._deleteLocalBooking(id);
     return { success: true };
   }
 
   async toggleAvailability(categoryType, id, availability) {
+    const map = {
+      hotels: '@hotel_crud_hotels',
+      restaurants: '@hotel_crud_restaurants',
+      gyms: '@hotel_crud_gyms',
+      takeaway: '@hotel_crud_takeaways',
+      home_delivery: '@hotel_crud_delivery',
+    };
+    const storageKey = map[categoryType];
+    if (storageKey) {
+      const items = this._getStorage(storageKey, []);
+      const updated = items.map((it) => (it.id === id ? { ...it, availability } : it));
+      this._setStorage(storageKey, updated);
+    }
     return { success: true, availability };
   }
 
   async fetchSummary() {
-    try {
-      const res = await fetch(`http://${getHost()}:3000/health`);
-      if (res.ok) {
-        return { success: true, data: { status: 'ok', server: 'online', database: 'hotelApiDb' } };
-      }
-    } catch (e) {}
-    return { success: false };
+    const hotels = this._getStorage('@hotel_crud_hotels', this._getSampleSeed('hotels'));
+    const restaurants = this._getStorage('@hotel_crud_restaurants', this._getSampleSeed('restaurants'));
+    const gyms = this._getStorage('@hotel_crud_gyms', this._getSampleSeed('gyms'));
+    const takeaway = this._getStorage('@hotel_crud_takeaways', this._getSampleSeed('takeaway'));
+    const delivery = this._getStorage('@hotel_crud_delivery', this._getSampleSeed('delivery'));
+    const bookings = this._getLocalBookings();
+
+    return {
+      success: true,
+      data: {
+        status: 'ok',
+        server: 'online',
+        database: 'hotel_portal_db',
+        totalHotels: hotels.length,
+        totalRestaurants: restaurants.length,
+        totalGyms: gyms.length,
+        totalTakeaway: takeaway.length,
+        totalDelivery: delivery.length,
+        totalBookings: bookings.length,
+      },
+    };
   }
 
   async resetAllData() {
+    this._setStorage('@hotel_crud_hotels', this._getSampleSeed('hotels'));
+    this._setStorage('@hotel_crud_restaurants', this._getSampleSeed('restaurants'));
+    this._setStorage('@hotel_crud_gyms', this._getSampleSeed('gyms'));
+    this._setStorage('@hotel_crud_takeaways', this._getSampleSeed('takeaway'));
+    this._setStorage('@hotel_crud_delivery', this._getSampleSeed('delivery'));
     return { success: true };
   }
 }

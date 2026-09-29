@@ -7,7 +7,6 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const path = require('path');
-const bcrypt = require('bcryptjs');
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
@@ -24,15 +23,15 @@ async function seed() {
     console.log('Connected to MongoDB successfully.');
 
     // 1. Ensure SuperAdmin
-    const existingAdmin = await HotelAdmin.findOne({ hotelAdminId: 'admin' });
+    const existingAdmin = await HotelAdmin.findOne({ username: 'admin' });
     if (!existingAdmin) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
       await HotelAdmin.create({
         hotelAdminId: 'admin',
-        password: hashedPassword,
-        adminName: 'Super Administrator',
-        contactNumber: '+91 98765 00000',
-        activeIndicator: 'Y',
+        username: 'admin',
+        password: 'admin123',
+        adminContactNumber: '+91 98765 00000',
+        adminAddress: 'Hotel Portal HQ',
+        adminEmail: 'admin@hotelportal.com',
       });
       console.log('Seeded admin: username "admin" / password "admin123"');
     } else {

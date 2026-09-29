@@ -548,7 +548,7 @@ export default function AdminDashboardScreen({
       ? hotelImages.map((img) => (typeof img === 'object' && img && img.url ? img.url : img))
       : (hotelConfigForm.imageLink.trim() ? [hotelConfigForm.imageLink.trim()] : []);
 
-    const cur = currentActiveHotel || activeHotelService.getActiveHotel() || {};
+    const heroImageUrl = finalImageUrls[0] || hotelConfigForm.imageLink.trim() || '';
 
     const saved = activeHotelService.saveAndActivateHotel({
       ...cur,
@@ -559,7 +559,7 @@ export default function AdminDashboardScreen({
       address: hotelConfigForm.address.trim(),
       latitude: !isNaN(latVal) ? latVal : null,
       longitude: !isNaN(lngVal) ? lngVal : null,
-      imageLink: heroImage,
+      imageLink: heroImageUrl,
       images: finalImageUrls,
       imageObjects: hotelImages,
       imageCaptions: hotelImages.map((img) => (img && img.caption) || 'Property Photo'),
@@ -1008,18 +1008,22 @@ export default function AdminDashboardScreen({
           const res = await apiService.createHotel(payload);
           const newItem = (res && res.data) ? res.data : { ...payload, id: `hotel-${Date.now()}` };
           setHotels((prev) => [newItem, ...prev]);
-          if (!activeHotelService.getActiveHotel()) {
-            const activated = activeHotelService.saveAndActivateHotel(newItem);
-            setCurrentActiveHotel(activated);
-            if (onSetActiveHotel) onSetActiveHotel(activated);
-          }
-          showToast(`Created hotel "${formFields.title}"!`);
+          const activated = activeHotelService.saveAndActivateHotel(newItem);
+          setCurrentActiveHotel(activated);
+          if (onSetActiveHotel) onSetActiveHotel(activated);
+          showToast(`Created & Activated hotel "${formFields.title}"!`);
         } else if (editingItem) {
-          await apiService.updateHotel(editingItem.id, payload);
+          const res = await apiService.updateHotel(editingItem.id, payload);
+          const updatedItem = (res && res.data) ? res.data : { ...editingItem, ...payload };
           setHotels((prev) =>
             prev.map((h) => (h.id === editingItem.id ? { ...h, ...payload } : h))
           );
-          showToast(`Updated hotel "${formFields.title}" in MongoDB!`);
+          if (currentActiveHotel?.id === editingItem.id) {
+            const saved = activeHotelService.saveAndActivateHotel({ ...currentActiveHotel, ...payload });
+            setCurrentActiveHotel(saved);
+            if (onSetActiveHotel) onSetActiveHotel(saved);
+          }
+          showToast(`Updated hotel "${formFields.title}"!`);
         }
       } else if (modalCategory === 'restaurants') {
         const payload = {
@@ -1027,7 +1031,9 @@ export default function AdminDashboardScreen({
           subtitle: formFields.subtitle,
           cuisine: formFields.cuisine || 'Continental',
           location: formFields.location,
+          address: formFields.location,
           distance: formFields.distance,
+          hotelDistance: formFields.distance,
           priceRange: formFields.price || '₹₹₹₹',
           rating: parseFloat(formFields.rating) || 4.8,
           imageLink: formFields.imageLink,
@@ -1037,27 +1043,36 @@ export default function AdminDashboardScreen({
         };
         if (modalMode === 'create') {
           const res = await apiService.createRestaurant(payload);
-          if (res && res.data) {
-            setRestaurants((prev) => [res.data, ...prev]);
-            showToast(`Created restaurant "${formFields.title}" in MongoDB!`);
-          } else {
-            const fallbackItem = { ...payload, id: `rest-${Date.now()}` };
-            setRestaurants((prev) => [fallbackItem, ...prev]);
-            showToast(`Added restaurant "${formFields.title}"!`);
+          const itemToSave = (res && res.data) ? res.data : { ...payload, id: `rest-${Date.now()}` };
+          setRestaurants((prev) => [itemToSave, ...prev]);
+          const updatedHotel = activeHotelService.addPlaceToActiveHotel('restaurants', itemToSave);
+          activeHotelService.addPlaceToActiveHotel('dining', itemToSave);
+          if (updatedHotel) {
+            setCurrentActiveHotel(updatedHotel);
+            if (onSetActiveHotel) onSetActiveHotel(updatedHotel);
           }
+          showToast(`Created restaurant "${formFields.title}"!`);
         } else if (editingItem) {
           await apiService.updateRestaurant(editingItem.id, payload);
           setRestaurants((prev) =>
             prev.map((r) => (r.id === editingItem.id ? { ...r, ...payload } : r))
           );
-          showToast(`Updated restaurant "${formFields.title}" in MongoDB!`);
+          const updatedHotel = activeHotelService.updatePlaceInActiveHotel('restaurants', editingItem.id, payload);
+          activeHotelService.updatePlaceInActiveHotel('dining', editingItem.id, payload);
+          if (updatedHotel) {
+            setCurrentActiveHotel(updatedHotel);
+            if (onSetActiveHotel) onSetActiveHotel(updatedHotel);
+          }
+          showToast(`Updated restaurant "${formFields.title}"!`);
         }
       } else if (modalCategory === 'gyms') {
         const payload = {
           title: formFields.title,
           subtitle: formFields.subtitle,
           location: formFields.location,
+          address: formFields.location,
           distance: formFields.distance,
+          hotelDistance: formFields.distance,
           passPrice: formFields.price || '₹1,500 / day pass',
           rating: parseFloat(formFields.rating) || 4.8,
           imageLink: formFields.imageLink,
@@ -1066,27 +1081,34 @@ export default function AdminDashboardScreen({
         };
         if (modalMode === 'create') {
           const res = await apiService.createGym(payload);
-          if (res && res.data) {
-            setGyms((prev) => [res.data, ...prev]);
-            showToast(`Created gym "${formFields.title}" in MongoDB!`);
-          } else {
-            const fallbackItem = { ...payload, id: `gym-${Date.now()}` };
-            setGyms((prev) => [fallbackItem, ...prev]);
-            showToast(`Added gym "${formFields.title}"!`);
+          const itemToSave = (res && res.data) ? res.data : { ...payload, id: `gym-${Date.now()}` };
+          setGyms((prev) => [itemToSave, ...prev]);
+          const updatedHotel = activeHotelService.addPlaceToActiveHotel('gyms', itemToSave);
+          if (updatedHotel) {
+            setCurrentActiveHotel(updatedHotel);
+            if (onSetActiveHotel) onSetActiveHotel(updatedHotel);
           }
+          showToast(`Created gym "${formFields.title}"!`);
         } else if (editingItem) {
           await apiService.updateGym(editingItem.id, payload);
           setGyms((prev) =>
             prev.map((g) => (g.id === editingItem.id ? { ...g, ...payload } : g))
           );
-          showToast(`Updated gym "${formFields.title}" in MongoDB!`);
+          const updatedHotel = activeHotelService.updatePlaceInActiveHotel('gyms', editingItem.id, payload);
+          if (updatedHotel) {
+            setCurrentActiveHotel(updatedHotel);
+            if (onSetActiveHotel) onSetActiveHotel(updatedHotel);
+          }
+          showToast(`Updated gym "${formFields.title}"!`);
         }
       } else if (modalCategory === 'takeaway') {
         const payload = {
           title: formFields.title,
           subtitle: formFields.subtitle,
           location: formFields.location,
+          address: formFields.location,
           distance: formFields.distance,
+          hotelDistance: formFields.distance,
           minOrder: formFields.price || 'Min ₹400',
           rating: parseFloat(formFields.rating) || 4.8,
           imageLink: formFields.imageLink,
@@ -1095,27 +1117,34 @@ export default function AdminDashboardScreen({
         };
         if (modalMode === 'create') {
           const res = await apiService.createTakeaway(payload);
-          if (res && res.data) {
-            setTakeaway((prev) => [res.data, ...prev]);
-            showToast(`Created takeaway partner "${formFields.title}" in MongoDB!`);
-          } else {
-            const fallbackItem = { ...payload, id: `takeaway-${Date.now()}` };
-            setTakeaway((prev) => [fallbackItem, ...prev]);
-            showToast(`Added takeaway "${formFields.title}"!`);
+          const itemToSave = (res && res.data) ? res.data : { ...payload, id: `takeaway-${Date.now()}` };
+          setTakeaway((prev) => [itemToSave, ...prev]);
+          const updatedHotel = activeHotelService.addPlaceToActiveHotel('takeaways', itemToSave);
+          if (updatedHotel) {
+            setCurrentActiveHotel(updatedHotel);
+            if (onSetActiveHotel) onSetActiveHotel(updatedHotel);
           }
+          showToast(`Created takeaway "${formFields.title}"!`);
         } else if (editingItem) {
           await apiService.updateTakeaway(editingItem.id, payload);
           setTakeaway((prev) =>
             prev.map((t) => (t.id === editingItem.id ? { ...t, ...payload } : t))
           );
-          showToast(`Updated takeaway partner "${formFields.title}" in MongoDB!`);
+          const updatedHotel = activeHotelService.updatePlaceInActiveHotel('takeaways', editingItem.id, payload);
+          if (updatedHotel) {
+            setCurrentActiveHotel(updatedHotel);
+            if (onSetActiveHotel) onSetActiveHotel(updatedHotel);
+          }
+          showToast(`Updated takeaway "${formFields.title}"!`);
         }
       } else if (modalCategory === 'delivery') {
         const payload = {
           title: formFields.title,
           subtitle: formFields.subtitle,
           location: formFields.location,
+          address: formFields.location,
           radius: formFields.distance || '5 km',
+          distance: formFields.distance || '5 km',
           deliveryFee: formFields.price || 'Free Suite Delivery',
           rating: parseFloat(formFields.rating) || 4.8,
           imageLink: formFields.imageLink,
@@ -1124,20 +1153,25 @@ export default function AdminDashboardScreen({
         };
         if (modalMode === 'create') {
           const res = await apiService.createHomeDelivery(payload);
-          if (res && res.data) {
-            setHomeDelivery((prev) => [res.data, ...prev]);
-            showToast(`Created delivery service "${formFields.title}" in MongoDB!`);
-          } else {
-            const fallbackItem = { ...payload, id: `delivery-${Date.now()}` };
-            setHomeDelivery((prev) => [fallbackItem, ...prev]);
-            showToast(`Added delivery service "${formFields.title}"!`);
+          const itemToSave = (res && res.data) ? res.data : { ...payload, id: `delivery-${Date.now()}` };
+          setHomeDelivery((prev) => [itemToSave, ...prev]);
+          const updatedHotel = activeHotelService.addPlaceToActiveHotel('homeDelivery', itemToSave);
+          if (updatedHotel) {
+            setCurrentActiveHotel(updatedHotel);
+            if (onSetActiveHotel) onSetActiveHotel(updatedHotel);
           }
+          showToast(`Created delivery service "${formFields.title}"!`);
         } else if (editingItem) {
           await apiService.updateHomeDelivery(editingItem.id, payload);
           setHomeDelivery((prev) =>
             prev.map((d) => (d.id === editingItem.id ? { ...d, ...payload } : d))
           );
-          showToast(`Updated delivery partner "${formFields.title}" in MongoDB!`);
+          const updatedHotel = activeHotelService.updatePlaceInActiveHotel('homeDelivery', editingItem.id, payload);
+          if (updatedHotel) {
+            setCurrentActiveHotel(updatedHotel);
+            if (onSetActiveHotel) onSetActiveHotel(updatedHotel);
+          }
+          showToast(`Updated delivery partner "${formFields.title}"!`);
         }
       }
       setItemModalVisible(false);
@@ -1152,7 +1186,7 @@ export default function AdminDashboardScreen({
   const handleDeleteItem = async (category, item) => {
     const itemName = item.title || item.name || 'this item';
     if (Platform.OS === 'web') {
-      if (!window.confirm(`Are you sure you want to delete "${itemName}"? This permanently removes it from MongoDB.`)) {
+      if (!window.confirm(`Are you sure you want to delete "${itemName}"?`)) {
         return;
       }
     }
@@ -1164,17 +1198,27 @@ export default function AdminDashboardScreen({
       } else if (category === 'restaurants') {
         await apiService.deleteRestaurant(item.id);
         setRestaurants((prev) => prev.filter((r) => r.id !== item.id));
+        activeHotelService.deletePlaceFromActiveHotel('restaurants', item.id);
+        activeHotelService.deletePlaceFromActiveHotel('dining', item.id);
       } else if (category === 'gyms') {
         await apiService.deleteGym(item.id);
         setGyms((prev) => prev.filter((g) => g.id !== item.id));
+        activeHotelService.deletePlaceFromActiveHotel('gyms', item.id);
       } else if (category === 'takeaway') {
         await apiService.deleteTakeaway(item.id);
         setTakeaway((prev) => prev.filter((t) => t.id !== item.id));
+        activeHotelService.deletePlaceFromActiveHotel('takeaways', item.id);
       } else if (category === 'delivery') {
         await apiService.deleteHomeDelivery(item.id);
         setHomeDelivery((prev) => prev.filter((d) => d.id !== item.id));
+        activeHotelService.deletePlaceFromActiveHotel('homeDelivery', item.id);
       }
-      showToast(`Deleted "${itemName}" from database successfully!`);
+      const cur = activeHotelService.getActiveHotel();
+      if (cur) {
+        setCurrentActiveHotel(cur);
+        if (onSetActiveHotel) onSetActiveHotel(cur);
+      }
+      showToast(`Deleted "${itemName}" successfully!`);
     } catch (err) {
       showToast('Failed to delete: ' + err.message, 'error');
     } finally {

@@ -59,8 +59,8 @@ export default function HomeScreen({
 
   // Multi-Language state
   const [currentLanguage, setCurrentLanguage] = useState('en');
-  const t = TRANSLATIONS[currentLanguage] || TRANSLATIONS.en;
-  const currentLangObj = LANGUAGES.find((l) => l.code === currentLanguage) || LANGUAGES[0];
+  const t = (TRANSLATIONS && (TRANSLATIONS[currentLanguage] || TRANSLATIONS.en)) || {};
+  const currentLangObj = (Array.isArray(LANGUAGES) && (LANGUAGES.find((l) => l.code === currentLanguage) || LANGUAGES[0])) || { code: 'en', flag: '🇬🇧', label: 'English' };
 
   // Dynamic Time & Date
   const [currentDateTime, setCurrentDateTime] = useState(() => {
@@ -197,7 +197,8 @@ export default function HomeScreen({
   };
 
   const cycleLanguage = () => {
-    const codes = LANGUAGES.map((l) => l.code);
+    const list = Array.isArray(LANGUAGES) ? LANGUAGES : [{ code: 'en' }];
+    const codes = list.map((l) => l.code);
     const currentIndex = codes.indexOf(currentLanguage);
     const nextIndex = (currentIndex + 1) % codes.length;
     setCurrentLanguage(codes[nextIndex]);

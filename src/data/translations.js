@@ -13,6 +13,8 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'es', label: 'Español', flag: '🇪🇸', dir: 'ltr' },
 ];
 
+export const LANGUAGES = SUPPORTED_LANGUAGES;
+
 export const TRANSLATIONS = {
   en: {
     hotelName: 'HOTEL & GUEST PORTAL',
