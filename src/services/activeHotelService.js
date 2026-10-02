@@ -1081,14 +1081,118 @@ class ActiveHotelService {
     return null;
   }
 
-  addCustomCategory(categoryData) {
+  addCustomCategory(keyOrObj, maybeName, maybeIcon) {
     if (!this.activeHotel) return null;
     const updatedHotel = { ...this.activeHotel };
     if (!Array.isArray(updatedHotel.customCategories)) updatedHotel.customCategories = [];
-    const catId = (typeof categoryData === 'object' && categoryData.id) ? categoryData.id : ('custom-cat-' + Date.now());
-    const label = (typeof categoryData === 'object' && categoryData.label) ? categoryData.label : (typeof categoryData === 'string' ? categoryData : 'Custom Category');
-    const icon = (typeof categoryData === 'object' && categoryData.icon) ? categoryData.icon : 'star';
-    updatedHotel.customCategories.push({ id: catId, label: label, icon: icon, items: [] });
+
+    let key, label, icon;
+    if (typeof keyOrObj === 'object' && keyOrObj !== null) {
+      key = String(keyOrObj.key || keyOrObj.id || ('custom_' + Date.now())).toLowerCase().replace(/[^a-z0-9]/g, '_');
+      label = keyOrObj.name || keyOrObj.label || key;
+      icon = keyOrObj.icon || '🌟';
+    } else {
+      key = String(keyOrObj || ('custom_' + Date.now())).toLowerCase().replace(/[^a-z0-9]/g, '_');
+      label = maybeName || key;
+      icon = maybeIcon || '🌟';
+    }
+
+    const catItem = { id: key, key: key, name: label, label: label, icon: icon };
+    const existingIdx = updatedHotel.customCategories.findIndex((c) => (c.key === key || c.id === key));
+    if (existingIdx >= 0) {
+      updatedHotel.customCategories[existingIdx] = catItem;
+    } else {
+      updatedHotel.customCategories.push(catItem);
+    }
+
+    if (!updatedHotel.nearby) updatedHotel.nearby = {};
+    if (!Array.isArray(updatedHotel.nearby[key])) {
+      updatedHotel.nearby[key] = [];
+    }
+    return this.setActiveHotel(updatedHotel);
+  }
+
+  deleteCustomCategory(catKey) {
+    if (!this.activeHotel) return null;
+    const updatedHotel = { ...this.activeHotel };
+    if (Array.isArray(updatedHotel.customCategories)) {
+      updatedHotel.customCategories = updatedHotel.customCategories.filter(
+        (c) => c.key !== catKey && c.id !== catKey
+      );
+    }
+    if (updatedHotel.nearby && updatedHotel.nearby[catKey]) {
+      delete updatedHotel.nearby[catKey];
+    }
+    return this.setActiveHotel(updatedHotel);
+  }
+
+  populatePresetPlaces(hotel = null) {
+    const targetHotel = hotel || this.activeHotel;
+    if (!targetHotel) return null;
+    const seed = buildInitialSeedHotel();
+    const hotelLat = parseFloat(targetHotel.latitude != null ? targetHotel.latitude : targetHotel.lat) || 12.9753;
+    const hotelLng = parseFloat(targetHotel.longitude != null ? targetHotel.longitude : targetHotel.lng) || 77.6062;
+    const hotelCity = targetHotel.city || 'Local Area';
+
+    // Adjust seed coordinates to relative offsets from the current hotel's actual location
+    const adjustCoords = (items, defaultLatOffset = 0, defaultLngOffset = 0) => {
+      return (items || []).map((p, idx) => {
+        const offsetLat = (idx * 0.006 + 0.003) * (idx % 2 === 0 ? 1 : -1);
+        const offsetLng = (idx * 0.007 + 0.004) * (idx % 3 === 0 ? 1 : -1);
+        const lat = parseFloat((hotelLat + (defaultLatOffset || offsetLat)).toFixed(5));
+        const lng = parseFloat((hotelLng + (defaultLngOffset || offsetLng)).toFixed(5));
+        return {
+          ...p,
+          latitude: lat,
+          longitude: lng,
+          lat: lat,
+          lng: lng,
+          address: p.address ? p.address.replace(/Bengaluru/g, hotelCity) : `${hotelCity} Central`,
+          location: p.location ? p.location.replace(/Bengaluru/g, hotelCity) : `${hotelCity} Central`,
+        };
+      });
+    };
+
+    const updatedHotel = {
+      ...targetHotel,
+      nearby: {
+        ...(targetHotel.nearby || {}),
+        touristPlaces: adjustCoords(seed.nearby.touristPlaces),
+        shopping: adjustCoords(seed.nearby.shopping),
+        transportation: adjustCoords(seed.nearby.transportation),
+        hospitals: adjustCoords(seed.nearby.hospitals),
+        pharmacies: adjustCoords(seed.nearby.pharmacies),
+        gyms: adjustCoords(seed.nearby.gyms),
+        takeaways: adjustCoords(seed.nearby.takeaways),
+        restaurants: adjustCoords(seed.nearby.restaurants),
+        dining: adjustCoords(seed.nearby.dining || seed.nearby.restaurants),
+        pools: adjustCoords([
+          {
+            id: 'pool-1',
+            title: 'Royal Sapphire Infinity Pool',
+            subtitle: 'Temperature-Controlled Rooftop Panoramic Pool',
+            rating: 4.9,
+            distance: 'On-Site • 18th Floor',
+            hotelDistance: 'Resident Privilege Access',
+            address: `${targetHotel.name || 'Hotel'} Rooftop Deck`,
+            timings: '6:00 AM - 10:00 PM',
+            imageLink: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=800&q=80',
+          },
+          {
+            id: 'pool-2',
+            title: 'Courtyard Palm Oasis Pool',
+            subtitle: 'Heated Lap Pool & Private Cabanas',
+            rating: 4.8,
+            distance: 'On-Site • Garden Level',
+            hotelDistance: 'Complimentary for Hotel Guests',
+            address: `${targetHotel.name || 'Hotel'} Courtyard Garden`,
+            timings: '7:00 AM - 9:00 PM',
+            imageLink: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80',
+          },
+        ]),
+      },
+    };
+
     return this.setActiveHotel(updatedHotel);
   }
 
@@ -1103,10 +1207,12 @@ class ActiveHotelService {
         hospitals: [],
         pharmacies: [],
         gyms: [],
+        pools: [],
         takeaways: [],
-        restaurants: []
+        restaurants: [],
+        dining: [],
       },
-      customCategories: []
+      customCategories: [],
     };
     return this.setActiveHotel(updatedHotel);
   }
@@ -1116,25 +1222,57 @@ export const activeHotelService = new ActiveHotelService();
 
 /**
  * Dynamic Turn-by-Turn Directions
- * ORIGIN: Active Hotel latitude and longitude (always — no exceptions)
- * DESTINATION: Place latitude and longitude
- * Returns null if coordinates are missing — never guesses
+ * ORIGIN: Active Hotel latitude and longitude (or validated hotel address)
+ * DESTINATION: Place latitude and longitude (or validated place title + address + hotel city)
  */
 export function calculateDynamicDirections(hotel, place) {
-  if (!hotel) return null;
-  const originLat = hotel.latitude != null ? hotel.latitude : hotel.lat;
-  const originLng = hotel.longitude != null ? hotel.longitude : hotel.lng;
-  if (!originLat || !originLng || isNaN(originLat) || isNaN(originLng)) return null;
-  if (!place) return null;
-  const destLat = place.latitude != null ? place.latitude : place.lat;
-  const destLng = place.longitude != null ? place.longitude : place.lng;
-  if (!destLat || !destLng || isNaN(destLat) || isNaN(destLng)) {
-    const destQuery = place.address
-      ? ((place.title || place.name || '') + ', ' + place.address)
-      : ((place.title || place.name || '') + ', ' + (hotel.city || ''));
-    return 'https://www.google.com/maps/dir/?api=1&origin=' + originLat + ',' + originLng + '&destination=' + encodeURIComponent(destQuery) + '&travelmode=driving';
+  if (!hotel && !place) return null;
+
+  // 1. Resolve Origin
+  let originParam = '';
+  const oLat = hotel?.latitude != null ? parseFloat(hotel.latitude) : (hotel?.lat != null ? parseFloat(hotel.lat) : null);
+  const oLng = hotel?.longitude != null ? parseFloat(hotel.longitude) : (hotel?.lng != null ? parseFloat(hotel.lng) : null);
+
+  if (oLat != null && oLng != null && !isNaN(oLat) && !isNaN(oLng)) {
+    originParam = `${oLat},${oLng}`;
+  } else if (hotel?.address) {
+    originParam = encodeURIComponent(hotel.address);
+  } else if (hotel?.name) {
+    originParam = encodeURIComponent(`${hotel.name}, ${hotel.city || ''}`.trim());
   }
-  return 'https://www.google.com/maps/dir/?api=1&origin=' + originLat + ',' + originLng + '&destination=' + destLat + ',' + destLng + '&travelmode=driving';
+
+  if (!originParam) {
+    originParam = encodeURIComponent(hotel?.city ? `${hotel.city}` : 'Hotel');
+  }
+
+  // 2. Resolve Destination
+  if (!place) return null;
+  let destParam = '';
+  const dLat = place?.latitude != null ? parseFloat(place.latitude) : (place?.lat != null ? parseFloat(place.lat) : null);
+  const dLng = place?.longitude != null ? parseFloat(place.longitude) : (place?.lng != null ? parseFloat(place.lng) : null);
+
+  // Check if coordinates exist and are physically sensible (<150km if origin coords exist)
+  let coordsSensible = dLat != null && dLng != null && !isNaN(dLat) && !isNaN(dLng);
+  if (coordsSensible && oLat != null && oLng != null) {
+    const latDiff = Math.abs(dLat - oLat);
+    const lngDiff = Math.abs(dLng - oLng);
+    // If more than ~2 degrees (~220 km) apart, coords likely belong to another city preset
+    if (latDiff > 2.0 || lngDiff > 2.0) {
+      coordsSensible = false;
+    }
+  }
+
+  if (coordsSensible) {
+    destParam = `${dLat},${dLng}`;
+  } else {
+    const cleanTitle = (place.title || place.name || '').replace(/\(.*?\)/g, '').replace(/•.*$/g, '').trim();
+    const cleanAddr = (place.address || place.location || '').replace(/•.*$/g, '').trim();
+    const city = hotel?.city || '';
+    const queryParts = [cleanTitle, cleanAddr, city].filter(Boolean);
+    destParam = encodeURIComponent(queryParts.length > 0 ? queryParts.join(', ') : 'Destination');
+  }
+
+  return `https://www.google.com/maps/dir/?api=1&origin=${originParam}&destination=${destParam}&travelmode=driving`;
 }
 
 export const getDirections = calculateDynamicDirections;

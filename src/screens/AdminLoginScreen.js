@@ -497,27 +497,16 @@ export default function AdminLoginScreen({ onLoginSuccess, onBackToGuestPortal }
                   </View>
                 </View>
 
-                {/* Instant 1-Click Login Options for Roles */}
-                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={() => handleInstantLogin('admin', 'admin123')}
-                    style={[styles.quickFillPill, { flex: 1, marginBottom: 0 }]}
-                  >
-                    <Text style={styles.quickFillIcon}>👑</Text>
-                    <Text style={styles.quickFillText} numberOfLines={1}>
-                      Super Admin: <Text style={styles.highlightText}>admin</Text>
-                    </Text>
-                  </TouchableOpacity>
-
+                {/* Instant 1-Click Login Option for Hotel Owner */}
+                <View style={{ marginBottom: 12 }}>
                   <TouchableOpacity
                     activeOpacity={0.8}
                     onPress={() => handleInstantLogin('client', 'client123')}
-                    style={[styles.quickFillPill, { flex: 1, marginBottom: 0 }]}
+                    style={[styles.quickFillPill, { marginBottom: 0 }]}
                   >
                     <Text style={styles.quickFillIcon}>🏨</Text>
                     <Text style={styles.quickFillText} numberOfLines={1}>
-                      Hotel Owner: <Text style={styles.highlightText}>client</Text>
+                      Hotel Owner Demo: <Text style={styles.highlightText}>client</Text>
                     </Text>
                   </TouchableOpacity>
                 </View>

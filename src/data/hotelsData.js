@@ -1,4 +1,4 @@
-﻿// =============================================================================
+// =============================================================================
 // src/data/hotelsData.js
 // Utility helpers only - ZERO hardcoded hotels, cities, or places data.
 // All hotel data comes from Admin-configured active hotel stored in localStorage.
@@ -23,23 +23,52 @@ export function safeVal(value, fallback) {
  * Returns null if either coordinate pair is missing.
  */
 export function getDirectionsUrl(hotel, place) {
-  if (!hotel) return null;
-  const originLat = hotel.latitude != null ? hotel.latitude : hotel.lat;
-  const originLng = hotel.longitude != null ? hotel.longitude : hotel.lng;
-  if (!originLat || !originLng || isNaN(originLat) || isNaN(originLng)) return null;
+  if (!hotel && !place) return null;
 
-  if (!place) return null;
-  const destLat = place.latitude != null ? place.latitude : place.lat;
-  const destLng = place.longitude != null ? place.longitude : place.lng;
+  // 1. Resolve Origin
+  let originParam = '';
+  const oLat = hotel?.latitude != null ? parseFloat(hotel.latitude) : (hotel?.lat != null ? parseFloat(hotel.lat) : null);
+  const oLng = hotel?.longitude != null ? parseFloat(hotel.longitude) : (hotel?.lng != null ? parseFloat(hotel.lng) : null);
 
-  if (!destLat || !destLng || isNaN(destLat) || isNaN(destLng)) {
-    const destQuery = place.address
-      ? ((place.title || place.name || '') + ', ' + place.address)
-      : ((place.title || place.name || '') + ', ' + (hotel.city || ''));
-    return 'https://www.google.com/maps/dir/?api=1&origin=' + originLat + ',' + originLng + '&destination=' + encodeURIComponent(destQuery) + '&travelmode=driving';
+  if (oLat != null && oLng != null && !isNaN(oLat) && !isNaN(oLng)) {
+    originParam = `${oLat},${oLng}`;
+  } else if (hotel?.address) {
+    originParam = encodeURIComponent(hotel.address);
+  } else if (hotel?.name) {
+    originParam = encodeURIComponent(`${hotel.name}, ${hotel.city || ''}`.trim());
   }
 
-  return 'https://www.google.com/maps/dir/?api=1&origin=' + originLat + ',' + originLng + '&destination=' + destLat + ',' + destLng + '&travelmode=driving';
+  if (!originParam) {
+    originParam = encodeURIComponent(hotel?.city ? `${hotel.city}` : 'Hotel');
+  }
+
+  // 2. Resolve Destination
+  if (!place) return null;
+  let destParam = '';
+  const dLat = place?.latitude != null ? parseFloat(place.latitude) : (place?.lat != null ? parseFloat(place.lat) : null);
+  const dLng = place?.longitude != null ? parseFloat(place.longitude) : (place?.lng != null ? parseFloat(place.lng) : null);
+
+  // Check if coordinates exist and are physically sensible (<150km if origin coords exist)
+  let coordsSensible = dLat != null && dLng != null && !isNaN(dLat) && !isNaN(dLng);
+  if (coordsSensible && oLat != null && oLng != null) {
+    const latDiff = Math.abs(dLat - oLat);
+    const lngDiff = Math.abs(dLng - oLng);
+    if (latDiff > 2.0 || lngDiff > 2.0) {
+      coordsSensible = false;
+    }
+  }
+
+  if (coordsSensible) {
+    destParam = `${dLat},${dLng}`;
+  } else {
+    const cleanTitle = (place.title || place.name || '').replace(/\(.*?\)/g, '').replace(/•.*$/g, '').trim();
+    const cleanAddr = (place.address || place.location || '').replace(/•.*$/g, '').trim();
+    const city = hotel?.city || '';
+    const queryParts = [cleanTitle, cleanAddr, city].filter(Boolean);
+    destParam = encodeURIComponent(queryParts.length > 0 ? queryParts.join(', ') : 'Destination');
+  }
+
+  return `https://www.google.com/maps/dir/?api=1&origin=${originParam}&destination=${destParam}&travelmode=driving`;
 }
 
 // Universal alias

@@ -476,6 +476,40 @@ export default function HomeScreen({
     return list.length > 0 ? list : hotelDining;
   }, [hotelDining]);
 
+  const customCategoryItemsMap = useMemo(() => {
+    const map = {};
+    const customCats = activeHotel?.customCategories || [];
+    customCats.forEach((c) => {
+      const key = c.key || c.id;
+      const raw = activeHotel?.nearby?.[key] || [];
+      map[key] = raw.map((item, idx) => ({
+        id: item.id || `custom-${key}-${idx}`,
+        title: item.title || item.name,
+        name: item.title || item.name,
+        subtitle: item.subtitle || item.description || '',
+        desc: item.subtitle || item.description || '',
+        category: key,
+        tag: (c.name || c.label || key).toUpperCase(),
+        address: item.address || item.location || activeHotel?.city || '',
+        location: item.address || item.location || activeHotel?.city || '',
+        distance: item.distance || item.hotelDistance || 'Near Hotel',
+        hotelDistance: item.distance || item.hotelDistance || 'Near Hotel',
+        rating: item.rating || 4.8,
+        timings: item.timings || item.hours || 'Open Daily',
+        imageLink: item.imageLink || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=80',
+        latitude: item.latitude != null ? item.latitude : item.lat,
+        longitude: item.longitude != null ? item.longitude : item.lng,
+        data1: item.data1 || 'Concierge Partner',
+        data2: item.data2 || item.distance || 'Near Hotel',
+      }));
+    });
+    return map;
+  }, [activeHotel?.customCategories, activeHotel?.nearby, activeHotel?.city]);
+
+  const allCustomCategoryItems = useMemo(() => {
+    return Object.values(customCategoryItemsMap).flat();
+  }, [customCategoryItemsMap]);
+
   const allBottomItems = useMemo(() => {
     return [
       ...hotelCafes,
@@ -488,8 +522,9 @@ export default function HomeScreen({
       ...hotelAtms,
       ...hotelTakeaway,
       ...hotelDelivery,
+      ...allCustomCategoryItems,
     ];
-  }, [hotelCafes, hotelRestaurants, hotelGyms, hotelPools, hotelHospitals, hotelPharmacies, hotelSpa, hotelAtms, hotelTakeaway, hotelDelivery]);
+  }, [hotelCafes, hotelRestaurants, hotelGyms, hotelPools, hotelHospitals, hotelPharmacies, hotelSpa, hotelAtms, hotelTakeaway, hotelDelivery, allCustomCategoryItems]);
 
   const currentBottomItems = useMemo(() => {
     if (bottomCategory === 'cafes') return hotelCafes;
@@ -502,10 +537,22 @@ export default function HomeScreen({
     if (bottomCategory === 'atms') return hotelAtms;
     if (bottomCategory === 'takeaway') return hotelTakeaway;
     if (bottomCategory === 'delivery') return hotelDelivery;
+    if (customCategoryItemsMap[bottomCategory]) return customCategoryItemsMap[bottomCategory];
     return allBottomItems;
-  }, [bottomCategory, hotelCafes, hotelRestaurants, hotelGyms, hotelPools, hotelHospitals, hotelPharmacies, hotelSpa, hotelAtms, hotelTakeaway, hotelDelivery, allBottomItems]);
+  }, [bottomCategory, hotelCafes, hotelRestaurants, hotelGyms, hotelPools, hotelHospitals, hotelPharmacies, hotelSpa, hotelAtms, hotelTakeaway, hotelDelivery, customCategoryItemsMap, allBottomItems]);
 
   const bottomFilterTabs = useMemo(() => {
+    const customTabs = (activeHotel?.customCategories || []).map((c) => {
+      const key = c.key || c.id;
+      const count = (customCategoryItemsMap[key] || []).length;
+      return {
+        id: key,
+        label: c.name || c.label || key,
+        icon: c.icon || '🌟',
+        count,
+      };
+    });
+
     const tabs = [
       { id: 'all', label: 'All Curations', icon: '✦', count: allBottomItems.length },
       { id: 'cafes', label: 'Bistros & Cafes', icon: '☕', count: hotelCafes.length },
@@ -518,9 +565,10 @@ export default function HomeScreen({
       { id: 'atms', label: '24/7 ATMs', icon: '🏧', count: hotelAtms.length },
       { id: 'takeaway', label: 'Express Takeaway', icon: '🍔', count: hotelTakeaway.length },
       { id: 'delivery', label: 'Suite Delivery', icon: '🛎️', count: hotelDelivery.length },
+      ...customTabs,
     ];
     return tabs;
-  }, [allBottomItems.length, hotelCafes.length, hotelRestaurants.length, hotelGyms.length, hotelPools.length, hotelHospitals.length, hotelPharmacies.length, hotelSpa.length, hotelAtms.length, hotelTakeaway.length, hotelDelivery.length]);
+  }, [allBottomItems.length, hotelCafes.length, hotelRestaurants.length, hotelGyms.length, hotelPools.length, hotelHospitals.length, hotelPharmacies.length, hotelSpa.length, hotelAtms.length, hotelTakeaway.length, hotelDelivery.length, activeHotel?.customCategories, customCategoryItemsMap]);
 
   // URL Hash Listener for direct deep-linking e.g. #/guest/place/:id
   useEffect(() => {

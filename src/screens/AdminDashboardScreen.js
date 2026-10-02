@@ -630,6 +630,24 @@ export default function AdminDashboardScreen({
     }
   };
 
+  const handlePopulatePresetPlaces = () => {
+    setIsLoading(true);
+    try {
+      const updated = activeHotelService.populatePresetPlaces(currentActiveHotel);
+      if (updated) {
+        setCurrentActiveHotel(updated);
+        if (onSetActiveHotel) onSetActiveHotel(updated);
+        showToast(`⚡ Populated verified places for ${updated.name || 'hotel'}!`, 'success');
+      } else {
+        showToast('Unable to populate places. Please configure hotel first.', 'error');
+      }
+    } catch (e) {
+      showToast('Error populating places: ' + e.message, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleOpenAddPlaceModal = (categoryKey = 'touristPlaces') => {
     setSelectedPlaceCategory(categoryKey);
     setEditingPlaceId(null);
@@ -799,6 +817,18 @@ export default function AdminDashboardScreen({
     }
   };
 
+  const handleDeleteCustomCategory = (catKey, catName) => {
+    const updated = activeHotelService.deleteCustomCategory(catKey);
+    if (updated) {
+      setCurrentActiveHotel(updated);
+      if (onSetActiveHotel) onSetActiveHotel(updated);
+      if (selectedPlaceCategory === catKey) {
+        setSelectedPlaceCategory('touristPlaces');
+      }
+      showToast(`🗑️ Removed category "${catName || catKey}".`, 'info');
+    }
+  };
+
   // Data Collections — start empty, loaded from API
   const [hotels, setHotels] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
@@ -872,7 +902,15 @@ export default function AdminDashboardScreen({
   };
 
   useEffect(() => {
+    const unsubscribe = activeHotelService.subscribe((updatedHotel) => {
+      if (updatedHotel) {
+        setCurrentActiveHotel(updatedHotel);
+      }
+    });
     loadAllAdminData();
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
   }, []);
 
   const loadAllAdminData = async () => {
@@ -3105,8 +3143,8 @@ export default function AdminDashboardScreen({
     const allCategories = [
       ...STANDARD_PLACE_CATEGORIES,
       ...((currentActiveHotel?.customCategories || []).map((c) => ({
-        key: c.key,
-        label: c.name || c.key,
+        key: c.key || c.id,
+        label: c.name || c.label || c.key,
         icon: c.icon || '🌟',
         isCustom: true,
       }))),
@@ -3157,6 +3195,16 @@ export default function AdminDashboardScreen({
             >
               <Text style={styles.addBtnText}>✨ Add Custom Category</Text>
             </TouchableOpacity>
+
+            {activeCatObj.isCustom && (
+              <TouchableOpacity
+                style={[styles.deleteItemBtn, { alignSelf: 'center', marginVertical: 0 }]}
+                onPress={() => handleDeleteCustomCategory(activeCatObj.key, activeCatObj.label)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.deleteItemBtnText}>🗑️ Delete Category</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -3453,7 +3501,23 @@ export default function AdminDashboardScreen({
             >
               <Text style={styles.formLabel}>Target Category *</Text>
               <View style={styles.availSelectorRow}>
-                {['touristPlaces', 'shopping', 'transportation', 'hospitals', 'pharmacies', 'gyms', 'pools', 'takeaways', 'dining'].map((cKey) => {
+                {[
+                  { key: 'touristPlaces', label: 'Tourist Places', icon: '🏛️' },
+                  { key: 'shopping', label: 'Shopping', icon: '🛍️' },
+                  { key: 'transportation', label: 'Transit', icon: '🚆' },
+                  { key: 'hospitals', label: 'Hospitals', icon: '🏥' },
+                  { key: 'pharmacies', label: 'Pharmacies', icon: '💊' },
+                  { key: 'gyms', label: 'Gyms', icon: '🏋️' },
+                  { key: 'pools', label: 'Swimming Pools', icon: '🏊' },
+                  { key: 'takeaways', label: 'Takeaways', icon: '🥡' },
+                  { key: 'dining', label: 'Dining', icon: '🍽️' },
+                  ...((currentActiveHotel?.customCategories || []).map((c) => ({
+                    key: c.key || c.id,
+                    label: c.name || c.label || c.key,
+                    icon: c.icon || '🌟',
+                  }))),
+                ].map((c) => {
+                  const cKey = c.key;
                   const isSel = newPlaceForm.category === cKey;
                   return (
                     <TouchableOpacity
@@ -3462,7 +3526,7 @@ export default function AdminDashboardScreen({
                       onPress={() => setNewPlaceForm({ ...newPlaceForm, category: cKey })}
                     >
                       <Text style={[styles.availPillText, isSel && { color: '#E2C082' }]}>
-                        {cKey === 'pools' ? 'swimming pools' : cKey}
+                        {c.icon} {c.label}
                       </Text>
                     </TouchableOpacity>
                   );
