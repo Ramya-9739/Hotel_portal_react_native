@@ -1924,7 +1924,6 @@ const styles = StyleSheet.create({
     color: '#E2C082',
     fontWeight: '800',
   },
-  },
   bottomTabCountText: {
     color: '#64748B',
     fontSize: 9,
