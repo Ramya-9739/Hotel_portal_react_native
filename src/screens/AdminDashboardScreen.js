@@ -4192,16 +4192,6 @@ export default function AdminDashboardScreen({
             </Text>
           </TouchableOpacity>
 
-          {authService.isSuperAdmin() && onOpenSuperAdmin && (
-            <TouchableOpacity
-              style={[styles.logoutBtn, { borderColor: '#D4AF37', backgroundColor: 'rgba(212, 175, 55, 0.15)' }]}
-              onPress={onOpenSuperAdmin}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.logoutBtnText, { color: '#E2C082' }]}>👑 Super Admin</Text>
-            </TouchableOpacity>
-          )}
-
           <TouchableOpacity
             style={styles.logoutBtn}
             onPress={onLogout}
