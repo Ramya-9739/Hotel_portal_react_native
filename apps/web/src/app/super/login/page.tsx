@@ -5,22 +5,32 @@ import { Shield, MapPin, Loader2, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 export default function SuperAdminLoginPage() {
   const router = useRouter()
-  const [email, setEmail] = React.useState("super@aroundme.app")
+  const [email, setEmail] = React.useState("super@platform.com")
   const [password, setPassword] = React.useState("admin123")
   const [loading, setLoading] = React.useState(false)
+  const [error, setError] = React.useState("")
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    // Simulate network request
+    setError("")
+
+    const isValid = email.trim().toLowerCase() === "super@platform.com" && password === "admin123"
+
     setTimeout(() => {
+      if (!isValid) {
+        setError("Use the seeded super admin credentials: super@platform.com / admin123")
+        setLoading(false)
+        return
+      }
+
       router.push("/super")
-    }, 1200)
+      setLoading(false)
+    }, 800)
   }
 
   return (
@@ -68,6 +78,10 @@ export default function SuperAdminLoginPage() {
                 className="h-12 bg-slate-950/50 border-slate-800 text-white focus-visible:ring-indigo-500"
               />
             </div>
+
+            {error ? (
+              <p className="text-sm text-red-400">{error}</p>
+            ) : null}
 
             <Button type="submit" className="w-full h-12 text-[15px] group bg-indigo-600 hover:bg-indigo-700 text-white" disabled={loading}>
               {loading ? (
