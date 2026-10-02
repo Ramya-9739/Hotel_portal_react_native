@@ -74,49 +74,49 @@ export function extractRowData(item, category, hotel) {
 
   const cat = (category || item.category || '').toLowerCase();
 
-  // 1. HOSPITALS (24/7)
+  // 1. HOSPITALS (24/7) — Sir's Schema: Place, Facilities, Emergency, Ambulance, Rating/Likes
   if (cat.includes('hosp')) {
     return {
       title,
       subtitle,
       categoryBadge: item.isEmergency24x7 ? '🚨 24/7 EMERGENCY' : categoryBadge,
-      col1Label: 'Rating',
-      col1Value: item.rating ? `★ ${item.rating} (${safeVal(item.likes || item.reviewsCount, '1.2k+')} reviews)` : '★ 4.9 (Verified)',
-      col2Label: 'Place / Distance',
-      col2Value: `${safeVal(item.area || item.place || item.location, hotel?.city || 'Local')}${item.distance ? ` · ${item.distance}` : ''}`,
-      col3Label: 'Facilities',
-      col3Value: Array.isArray(item.facilities) ? item.facilities.join(', ') : safeVal(item.facilities || item.specialities, 'Multi-Speciality Care, ICU, Diagnostics'),
-      col4Label: 'Emergency / Ambulance',
-      col4Value: safeVal(item.emergencyAmbulance || item.emergencyNumber || item.ambulancePhone, '24/7 Trauma Desk & Ambulance'),
-      col5Label: 'Contact / Hours',
-      col5Value: `${safeVal(item.contact || item.contactPhone || item.phone, 'Concierge Assistance')}${item.hours ? ` · ${item.hours}` : ' · 24 Hours Open'}`,
+      col1Label: 'Place',
+      col1Value: safeVal(item.place || item.area || item.location, hotel?.city || 'Local Area'),
+      col2Label: 'Facilities',
+      col2Value: Array.isArray(item.facilities) ? item.facilities.join(', ') : safeVal(item.facilities || item.specialities, 'Multi-Speciality Care, ICU, Diagnostics'),
+      col3Label: 'Emergency Availability',
+      col3Value: safeVal(item.emergency || item.emergencyAvailability || item.emergencyAmbulance, '24/7 Trauma Desk Active'),
+      col4Label: 'Ambulance Availability',
+      col4Value: safeVal(item.ambulance || item.ambulanceAvailability || item.ambulancePhone, 'On-Call Ambulance Fleet Active'),
+      col5Label: 'Rating / Likes',
+      col5Value: item.rating ? `★ ${item.rating} (${safeVal(item.likes || item.reviewsCount, '1.2k+')} likes)` : '★ 4.9 · 1.5k likes',
       websiteUrl,
       directionsUrl,
     };
   }
 
-  // 2. PHARMACIES
+  // 2. PHARMACIES — Sir's Schema: Place, Services, Hours, Availability/Delivery, Rating/Likes
   if (cat.includes('pharm')) {
     return {
       title,
       subtitle,
       categoryBadge: item.isOpen24x7 || item.is24x7 ? '🕒 24/7 OPEN' : categoryBadge,
-      col1Label: 'Rating',
-      col1Value: item.rating ? `★ ${item.rating} (${safeVal(item.reviewsCount || item.likes, '950+')} reviews)` : '★ 4.85',
-      col2Label: 'Distance',
-      col2Value: `${safeVal(item.distance || item.hotelDistance, 'Nearby')}${item.driveTime ? ` (${item.driveTime})` : ''}`,
+      col1Label: 'Place',
+      col1Value: safeVal(item.place || item.area || item.location, hotel?.city || 'Local Area'),
+      col2Label: 'Services',
+      col2Value: safeVal(item.services || item.shortDescription || item.additionalInfo, 'Prescription, OTC & Surgical Supplies'),
       col3Label: 'Operating Hours',
       col3Value: safeVal(item.hours || item.timings || item.timing, 'Open 24 Hours / 7 Days'),
-      col4Label: '24/7 Availability',
-      col4Value: item.isOpen24x7 || item.is24x7 ? '✓ Verified 24/7 Emergency Stock' : safeVal(item.availability, 'Regular Operating Hours'),
-      col5Label: 'Contact / Delivery',
-      col5Value: `${safeVal(item.contact || item.contactPhone || item.phone, 'Available')} · ${safeVal(item.deliveryService, 'Doorstep Delivery Available')}`,
+      col4Label: 'Availability / Delivery',
+      col4Value: item.isOpen24x7 || item.is24x7 ? '24/7 Emergency Stock · Delivery' : safeVal(item.deliveryService, 'Doorstep Delivery Available'),
+      col5Label: 'Rating / Likes',
+      col5Value: item.rating ? `★ ${item.rating} (${safeVal(item.reviewsCount || item.likes, '950+')} likes)` : '★ 4.85 · 950+ likes',
       websiteUrl,
       directionsUrl,
     };
   }
 
-  // 3. WELLNESS & GYMS
+  // 3. WELLNESS & GYMS — Sir's Schema: Rating, Likes, Distance, Equipment/Facilities, Timings
   if (cat.includes('gym')) {
     return {
       title,
@@ -124,160 +124,223 @@ export function extractRowData(item, category, hotel) {
       categoryBadge: safeVal(item.category || item.tag, 'WELLNESS & GYM'),
       col1Label: 'Rating',
       col1Value: item.rating ? `★ ${typeof item.rating === 'number' ? item.rating.toFixed(2) : item.rating}` : '★ 4.90',
-      col2Label: 'Distance',
-      col2Value: safeVal(item.hotelDistance || item.distance || item.location, '1.5 km from Hotel'),
-      col3Label: 'Travel Time',
-      col3Value: safeVal(item.driveTime, '5-8 mins drive'),
-      col4Label: 'Hours / Timings',
-      col4Value: safeVal(item.timings || item.hours || item.timing, '6:00 AM - 10:00 PM'),
-      col5Label: 'Services / Offer',
-      col5Value: Array.isArray(item.services) ? item.services.join(' • ') : safeVal(item.services || item.offer, 'Free Day Pass for Hotel Residents'),
+      col2Label: 'Likes',
+      col2Value: `${safeVal(item.likes, '3,450')} likes`,
+      col3Label: 'Distance',
+      col3Value: safeVal(item.hotelDistance || item.distance || item.location, '1.5 km from Hotel'),
+      col4Label: 'Equipment / Facilities',
+      col4Value: Array.isArray(item.services) ? item.services.join(' • ') : safeVal(item.services || item.facilities || item.offer, 'Cardio, Free Weights, Steam'),
+      col5Label: 'Timings',
+      col5Value: safeVal(item.timings || item.hours || item.timing, '6:00 AM - 10:00 PM'),
       websiteUrl,
       directionsUrl,
     };
   }
 
-  // 4. SWIMMING POOLS
+  // 4. SWIMMING POOLS — Sir's Schema: Location, Pool Features, Hours, Access Privilege, Rating
   if (cat.includes('pool') || cat.includes('swim')) {
     return {
       title,
       subtitle,
       categoryBadge: safeVal(item.tag, 'SWIMMING POOL'),
-      col1Label: 'Rating',
-      col1Value: item.rating ? `★ ${typeof item.rating === 'number' ? item.rating.toFixed(2) : item.rating}` : '★ 4.92',
-      col2Label: 'Location / Distance',
-      col2Value: `${safeVal(item.location || item.address, 'Hotel Courtyard')}${item.distance || item.hotelDistance ? ` · ${item.distance || item.hotelDistance}` : ''}`,
+      col1Label: 'Location & Distance',
+      col1Value: `${safeVal(item.location || item.address, 'Hotel Courtyard')}${item.distance || item.hotelDistance ? ` · ${item.distance || item.hotelDistance}` : ''}`,
+      col2Label: 'Pool Features',
+      col2Value: safeVal(item.additionalInfo || item.features, 'Temperature Controlled · Cabanas · Towels'),
       col3Label: 'Operating Hours',
       col3Value: safeVal(item.timing || item.timings || item.hours, '6:00 AM - 9:00 PM (Daily)'),
-      col4Label: 'Pool Features',
-      col4Value: safeVal(item.additionalInfo || item.offer, 'Heated Water · Cabanas · Towels'),
-      col5Label: 'Resident Access',
-      col5Value: safeVal(item.offer, 'Complimentary Resident Access Available'),
+      col4Label: 'Access Privilege',
+      col4Value: safeVal(item.offer, 'Complimentary Access for In-House Guests'),
+      col5Label: 'Rating & Likes',
+      col5Value: item.rating ? `★ ${typeof item.rating === 'number' ? item.rating.toFixed(2) : item.rating} (${safeVal(item.likes, '620+')} likes)` : '★ 4.92 · 620+ likes',
       websiteUrl,
       directionsUrl,
     };
   }
 
-  // 5. BISTROS & DINING
+  // 5. BISTROS & DINING — Sir's Schema: Cuisine, Place & Distance, Hours, Ambience, Rating & Reservation
   if (cat.includes('cafe') || cat.includes('dine') || cat.includes('restaur')) {
     return {
       title,
       subtitle,
       categoryBadge: safeVal(item.tag || item.category, 'BISTRO & DINING'),
-      col1Label: 'Rating',
-      col1Value: item.rating ? `★ ${typeof item.rating === 'number' ? item.rating.toFixed(2) : item.rating}` : '★ 4.90',
-      col2Label: 'Location / Distance',
+      col1Label: 'Cuisine & Specialty',
+      col1Value: safeVal(item.cuisine || item.additionalInfo || item.offer, 'Artisanal Roasts, Sourdough & Continental'),
+      col2Label: 'Place & Distance',
       col2Value: `${safeVal(item.area || item.location || item.address, hotel?.city || 'Local')}${item.distance || item.hotelDistance ? ` · ${item.distance || item.hotelDistance}` : ''}`,
-      col3Label: 'Timings',
+      col3Label: 'Operating Hours',
       col3Value: safeVal(item.timing || item.timings || item.hours, '8:00 AM - 11:00 PM'),
-      col4Label: 'Cuisine / Speciality',
-      col4Value: safeVal(item.additionalInfo || item.cuisine || item.offer, 'Artisanal Roasts, Sourdough & Continental'),
-      col5Label: 'Resident Privilege',
-      col5Value: safeVal(item.offer, 'Priority Table Reservation for Guests'),
+      col4Label: 'Ambience & Dining',
+      col4Value: safeVal(item.ambience || item.seating || item.services, 'Indoor Fine Dining & Al Fresco Patio'),
+      col5Label: 'Rating & Reservation',
+      col5Value: item.rating ? `★ ${typeof item.rating === 'number' ? item.rating.toFixed(2) : item.rating} · Priority Table` : '★ 4.90 · Priority Guest Seating',
       websiteUrl,
       directionsUrl,
     };
   }
 
-  // 6. EXPRESS TAKEAWAY
+  // 6. EXPRESS TAKEAWAY — Sir's Schema: Cuisine, Distance & Prep, Hours, Rating, Guest Privilege
   if (cat.includes('takeaway')) {
     return {
       title,
       subtitle,
       categoryBadge: safeVal(item.tag, 'EXPRESS TAKEAWAY'),
-      col1Label: 'Rating',
-      col1Value: item.rating ? `★ ${typeof item.rating === 'number' ? item.rating.toFixed(2) : item.rating}` : '★ 4.85',
-      col2Label: 'Distance & Prep',
+      col1Label: 'Cuisine',
+      col1Value: safeVal(item.cuisine || item.category || item.tag, 'Artisanal & Multi-Cuisine'),
+      col2Label: 'Distance & Prep Time',
       col2Value: `${safeVal(item.distance || item.location, '0.5 km')}${item.timing || item.takeawayTime ? ` · ${item.timing || item.takeawayTime}` : ' · 15 mins ready'}`,
       col3Label: 'Operating Hours',
       col3Value: safeVal(item.hours || item.timings, '10:00 AM - 11:00 PM'),
-      col4Label: 'Menu Specialties',
-      col4Value: safeVal(item.additionalInfo || (Array.isArray(item.services) ? item.services.join(', ') : item.services), 'Fresh Handcrafted Specialties'),
+      col4Label: 'Rating / Likes',
+      col4Value: item.rating ? `★ ${typeof item.rating === 'number' ? item.rating.toFixed(2) : item.rating} (${safeVal(item.likes, '850+')} likes)` : '★ 4.85',
       col5Label: 'Guest Privilege',
-      col5Value: safeVal(item.offer, 'Express Pickup Packaging for Hotel Guests'),
+      col5Value: safeVal(item.offer || item.packaging, 'Express Pickup Packaging for Hotel Guests'),
       websiteUrl,
       directionsUrl,
     };
   }
 
-  // 7. BEAUTY & PARLOUR
-  if (cat.includes('parlour') || cat.includes('beauty') || cat.includes('salon')) {
+  // 7. BEAUTY & PARLOUR / SPA — Sir's Schema: Location, Services, Hours, Privilege, Rating & Likes
+  if (cat.includes('parlour') || cat.includes('beauty') || cat.includes('salon') || cat.includes('spa')) {
     return {
       title,
       subtitle,
       categoryBadge: safeVal(item.tag, 'BEAUTY & SPA'),
-      col1Label: 'Rating',
-      col1Value: item.rating ? `★ ${typeof item.rating === 'number' ? item.rating.toFixed(2) : item.rating}` : '★ 4.85',
-      col2Label: 'Location / Distance',
-      col2Value: safeVal(item.location || item.address, 'Near Hotel'),
+      col1Label: 'Location & Distance',
+      col1Value: `${safeVal(item.location || item.address, 'Near Hotel')}${item.distance ? ` · ${item.distance}` : ''}`,
+      col2Label: 'Services & Care',
+      col2Value: safeVal(item.additionalInfo || item.services, 'Ayurvedic Therapy, Facials & Salon Care'),
       col3Label: 'Operating Hours',
       col3Value: safeVal(item.timing || item.timings, '9:00 AM - 8:30 PM'),
-      col4Label: 'Services',
-      col4Value: safeVal(item.additionalInfo, 'Hair, Facials & Ayurvedic Spa'),
-      col5Label: 'Resident Privilege',
-      col5Value: safeVal(item.offer, 'Resident Privilege Discount Available'),
+      col4Label: 'Privilege',
+      col4Value: safeVal(item.offer, '15% Resident Spa Privilege Available'),
+      col5Label: 'Rating & Likes',
+      col5Value: item.rating ? `★ ${typeof item.rating === 'number' ? item.rating.toFixed(2) : item.rating} (${safeVal(item.likes, '780+')} likes)` : '★ 4.88 · 780+ likes',
       websiteUrl,
       directionsUrl,
     };
   }
 
-  // 8. 24/7 ATMS & BANKING
+  // 8. 24/7 ATMS & BANKING — Sir's Schema: Location, Bank Network, Hours, Features, Surcharge & Status
   if (cat.includes('atm') || cat.includes('bank')) {
     return {
       title,
       subtitle,
       categoryBadge: safeVal(item.tag, '24/7 ATM'),
-      col1Label: 'Status',
-      col1Value: `★ ${item.rating || 4.82} · 24/7 Active`,
-      col2Label: 'Location',
-      col2Value: safeVal(item.location || item.address, 'Near Hotel'),
+      col1Label: 'Location & Distance',
+      col1Value: `${safeVal(item.location || item.address, 'Near Hotel')}${item.distance ? ` · ${item.distance}` : ''}`,
+      col2Label: 'Bank Network',
+      col2Value: safeVal(item.bank || item.network || item.title, 'National & International Cards'),
       col3Label: 'Operating Hours',
-      col3Value: safeVal(item.timing, '24 Hours Open (7 Days)'),
+      col3Value: safeVal(item.timing || item.hours, '24 Hours Open (7 Days)'),
       col4Label: 'Features',
-      col4Value: safeVal(item.additionalInfo, 'Touchless Cash Dispense · Clean Currency'),
-      col5Label: 'Surcharge',
-      col5Value: safeVal(item.offer, 'Zero Convenience Surcharge'),
+      col4Value: safeVal(item.additionalInfo || item.features, 'Touchless Cash Dispense · Clean Currency'),
+      col5Label: 'Surcharge & Status',
+      col5Value: safeVal(item.offer || item.status, 'Zero Surcharge for Guests · Active'),
       websiteUrl,
       directionsUrl,
     };
   }
 
-  // 9. SHOPPING MALLS
+  // 9. SHOPPING MALLS — Sir's Schema: Place & Distance, Category & Brands, Hours, Store Details, Rating & Likes
   if (cat.includes('shop')) {
     return {
       title,
       subtitle,
-      categoryBadge,
-      col1Label: 'Rating',
-      col1Value: item.rating ? `★ ${item.rating}` : '★ 4.8',
-      col2Label: 'Distance',
-      col2Value: safeVal(item.distance || item.hotelDistance || item.location, '2.5 km from Hotel'),
+      categoryBadge: safeVal(item.tag || item.category, 'SHOPPING & MALLS'),
+      col1Label: 'Place & Distance',
+      col1Value: safeVal(item.distance || item.hotelDistance || item.location, '2.5 km from Hotel'),
+      col2Label: 'Category & Brands',
+      col2Value: safeVal(item.mallType || item.category, 'Lifestyle, Fashion & Fine Dining'),
       col3Label: 'Opening Hours',
       col3Value: safeVal(item.openingHours || item.timings || item.hours, '10:00 AM - 10:00 PM'),
-      col4Label: 'Category / Brands',
-      col4Value: safeVal(item.mallType || item.category, 'Lifestyle, Fashion & Fine Dining'),
-      col5Label: 'Store Details',
-      col5Value: safeVal(item.storeCount || item.stores || item.driveTime, 'Multi-brand Retail & Multiplex'),
+      col4Label: 'Store Details',
+      col4Value: safeVal(item.storeCount || item.stores, '120+ International Brands & Multiplex'),
+      col5Label: 'Rating & Likes',
+      col5Value: item.rating ? `★ ${item.rating} (${safeVal(item.likes, '3.2k+')} likes)` : '★ 4.85 · 3.2k+ likes',
       websiteUrl,
       directionsUrl,
     };
   }
 
-  // 10. ADAPTIVE 'ALL' / TOURIST / DEFAULT
+  // 10. TRANSPORTATION (Section 16) — Sir's Schema: Place/Hub, Transit Type, Availability, Booking/Contact, Fare/Rating
+  if (cat.includes('transit') || cat.includes('transport') || cat.includes('mobility')) {
+    return {
+      title,
+      subtitle,
+      categoryBadge: safeVal(item.tag, 'TRANSPORTATION'),
+      col1Label: 'Place / Hub',
+      col1Value: safeVal(item.place || item.location || item.area, hotel?.city ? `${hotel.city} Central` : 'City Hub'),
+      col2Label: 'Transit Type',
+      col2Value: safeVal(item.type || item.transitType || item.category, 'Private Chauffeur & City Fleet'),
+      col3Label: 'Availability & Hours',
+      col3Value: safeVal(item.availability || item.hours || item.timing, '24/7 On-Call Concierge Fleet'),
+      col4Label: 'Booking / Contact',
+      col4Value: safeVal(item.contact || item.booking || item.phone, 'Hotel Front Desk Dispatch'),
+      col5Label: 'Fare / Rating',
+      col5Value: safeVal(item.fare || (item.rating ? `★ ${item.rating} · Metered / Fixed` : 'Metered Luxury Fleet')),
+      websiteUrl,
+      directionsUrl,
+    };
+  }
+
+  // 11. TOURIST / ATTRACTIONS — Sir's Schema: Place/Area, Attraction Type, Visiting Hours, Highlights, Rating & Likes
+  if (cat.includes('tourist') || cat.includes('attraction') || cat.includes('monument')) {
+    return {
+      title,
+      subtitle,
+      categoryBadge: safeVal(item.tag || item.category, 'HERITAGE & EXCURSION'),
+      col1Label: 'Place / Area',
+      col1Value: safeVal(item.location || item.area || item.distance, hotel?.city ? `${hotel.city} Area` : 'Local Area'),
+      col2Label: 'Attraction Type',
+      col2Value: safeVal(item.category || item.tag, 'Historic Monument & Cultural Site'),
+      col3Label: 'Visiting Hours',
+      col3Value: safeVal(item.timing || item.timings || item.visitingHours, '9:00 AM - 5:30 PM'),
+      col4Label: 'Highlights',
+      col4Value: safeVal(item.facilities || item.highlights || item.additionalInfo, 'Guided Tours & Photography Permitted'),
+      col5Label: 'Rating & Likes',
+      col5Value: item.rating ? `★ ${item.rating} (${safeVal(item.likes, '5.1k+')} likes)` : '★ 4.90 · 5.1k+ likes',
+      websiteUrl,
+      directionsUrl,
+    };
+  }
+
+  // 12. SUITE DELIVERY — Sir's Schema: Service Type, Delivery Time, Hours, Item Types, Guest Privilege
+  if (cat.includes('delivery')) {
+    return {
+      title,
+      subtitle,
+      categoryBadge: safeVal(item.tag, 'SUITE DELIVERY'),
+      col1Label: 'Service Type',
+      col1Value: safeVal(item.tag || item.category, 'In-Suite Dining & Essentials'),
+      col2Label: 'Delivery Time',
+      col2Value: safeVal(item.deliveryTime || item.timing, '20-30 mins delivery'),
+      col3Label: 'Operating Hours',
+      col3Value: safeVal(item.hours || item.timing, '24 Hours Available'),
+      col4Label: 'Item Types',
+      col4Value: safeVal(item.additionalInfo || item.services, 'Gourmet Meals, Fresh Brews & Toiletries'),
+      col5Label: 'Guest Privilege',
+      col5Value: safeVal(item.offer, 'Direct In-Room Contactless Delivery'),
+      websiteUrl,
+      directionsUrl,
+    };
+  }
+
+  // 13. ADAPTIVE 'ALL' / DEFAULT — Dynamic 5-column fallback
   return {
     title,
     subtitle,
     categoryBadge,
-    col1Label: 'Rating',
-    col1Value: item.rating ? `★ ${item.rating}` : '★ 4.9',
-    col2Label: 'Distance',
+    col1Label: 'Category',
+    col1Value: safeVal(item.tag || item.category, 'PREMIER CURATION'),
+    col2Label: 'Location & Distance',
     col2Value: safeVal(item.distance || item.hotelDistance || item.location, hotel?.city ? `${hotel.city} Area` : 'Local Area'),
     col3Label: 'Hours / Timings',
     col3Value: safeVal(item.timing || item.timings || item.visitingHours || item.hours, 'Open for Visitors'),
-    col4Label: 'Highlights / Specs',
-    col4Value: safeVal(item.facilities || item.services || item.category || item.tag, 'Curated Excursion & Privilege'),
-    col5Label: 'Access / Info',
-    col5Value: safeVal(item.offer || item.additionalInfo || item.contact || item.contactPhone, 'Concierge Assistance Available'),
+    col4Label: 'Highlights',
+    col4Value: safeVal(item.facilities || item.services || item.category || item.tag, 'Curated Concierge Recommendation'),
+    col5Label: 'Rating & Likes',
+    col5Value: item.rating ? `★ ${item.rating} (${safeVal(item.likes, '1.2k+')} likes)` : '★ 4.90 · 1.2k+ likes',
     websiteUrl,
     directionsUrl,
   };
@@ -289,6 +352,7 @@ export default function UniversalCategoryTableList({
   hotel,
   onSelectItem,
   onDataChanged,
+  allowAdminControls = false,
 }) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
@@ -429,24 +493,26 @@ export default function UniversalCategoryTableList({
 
   return (
     <View style={styles.wrapper}>
-      {/* 0. TABLE TOOLBAR WITH ADD PLACE BUTTON */}
+      {/* 0. TABLE TOOLBAR */}
       <View style={styles.tableToolbar}>
         <View style={styles.toolbarTitleRow}>
           <Text style={styles.toolbarTitle}>
-            📋 FACULTY 5-COLUMN SCHEMA LIST ({items.length} LISTINGS)
+            {category.toUpperCase()} · VERIFIED DIRECTORY ({items.length} PLACES)
           </Text>
           <Text style={styles.toolbarSubtitle}>
-            [TITLE + SUBTITLE] ∣ [DATA 1] ∣ [DATA 2] ∣ [DATA 3] ∣ [DATA 4] ∣ [DATA 5] + [WEBSITE] & [DIRECTIONS]
+            Origin Stay: {hotel?.name || 'Active Hotel'}{hotel?.city ? `, ${hotel.city}` : ''} • Dynamic GPS Turn-by-Turn Directions
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.toolbarAddBtn}
-          onPress={handleOpenAddModal}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.toolbarAddBtnText}>➕ Add Place to {category.toUpperCase()}</Text>
-        </TouchableOpacity>
+        {allowAdminControls && (
+          <TouchableOpacity
+            style={styles.toolbarAddBtn}
+            onPress={handleOpenAddModal}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.toolbarAddBtnText}>➕ Add Place to {category.toUpperCase()}</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* 1. DESKTOP TABLE HEADER */}
@@ -644,13 +710,15 @@ export default function UniversalCategoryTableList({
                     </View>
                   )}
 
-                  <TouchableOpacity
-                    style={styles.editBtn}
-                    onPress={() => handleOpenEditModal(rawItem)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.editBtnText}>✏️ Edit</Text>
-                  </TouchableOpacity>
+                  {allowAdminControls && (
+                    <TouchableOpacity
+                      style={styles.editBtn}
+                      onPress={() => handleOpenEditModal(rawItem)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.editBtnText}>✏️ Edit</Text>
+                    </TouchableOpacity>
+                  )}
 
                   {onSelectItem && (
                     <TouchableOpacity
@@ -658,7 +726,7 @@ export default function UniversalCategoryTableList({
                       onPress={() => onSelectItem(rawItem)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.detailsBtnText}>Route →</Text>
+                      <Text style={styles.detailsBtnText}>View Details →</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -743,7 +811,7 @@ export default function UniversalCategoryTableList({
                     <Text style={styles.fieldLabel}>[DATA 2] · PLACE / DISTANCE</Text>
                     <TextInput
                       style={styles.textInput}
-                      placeholder="e.g. Contour Road · 0.8 km"
+                      placeholder="e.g. Central Avenue · 0.8 km"
                       placeholderTextColor="#64748B"
                       value={form.data2}
                       onChangeText={(t) => setForm((prev) => ({ ...prev, data2: t }))}

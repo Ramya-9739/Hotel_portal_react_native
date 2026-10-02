@@ -114,7 +114,7 @@ export default function GymListScreen({
     const mapsUrl = getDirectionsUrl(hotel, gym);
     if (!mapsUrl) {
       const msg = !hotel || (!hotel.latitude && !hotel.lat)
-        ? 'Hotel location not configured. Please configure hotel in Admin Dashboard.'
+        ? 'Hotel location coordinates not configured for turn-by-turn routing.'
         : 'Directions unavailable for this destination (missing coordinates).';
       if (Platform.OS === 'web') alert(msg);
       return;

@@ -251,7 +251,7 @@ export default function HorizontalComponentList({
           <Text style={styles.horizontalEmptyIcon}>✦</Text>
           <Text style={styles.horizontalEmptyTitle}>No items currently available</Text>
           <Text style={styles.horizontalEmptySubtitle}>
-            {emptyMessage || 'Items for this category can be added from the Admin Dashboard.'}
+            {emptyMessage || 'Curations for this category will appear here once loaded.'}
           </Text>
         </View>
       ) : viewMode === 'carousel' ? (

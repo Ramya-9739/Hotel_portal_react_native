@@ -44,7 +44,7 @@ export default function CentralDisplay({
     subtitle: 'Luxury Accommodation & Guest Services',
     brandBadge: 'GUEST CONCIERGE PORTAL',
     city: '',
-    address: 'Select a hotel in Admin to populate details',
+    address: 'Luxury Boutique Accommodation & Residences',
     latitude: null,
     longitude: null,
     rating: 5.0,
