@@ -1,17 +1,20 @@
 // =============================================================================
 // src/components/RightTransitAndCarePanel.js
-// Middle Right Column (~28%): Healthcare & Transit Hubs
-// Requirements matching original design & commit 0f56733:
-// 1. Vertical list
-// 2. Thumbnail
-// 3. Category/tag (HEALTHCARE, HOSPITAL CARE, TRANSIT HUB)
-// 4. Title
-// 5. Subtitle/address
-// 6. Distance
-// 7. Direction/action button ↗
+// Middle Right Column (~28%): TRANSPORTATION ONLY
+// Dedicated exclusively to transportation & mobility links:
+// - Bus stations, metro stations, railway stations, airports, taxi/cab services
+// Requirements:
+// 1. Image if available
+// 2. Name
+// 3. Transportation type
+// 4. Address
+// 5. Distance
+// 6. View Details
+// 7. Get Directions
+// NO hospitals or pharmacies here (they belong in All Curations at the bottom).
 // =============================================================================
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   StyleSheet,
   View,
@@ -22,12 +25,14 @@ import {
   Platform,
   Linking,
 } from 'react-native';
-import { getDirectionsUrl, safeVal, HOSPITAL_FALLBACK_IMAGE } from '../data/hotelsData';
+import { getDirectionsUrl, safeVal } from '../data/hotelsData';
 
 export default function RightTransitAndCarePanel({
   hotel,
   onSelectTransitItem,
 }) {
+  const transitItems = hotel?.nearby?.transportation || [];
+
   const handleOpenLink = (url) => {
     if (!url) return;
     if (Platform.OS === 'web') {
@@ -37,37 +42,24 @@ export default function RightTransitAndCarePanel({
     }
   };
 
-  const handleAction = (item) => {
+  const handleGetDirections = (item) => {
     const directionsUrl = getDirectionsUrl(hotel, item);
-    const link = item.websiteUrl || item.link;
-    if (onSelectTransitItem) {
-      onSelectTransitItem(item);
-    } else if (directionsUrl) {
+    if (directionsUrl) {
       handleOpenLink(directionsUrl);
-    } else if (link) {
-      handleOpenLink(link);
+    } else if (item.link || item.websiteUrl) {
+      handleOpenLink(item.link || item.websiteUrl);
+    } else if (onSelectTransitItem) {
+      onSelectTransitItem(item);
     }
   };
 
-  // Combine Healthcare and Transit items for the Middle Right quadrant
-  const combinedItems = useMemo(() => {
-    const hospitals = (hotel?.nearby?.hospitals || []).map((h) => ({
-      ...h,
-      itemType: 'care',
-      tag: h.tag || (h.isEmergency24x7 ? 'HEALTHCARE' : 'HOSPITAL CARE'),
-      imageLink: h.imageLink || HOSPITAL_FALLBACK_IMAGE,
-    }));
-
-    const transit = (hotel?.nearby?.transportation || []).map((t) => ({
-      ...t,
-      itemType: 'transit',
-      tag: t.tag || t.category || 'TRANSIT HUB',
-      imageLink: t.imageLink || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80',
-    }));
-
-    // Interleave or list healthcare first, then transit hubs
-    return [...hospitals, ...transit];
-  }, [hotel]);
+  const handleItemClick = (item) => {
+    if (onSelectTransitItem) {
+      onSelectTransitItem(item);
+    } else {
+      handleGetDirections(item);
+    }
+  };
 
   const hotelCity = hotel?.city || 'Local Area';
 
@@ -77,46 +69,45 @@ export default function RightTransitAndCarePanel({
       <View style={styles.headerRow}>
         <View style={styles.headerTitleBox}>
           <Text style={styles.sectionTitle} numberOfLines={1}>
-            🏥 HEALTHCARE & TRANSIT HUBS
+            🚕 TRANSPORTATION
           </Text>
           <Text style={styles.sectionSubtitle} numberOfLines={1}>
-            {`Emergency hospitals, rapid transit & 24/7 care near ${hotelCity}`}
+            {`Bus stations, metro, railway, airports & cab services near ${hotelCity}`}
           </Text>
         </View>
         <View style={styles.countBadge}>
-          <Text style={styles.countBadgeText}>{combinedItems.length} Hubs</Text>
+          <Text style={styles.countBadgeText}>{transitItems.length} Links</Text>
         </View>
       </View>
 
-      {/* 2. SCROLLABLE LIST WITH THUMBNAILS & DETAILS */}
+      {/* 2. SCROLLABLE LIST WITH THUMBNAIL, DETAILS & ACTIONS */}
       <ScrollView
         showsVerticalScrollIndicator={true}
-        contentContainerStyle={[styles.scrollContent, combinedItems.length === 0 && styles.emptyScrollContent]}
+        contentContainerStyle={[styles.scrollContent, transitItems.length === 0 && styles.emptyScrollContent]}
         style={styles.scrollContainer}
         scrollIndicatorInsets={{ right: 1 }}
         nestedScrollEnabled={true}
       >
-        {combinedItems.length === 0 ? (
+        {transitItems.length === 0 ? (
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyIcon}>🏥</Text>
-            <Text style={styles.emptyTitle}>No healthcare or transit facilities found.</Text>
+            <Text style={styles.emptyIcon}>🚕</Text>
+            <Text style={styles.emptyTitle}>No transportation hubs found near this hotel.</Text>
             <Text style={styles.emptySub}>
-              Hospitals, clinics, and transit stations near {hotelCity} will appear once loaded.
+              Railway, metro, airport, and taxi services near {hotelCity} will appear once loaded.
             </Text>
           </View>
         ) : (
-          combinedItems.map((item, index) => {
-            const directionsUrl = getDirectionsUrl(hotel, item);
-            const externalLink = item.link || item.websiteUrl;
-            const imgSrc = item.imageLink || item.image || HOSPITAL_FALLBACK_IMAGE;
-            const categoryTag = (item.tag || (item.itemType === 'care' ? 'HEALTHCARE' : 'TRANSIT HUB')).toUpperCase();
+          transitItems.map((item, index) => {
+            const imgSrc = item.imageLink || item.image || item.imageUrl || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80';
+            const transitType = (item.type || item.tag || item.category || 'TRANSIT HUB').toUpperCase();
             const distanceText = item.distance || item.hotelDistance || item.location || 'Nearby';
+            const addressText = item.address || item.location || `${hotelCity} Hub`;
 
             return (
               <TouchableOpacity
-                key={item.id || `care-transit-${index}`}
+                key={item.id || `trans-${index}`}
                 activeOpacity={0.82}
-                onPress={() => handleAction(item)}
+                onPress={() => handleItemClick(item)}
                 style={[
                   styles.listItemRow,
                   index % 2 === 1 && styles.listItemRowAlt,
@@ -133,39 +124,38 @@ export default function RightTransitAndCarePanel({
                 <View style={styles.infoCol}>
                   <View style={styles.tagRow}>
                     <Text style={styles.categoryTagText} numberOfLines={1}>
-                      {categoryTag}
+                      {transitType}
                     </Text>
                   </View>
 
                   <Text style={styles.itemTitle} numberOfLines={1}>
-                    {safeVal(item.title, 'Healthcare / Transit Station')}
+                    {safeVal(item.title, 'Transit Station')}
                   </Text>
 
                   <Text style={styles.itemSubtitle} numberOfLines={1}>
-                    {safeVal(item.subtitle || item.description || item.notes, 'Priority emergency care & passenger transit')}
+                    {safeVal(addressText, 'Transit Corridor')}
                   </Text>
 
                   <Text style={styles.distanceText} numberOfLines={1}>
-                    {distanceText}
+                    📍 {distanceText}
                   </Text>
                 </View>
 
-                {/* Right Action Button */}
-                <TouchableOpacity
-                  style={styles.actionCircleBtn}
-                  onPress={() => {
-                    if (directionsUrl) {
-                      handleOpenLink(directionsUrl);
-                    } else if (externalLink) {
-                      handleOpenLink(externalLink);
-                    } else if (onSelectTransitItem) {
-                      onSelectTransitItem(item);
-                    }
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.actionArrowText}>↗</Text>
-                </TouchableOpacity>
+                {/* Right Action: Get Directions & View Details */}
+                <View style={styles.actionsColumn}>
+                  <TouchableOpacity
+                    style={styles.actionCircleBtn}
+                    onPress={(e) => {
+                      e.stopPropagation && e.stopPropagation();
+                      handleGetDirections(item);
+                    }}
+                    activeOpacity={0.7}
+                    accessibilityLabel="Get Directions"
+                  >
+                    <Text style={styles.actionArrowText}>↗</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.actionLabelSmall}>Directions</Text>
+                </View>
               </TouchableOpacity>
             );
           })
@@ -277,7 +267,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryTagText: {
-    color: '#E2C082',
+    color: '#38BDF8',
     fontSize: 7.5,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -298,21 +288,31 @@ const styles = StyleSheet.create({
     fontSize: 7.5,
     fontWeight: '600',
   },
+  actionsColumn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 1,
+  },
   actionCircleBtn: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(56, 189, 248, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
   },
   actionArrowText: {
-    color: '#E2C082',
+    color: '#38BDF8',
     fontSize: 10,
     fontWeight: '800',
+  },
+  actionLabelSmall: {
+    color: '#64748B',
+    fontSize: 6.5,
+    fontWeight: '600',
   },
   emptyScrollContent: {
     flexGrow: 1,

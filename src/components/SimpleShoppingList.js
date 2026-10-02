@@ -131,22 +131,27 @@ export default function SimpleShoppingList({
                   </Text>
                 </View>
 
-                {/* Right Action Button */}
-                <TouchableOpacity
-                  style={styles.actionCircleBtn}
-                  onPress={() => {
-                    if (directionsUrl) {
-                      handleOpenLink(directionsUrl);
-                    } else if (websiteUrl) {
-                      handleOpenLink(websiteUrl);
-                    } else if (onSelectItem) {
-                      onSelectItem(item);
-                    }
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.actionArrowText}>↗</Text>
-                </TouchableOpacity>
+                {/* Right Action: Get Directions */}
+                <View style={styles.actionsColumn}>
+                  <TouchableOpacity
+                    style={styles.actionCircleBtn}
+                    onPress={(e) => {
+                      e.stopPropagation && e.stopPropagation();
+                      if (directionsUrl) {
+                        handleOpenLink(directionsUrl);
+                      } else if (websiteUrl) {
+                        handleOpenLink(websiteUrl);
+                      } else if (onSelectItem) {
+                        onSelectItem(item);
+                      }
+                    }}
+                    activeOpacity={0.7}
+                    accessibilityLabel="Get Directions"
+                  >
+                    <Text style={styles.actionArrowText}>↗</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.actionLabelSmall}>Directions</Text>
+                </View>
               </TouchableOpacity>
             );
           })
@@ -279,6 +284,11 @@ const styles = StyleSheet.create({
     fontSize: 7.5,
     fontWeight: '600',
   },
+  actionsColumn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 1,
+  },
   actionCircleBtn: {
     width: 22,
     height: 22,
@@ -294,6 +304,11 @@ const styles = StyleSheet.create({
     color: '#E2C082',
     fontSize: 10,
     fontWeight: '800',
+  },
+  actionLabelSmall: {
+    color: '#64748B',
+    fontSize: 6.5,
+    fontWeight: '600',
   },
   emptyScrollContent: {
     flexGrow: 1,

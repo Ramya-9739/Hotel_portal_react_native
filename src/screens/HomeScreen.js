@@ -207,15 +207,12 @@ export default function HomeScreen({
 
   const handleOpenDetail = (item) => {
     if (!item) return;
-    if (item.category === 'Wellness & Gyms' || (item.id && String(item.id).startsWith('gym-'))) {
-      if (onSelectGym) {
-        onSelectGym(item);
-        return;
-      }
-    }
     setSelectedComponent(item);
     setDetailComponent(item);
     setActiveScreen('detail');
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.location.hash = `#/guest/place/${item.id || item._id || 'item'}`;
+    }
   };
 
   const handleBottomTabChange = (tabId) => {
@@ -223,10 +220,7 @@ export default function HomeScreen({
   };
 
   const handleSelectRouteItem = (item) => {
-    if (!item) return;
-    setSelectedComponent(item);
-    setRouteModalItem(item);
-    setRouteModalVisible(true);
+    handleOpenDetail(item);
   };
 
   const handleOpenBooking = (item) => {
@@ -463,42 +457,107 @@ export default function HomeScreen({
     }));
   }, [activeHotel]);
 
+  const hotelCafes = useMemo(() => {
+    const list = hotelDining.filter(
+      (d) =>
+        (d.title && /cafe|bistro|coffee|roastery|bakery|kaapi/i.test(d.title)) ||
+        (d.tag && /cafe|bistro|coffee|roastery|bakery|kaapi/i.test(d.tag)) ||
+        (d.subtitle && /cafe|bistro|coffee|roastery|bakery/i.test(d.subtitle))
+    );
+    return list.length > 0 ? list : hotelDining.slice(0, Math.ceil(hotelDining.length / 2));
+  }, [hotelDining]);
+
+  const hotelRestaurants = useMemo(() => {
+    const list = hotelDining.filter(
+      (d) =>
+        !((d.title && /cafe|bistro|coffee|roastery|bakery|kaapi/i.test(d.title)) ||
+          (d.tag && /cafe|bistro|coffee|roastery|bakery|kaapi/i.test(d.tag)))
+    );
+    return list.length > 0 ? list : hotelDining;
+  }, [hotelDining]);
+
   const allBottomItems = useMemo(() => {
     return [
-      ...hotelDining,
-      ...hotelAtms,
-      ...hotelPools,
-      ...hotelSpa,
+      ...hotelCafes,
+      ...hotelRestaurants,
       ...hotelGyms,
+      ...hotelPools,
+      ...hotelHospitals,
+      ...hotelPharmacies,
+      ...hotelSpa,
+      ...hotelAtms,
       ...hotelTakeaway,
       ...hotelDelivery,
     ];
-  }, [hotelDining, hotelAtms, hotelPools, hotelSpa, hotelGyms, hotelTakeaway, hotelDelivery]);
+  }, [hotelCafes, hotelRestaurants, hotelGyms, hotelPools, hotelHospitals, hotelPharmacies, hotelSpa, hotelAtms, hotelTakeaway, hotelDelivery]);
 
   const currentBottomItems = useMemo(() => {
-    if (bottomCategory === 'cafes' || bottomCategory === 'dining') return hotelDining;
-    if (bottomCategory === 'atms') return hotelAtms;
-    if (bottomCategory === 'pools') return hotelPools;
-    if (bottomCategory === 'spa') return hotelSpa;
+    if (bottomCategory === 'cafes') return hotelCafes;
+    if (bottomCategory === 'restaurants') return hotelRestaurants;
     if (bottomCategory === 'gyms') return hotelGyms;
+    if (bottomCategory === 'pools') return hotelPools;
+    if (bottomCategory === 'hospitals') return hotelHospitals;
+    if (bottomCategory === 'pharmacies') return hotelPharmacies;
+    if (bottomCategory === 'spa') return hotelSpa;
+    if (bottomCategory === 'atms') return hotelAtms;
     if (bottomCategory === 'takeaway') return hotelTakeaway;
     if (bottomCategory === 'delivery') return hotelDelivery;
     return allBottomItems;
-  }, [bottomCategory, hotelDining, hotelAtms, hotelPools, hotelSpa, hotelGyms, hotelTakeaway, hotelDelivery, allBottomItems]);
+  }, [bottomCategory, hotelCafes, hotelRestaurants, hotelGyms, hotelPools, hotelHospitals, hotelPharmacies, hotelSpa, hotelAtms, hotelTakeaway, hotelDelivery, allBottomItems]);
 
   const bottomFilterTabs = useMemo(() => {
     const tabs = [
       { id: 'all', label: 'All Curations', icon: '✦', count: allBottomItems.length },
-      { id: 'cafes', label: 'Bistros & Cafes', icon: '🍽️', count: hotelDining.length },
-      { id: 'atms', label: '24/7 ATMs', icon: '🏧', count: hotelAtms.length },
-      { id: 'pools', label: 'Swimming Pools', icon: '🏊', count: hotelPools.length },
-      { id: 'spa', label: 'Parlour & Spa', icon: '💆', count: hotelSpa.length },
+      { id: 'cafes', label: 'Bistros & Cafes', icon: '☕', count: hotelCafes.length },
+      { id: 'restaurants', label: 'Restaurants', icon: '🍽️', count: hotelRestaurants.length },
       { id: 'gyms', label: 'Wellness & Gyms', icon: '🏋️', count: hotelGyms.length },
-      { id: 'takeaway', label: 'Express Takeaway', icon: '🥡', count: hotelTakeaway.length },
+      { id: 'pools', label: 'Swimming Pools', icon: '🏊', count: hotelPools.length },
+      { id: 'hospitals', label: 'Hospitals', icon: '🏥', count: hotelHospitals.length },
+      { id: 'pharmacies', label: 'Pharmacies', icon: '💊', count: hotelPharmacies.length },
+      { id: 'spa', label: 'Parlour & Spa', icon: '💆', count: hotelSpa.length },
+      { id: 'atms', label: '24/7 ATMs', icon: '🏧', count: hotelAtms.length },
+      { id: 'takeaway', label: 'Express Takeaway', icon: '🍔', count: hotelTakeaway.length },
       { id: 'delivery', label: 'Suite Delivery', icon: '🛎️', count: hotelDelivery.length },
     ];
     return tabs;
-  }, [allBottomItems.length, hotelDining.length, hotelAtms.length, hotelPools.length, hotelSpa.length, hotelGyms.length, hotelTakeaway.length, hotelDelivery.length]);
+  }, [allBottomItems.length, hotelCafes.length, hotelRestaurants.length, hotelGyms.length, hotelPools.length, hotelHospitals.length, hotelPharmacies.length, hotelSpa.length, hotelAtms.length, hotelTakeaway.length, hotelDelivery.length]);
+
+  // URL Hash Listener for direct deep-linking e.g. #/guest/place/:id
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+
+    const syncPlaceFromHash = () => {
+      const hash = window.location.hash || '';
+      if (hash.startsWith('#/guest/place/')) {
+        const placeId = hash.replace('#/guest/place/', '').split('?')[0].trim();
+        if (placeId) {
+          const allPlaces = [
+            ...(activeHotel?.nearby?.touristPlaces || []),
+            ...(activeHotel?.nearby?.shopping || []),
+            ...(activeHotel?.nearby?.transportation || []),
+            ...allBottomItems,
+            ...rawComponents,
+          ];
+          const match = allPlaces.find(
+            (p) => String(p.id) === placeId || String(p._id) === placeId || (p.title && encodeURIComponent(p.title) === placeId)
+          );
+          if (match) {
+            setSelectedComponent(match);
+            setDetailComponent(match);
+            setActiveScreen('detail');
+          }
+        }
+      } else if (hash === '#/guest' || hash === '' || hash === '#/') {
+        if (activeScreen === 'detail') {
+          setActiveScreen('home');
+        }
+      }
+    };
+
+    syncPlaceFromHash();
+    window.addEventListener('hashchange', syncPlaceFromHash);
+    return () => window.removeEventListener('hashchange', syncPlaceFromHash);
+  }, [activeHotel, allBottomItems, rawComponents, activeScreen]);
 
   // Unconfigured Hotel Fallback Screen — Luxury Concierge placeholder
   const activeHotelName = activeHotel?.name || activeHotel?.title || activeHotel?.hotelName;
@@ -525,7 +584,12 @@ export default function HomeScreen({
       <DetailScreen
         component={detailComponent}
         hotel={activeHotel}
-        onBack={() => setActiveScreen('home')}
+        onBack={() => {
+          setActiveScreen('home');
+          if (Platform.OS === 'web' && typeof window !== 'undefined') {
+            window.location.hash = '#/guest';
+          }
+        }}
       />
     );
   }
@@ -578,28 +642,29 @@ export default function HomeScreen({
       {/* =================================================================== */}
       {isDesktop ? (
         <View style={styles.desktopContainer}>
-          {/* 1. ABOVE / TOP: Attractions & Landmarks with Sleek Scroll Icons */}
+          {/* 1. TOP SECTION: TOP TOURIST PLACES / ATTRACTIONS */}
           <HorizontalComponentList
-            title={`🏛️ ${t.quadrantTop || 'ATTRACTIONS & SIGHTSEEING'}`}
+            title="🏛️ TOP TOURIST PLACES / ATTRACTIONS"
             subtitle={activeHotel?.city ? `Curated royal heritage, palaces, gardens and private guided excursions near ${activeHotel.name || activeHotel.city}` : "Curated royal heritage, palaces, gardens and private guided excursions"}
             actionLabel="Explore Curations →"
             items={activeHotel?.nearby?.touristPlaces || []}
             emptyMessage="No tourist places found near this hotel."
             selectedId={selectedComponent?.id}
-            onSelectComponent={handleSelectRouteItem}
+            onSelectComponent={handleOpenDetail}
+            onViewDetails={handleOpenDetail}
             onScanPress={handleOpenScan}
           />
 
-          {/* 2. MIDDLE ROW: Left (Shopping) | Center 44% (Hotel & Map) | Right (Transit & Care) */}
+          {/* 2. MIDDLE ROW: Left (Shopping) | Center 44% (Hotel & Map) | Right (Transportation Only) */}
           <View style={styles.middleRow}>
-            {/* LEFT PANEL (~28%): Simple Shopping List with thumbnails & directions */}
+            {/* LEFT PANEL (~28%): Shopping Malls & Silk Bazaars */}
             <View style={styles.sideColumn}>
               <SimpleShoppingList
-                title={`🛍️ ${t.quadrantLeft || 'SHOPPING MALLS & SILK BAZAARS'}`}
-                subtitle={`Royal silk weavers, sandalwood emporiums & yoga shalas`}
+                title="🛍️ SHOPPING MALLS & SILK BAZAARS"
+                subtitle="Royal silk weavers, sandalwood emporiums & yoga shalas"
                 items={activeHotel?.nearby?.shopping || []}
                 hotel={activeHotel}
-                onSelectItem={handleSelectRouteItem}
+                onSelectItem={handleOpenDetail}
               />
             </View>
 
@@ -613,25 +678,25 @@ export default function HomeScreen({
               />
             </View>
 
-            {/* RIGHT PANEL (~28%): Dedicated Healthcare & Transit Links */}
+            {/* RIGHT PANEL (~28%): TRANSPORTATION ONLY */}
             <View style={styles.sideColumn}>
               <RightTransitAndCarePanel
                 hotel={activeHotel}
-                onSelectTransitItem={handleSelectRouteItem}
+                onSelectTransitItem={handleOpenDetail}
               />
             </View>
           </View>
 
-          {/* 3. BOTTOM CURATIONS: Dining, 24/7 ATMs, Pools & Parlour */}
+          {/* 3. BOTTOM SECTION: ALL CURATIONS (Horizontal Card Carousel with Filter Tabs) */}
           <View style={styles.bottomSectionWrapper}>
             {/* Header with Title and Filter Tabs */}
             <View style={styles.bottomSectionHeaderRow}>
               <View style={styles.bottomHeaderLeft}>
                 <Text style={styles.bottomSectionTitle}>
-                  ☀️ DINING, 24/7 ATMS, POOLS & PARLOUR
+                  ✦ ALL CURATIONS
                 </Text>
                 <Text style={styles.bottomSectionSub}>
-                  Bistros, 24/7 cash ATMs, swimming pools, beauty parlours, gyms & suite delivery
+                  Bistros, fine restaurants, wellness gyms, pools, hospitals, pharmacies, spa, ATMs & delivery
                 </Text>
               </View>
 
@@ -665,14 +730,14 @@ export default function HomeScreen({
               </ScrollView>
             </View>
 
-            {/* Content Display: Card Carousel */}
+            {/* Content Display: Pure Card Carousel */}
             <HorizontalComponentList
               title=""
               subtitle=""
               items={currentBottomItems}
               selectedId={selectedComponent?.id}
               onViewDetails={handleOpenDetail}
-              onSelectComponent={handleSelectRouteItem}
+              onSelectComponent={handleOpenDetail}
               onScanPress={handleOpenScan}
               showSortControls={false}
             />
@@ -687,12 +752,13 @@ export default function HomeScreen({
         >
           {/* 1. TOP ATTRACTIONS */}
           <HorizontalComponentList
-            title={`🏛️ ${t.quadrantTop || 'HISTORIC LANDMARKS & EXCURSIONS'} (${(activeHotel.city || 'NEARBY').toUpperCase()})`}
+            title="🏛️ TOP TOURIST PLACES / ATTRACTIONS"
             subtitle={`Real heritage & attractions near ${activeHotel.name}`}
             items={activeHotel?.nearby?.touristPlaces || []}
             emptyMessage="No tourist places found near this hotel."
             selectedId={selectedComponent?.id}
-            onSelectComponent={handleSelectRouteItem}
+            onSelectComponent={handleOpenDetail}
+            onViewDetails={handleOpenDetail}
             onScanPress={handleOpenScan}
           />
 
@@ -738,7 +804,7 @@ export default function HomeScreen({
                   mobileActiveTab === 'right' && styles.mobileTabTextActive,
                 ]}
               >
-                🚆 Transportation
+                🚕 Transportation
               </Text>
             </TouchableOpacity>
           </View>
@@ -747,53 +813,30 @@ export default function HomeScreen({
           <View style={styles.mobileVerticalWrapper}>
             {mobileActiveTab === 'left' ? (
               <SimpleShoppingList
-                title={`🛍️ Shopping Malls`}
+                title="🛍️ SHOPPING MALLS & SILK BAZAARS"
                 subtitle={`Premier retail destinations near ${activeHotel.city}`}
                 items={activeHotel?.nearby?.shopping || []}
                 hotel={activeHotel}
-                onSelectItem={handleSelectRouteItem}
+                onSelectItem={handleOpenDetail}
               />
             ) : (
               <RightTransitAndCarePanel
                 hotel={activeHotel}
-                onSelectTransitItem={handleSelectRouteItem}
+                onSelectTransitItem={handleOpenDetail}
               />
             )}
           </View>
 
-          {/* 3. BOTTOM TRACK: Dining, 24/7 Hospitals, Pharmacies, Gyms & Delivery */}
+          {/* 3. BOTTOM SECTION: ALL CURATIONS (Horizontal Card Carousel) */}
           <View style={styles.bottomSectionWrapper}>
-            {/* Header with Title and View Switcher */}
             <View style={styles.bottomSectionHeaderRow}>
               <View style={styles.bottomHeaderLeft}>
                 <Text style={styles.bottomSectionTitle}>
-                  🌟 DINING, 24/7 HOSPITALS, PHARMACIES & WELLNESS
+                  ✦ ALL CURATIONS
                 </Text>
                 <Text style={styles.bottomSectionSub}>
-                  Bistros, 24/7 emergency care, pharmacies, gyms, pools & delivery near {activeHotel.city}
+                  Bistros, fine restaurants, wellness gyms, pools, hospitals, pharmacies, spa, ATMs & delivery
                 </Text>
-              </View>
-
-              <View style={styles.viewModeToggleRow}>
-                <TouchableOpacity
-                  style={[styles.viewModePill, bottomViewMode === 'table' && styles.viewModePillActive]}
-                  onPress={() => setBottomViewMode('table')}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.viewModePillText, bottomViewMode === 'table' && styles.viewModePillTextActive]}>
-                    📋 Faculty 5-Column Table
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.viewModePill, bottomViewMode === 'cards' && styles.viewModePillActive]}
-                  onPress={() => setBottomViewMode('cards')}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.viewModePillText, bottomViewMode === 'cards' && styles.viewModePillTextActive]}>
-                    🗂️ Card Carousel
-                  </Text>
-                </TouchableOpacity>
               </View>
             </View>
 
@@ -826,28 +869,17 @@ export default function HomeScreen({
               })}
             </ScrollView>
 
-            {/* Content Display: 5-Column Table or Carousel */}
-            {bottomViewMode === 'table' ? (
-              <UniversalCategoryTableList
-                items={currentBottomItems}
-                category={bottomCategory}
-                hotel={activeHotel}
-                onSelectItem={handleSelectRouteItem}
-                onDataChanged={loadData}
-              />
-            ) : (
-              <HorizontalComponentList
-                title=""
-                subtitle=""
-                items={currentBottomItems}
-                selectedId={selectedComponent?.id}
-                onViewDetails={handleOpenDetail}
-                onSelectComponent={handleSelectRouteItem}
-                onScanPress={handleOpenScan}
-                showSortControls={true}
-                defaultSort={bottomCategory === 'gyms' ? 'likes' : 'default'}
-              />
-            )}
+            {/* Content Display: Card Carousel */}
+            <HorizontalComponentList
+              title=""
+              subtitle=""
+              items={currentBottomItems}
+              selectedId={selectedComponent?.id}
+              onViewDetails={handleOpenDetail}
+              onSelectComponent={handleOpenDetail}
+              onScanPress={handleOpenScan}
+              showSortControls={false}
+            />
           </View>
         </ScrollView>
       )}
