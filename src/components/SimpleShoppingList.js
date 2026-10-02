@@ -1,13 +1,14 @@
 // =============================================================================
 // src/components/SimpleShoppingList.js
-// Clean, Lightweight List-Style Presentation WITHOUT Large Images
-// Requirements:
-// 1. Title
-// 2. Subtitle
-// 3. Likes / Rating
-// 4. Distance
-// 5. Website link
-// 6. Turn-by-turn driving directions from current hotel
+// Middle Left Column (~28%): Shopping Malls & Silk Bazaars
+// Requirements matching original design & commit 0f56733:
+// 1. Vertical list
+// 2. Thumbnail
+// 3. Category/tag
+// 4. Title
+// 5. Subtitle/address
+// 6. Distance
+// 7. Direction/action button
 // =============================================================================
 
 import React from 'react';
@@ -17,14 +18,15 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  Image,
   Platform,
   Linking,
 } from 'react-native';
 import { getDirectionsUrl, safeVal } from '../data/hotelsData';
 
 export default function SimpleShoppingList({
-  title = '🛍️ SHOPPING & MALLS',
-  subtitle = 'Premier retail destinations & lifestyle malls',
+  title = '🛍️ SHOPPING MALLS & SILK BAZAARS',
+  subtitle = 'Royal silk weavers, sandalwood emporiums & yoga shalas',
   items = [],
   hotel,
   onSelectItem,
@@ -35,6 +37,18 @@ export default function SimpleShoppingList({
       window.open(url, '_blank', 'noopener,noreferrer');
     } else {
       Linking.openURL(url).catch((err) => console.error('Error opening link:', err));
+    }
+  };
+
+  const handleAction = (item) => {
+    const directionsUrl = getDirectionsUrl(hotel, item);
+    const link = item.websiteUrl || item.link;
+    if (onSelectItem) {
+      onSelectItem(item);
+    } else if (directionsUrl) {
+      handleOpenLink(directionsUrl);
+    } else if (link) {
+      handleOpenLink(link);
     }
   };
 
@@ -55,7 +69,7 @@ export default function SimpleShoppingList({
         </View>
       </View>
 
-      {/* 2. SCROLLABLE CLEAN LIST WITHOUT LARGE IMAGES */}
+      {/* 2. SCROLLABLE LIST WITH THUMBNAILS & DETAILS */}
       <ScrollView
         showsVerticalScrollIndicator={true}
         contentContainerStyle={[styles.scrollContent, items.length === 0 && styles.emptyScrollContent]}
@@ -74,105 +88,69 @@ export default function SimpleShoppingList({
         ) : (
           items.map((item, index) => {
             const directionsUrl = getDirectionsUrl(hotel, item);
-          const websiteUrl = item.websiteUrl || item.link;
+            const websiteUrl = item.websiteUrl || item.link;
+            const imgSrc = item.imageLink || item.image || item.imageUrl || 'https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=600&q=80';
+            const categoryTag = (item.tag || item.category || 'SHOPPING MALL').toUpperCase();
+            const distanceText = item.distance || item.hotelDistance || item.location || 'Nearby';
 
-          return (
-            <View
-              key={item.id || `shop-${index}`}
-              style={[
-                styles.listItemRow,
-                index % 2 === 1 && styles.listItemRowAlt,
-              ]}
-            >
-              {/* Category Tag + Store Badge */}
-              <View style={styles.itemTopRow}>
-                <View style={styles.categoryBadge}>
-                  <Text style={styles.categoryBadgeText}>
-                    {safeVal(item.category || item.tag, 'SHOPPING').toUpperCase()}
-                  </Text>
-                </View>
-                {item.storeCount ? (
-                  <Text style={styles.storeCountText}>{item.storeCount}</Text>
-                ) : null}
-              </View>
-
-              {/* Title & Subtitle */}
+            return (
               <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => onSelectItem && onSelectItem(item)}
+                key={item.id || `shop-${index}`}
+                activeOpacity={0.82}
+                onPress={() => handleAction(item)}
+                style={[
+                  styles.listItemRow,
+                  index % 2 === 1 && styles.listItemRowAlt,
+                ]}
               >
-                <Text style={styles.itemTitle} numberOfLines={1}>
-                  {safeVal(item.title, 'Shopping Venue')}
-                </Text>
-              </TouchableOpacity>
+                {/* Left Thumbnail */}
+                <Image
+                  source={{ uri: imgSrc }}
+                  style={styles.thumbnail}
+                  resizeMode="cover"
+                />
 
-              <Text style={styles.itemSubtitle} numberOfLines={2}>
-                {safeVal(item.subtitle || item.description, 'Premier retail experience')}
-              </Text>
-
-              {/* Metadata Row: Rating, Likes, Distance */}
-              <View style={styles.metaRow}>
-                {item.rating ? (
-                  <View style={styles.metaPill}>
-                    <Text style={styles.ratingText}>★ {item.rating}</Text>
-                  </View>
-                ) : null}
-
-                {item.likes ? (
-                  <View style={styles.metaPill}>
-                    <Text style={styles.likesText}>❤️ {item.likes.toLocaleString()}</Text>
-                  </View>
-                ) : null}
-
-                <View style={styles.metaPill}>
-                  <Text style={styles.distanceText}>
-                    📍 {safeVal(item.distance || item.hotelDistance, 'Nearby')}
-                  </Text>
-                </View>
-
-                {item.openingHours ? (
-                  <Text style={styles.hoursText} numberOfLines={1}>
-                    🕒 {item.openingHours}
-                  </Text>
-                ) : null}
-              </View>
-
-              {/* Action Buttons: Website + Directions */}
-              <View style={styles.actionsRow}>
-                {websiteUrl ? (
-                  <TouchableOpacity
-                    style={styles.actionBtnSecondary}
-                    onPress={() => handleOpenLink(websiteUrl)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.actionBtnSecondaryText}>🌐 Website ↗</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={styles.disabledBtn}>
-                    <Text style={styles.disabledBtnText}>Website unavailable</Text>
-                  </View>
-                )}
-
-                {directionsUrl ? (
-                  <TouchableOpacity
-                    style={styles.actionBtnPrimary}
-                    onPress={() => handleOpenLink(directionsUrl)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.actionBtnPrimaryText}>🧭 Directions ↗</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={styles.disabledBtn}>
-                    <Text style={styles.disabledBtnText} numberOfLines={1}>
-                      {!hotel || (!hotel.latitude && !hotel.lat) ? 'Hotel loc. unset' : 'Directions unavailable'}
+                {/* Middle Info */}
+                <View style={styles.infoCol}>
+                  <View style={styles.tagRow}>
+                    <Text style={styles.categoryTagText} numberOfLines={1}>
+                      {categoryTag}
                     </Text>
                   </View>
-                )}
-              </View>
-            </View>
-          );
-        })
-      )}
+
+                  <Text style={styles.itemTitle} numberOfLines={1}>
+                    {safeVal(item.title, 'Shopping Venue')}
+                  </Text>
+
+                  <Text style={styles.itemSubtitle} numberOfLines={1}>
+                    {safeVal(item.subtitle || item.description, 'Premier retail experience')}
+                  </Text>
+
+                  <Text style={styles.distanceText} numberOfLines={1}>
+                    {distanceText}
+                  </Text>
+                </View>
+
+                {/* Right Action Button */}
+                <TouchableOpacity
+                  style={styles.actionCircleBtn}
+                  onPress={() => {
+                    if (directionsUrl) {
+                      handleOpenLink(directionsUrl);
+                    } else if (websiteUrl) {
+                      handleOpenLink(websiteUrl);
+                    } else if (onSelectItem) {
+                      onSelectItem(item);
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.actionArrowText}>↗</Text>
+                </TouchableOpacity>
+              </TouchableOpacity>
+            );
+          })
+        )}
       </ScrollView>
     </View>
   );
@@ -185,7 +163,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(226, 192, 130, 0.16)',
-    padding: 10,
+    padding: 8,
     flexDirection: 'column',
     ...Platform.select({
       web: {
@@ -197,19 +175,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
-    paddingHorizontal: 4,
+    marginBottom: 6,
+    paddingHorizontal: 2,
     paddingBottom: 6,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(226, 192, 130, 0.12)',
   },
   headerTitleBox: {
     flex: 1,
-    gap: 2,
+    gap: 1,
   },
   sectionTitle: {
     color: '#F8F6F0',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.5,
     ...Platform.select({
@@ -220,7 +198,7 @@ const styles = StyleSheet.create({
   },
   sectionSubtitle: {
     color: '#94A3B8',
-    fontSize: 9.5,
+    fontSize: 8.5,
   },
   countBadge: {
     backgroundColor: 'rgba(226, 192, 130, 0.12)',
@@ -232,7 +210,7 @@ const styles = StyleSheet.create({
   },
   countBadgeText: {
     color: '#E2C082',
-    fontSize: 9,
+    fontSize: 8.5,
     fontWeight: '800',
   },
   scrollContainer: {
@@ -240,7 +218,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexDirection: 'column',
-    gap: 8,
+    gap: 5,
     paddingBottom: 4,
   },
   listItemRow: {
@@ -248,11 +226,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
-    padding: 10,
-    flexDirection: 'column',
-    gap: 4,
+    padding: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     ...Platform.select({
       web: {
+        cursor: 'pointer',
         transition: 'all 0.15s ease',
       },
     }),
@@ -260,119 +240,60 @@ const styles = StyleSheet.create({
   listItemRowAlt: {
     backgroundColor: '#181A24',
   },
-  itemTopRow: {
+  thumbnail: {
+    width: 44,
+    height: 44,
+    borderRadius: 6,
+    backgroundColor: '#1C1F2B',
+    flexShrink: 0,
+  },
+  infoCol: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 1,
+    minWidth: 0,
+  },
+  tagRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  categoryBadge: {
-    backgroundColor: 'rgba(226, 192, 130, 0.1)',
-    paddingHorizontal: 5,
-    paddingVertical: 1.5,
-    borderRadius: 3,
-  },
-  categoryBadgeText: {
+  categoryTagText: {
     color: '#E2C082',
-    fontSize: 8.5,
+    fontSize: 7.5,
     fontWeight: '800',
-    letterSpacing: 0.4,
-  },
-  storeCountText: {
-    color: '#64748B',
-    fontSize: 9,
-    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   itemTitle: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
   itemSubtitle: {
     color: '#94A3B8',
-    fontSize: 10,
-    lineHeight: 14,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 2,
-  },
-  metaPill: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderRadius: 4,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-  },
-  ratingText: {
-    color: '#F4DC9E',
-    fontSize: 9.5,
-    fontWeight: '700',
-  },
-  likesText: {
-    color: '#F87171',
-    fontSize: 9.5,
-    fontWeight: '600',
+    fontSize: 8.5,
+    lineHeight: 12,
   },
   distanceText: {
-    color: '#CBD5E1',
-    fontSize: 9.5,
+    color: '#64748B',
+    fontSize: 7.5,
     fontWeight: '600',
   },
-  hoursText: {
-    color: '#64748B',
-    fontSize: 9,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
-    paddingTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.04)',
-  },
-  actionBtnSecondary: {
-    flex: 1,
-    backgroundColor: 'rgba(226, 192, 130, 0.08)',
+  actionCircleBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.25)',
-    borderRadius: 5,
-    paddingVertical: 4.5,
-    alignItems: 'center',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
   },
-  actionBtnSecondaryText: {
+  actionArrowText: {
     color: '#E2C082',
     fontSize: 10,
-    fontWeight: '700',
-  },
-  actionBtnPrimary: {
-    flex: 1,
-    backgroundColor: '#E2C082',
-    borderRadius: 5,
-    paddingVertical: 4.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionBtnPrimaryText: {
-    color: '#0D0E12',
-    fontSize: 10,
     fontWeight: '800',
-  },
-  disabledBtn: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    borderRadius: 5,
-    paddingVertical: 4.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  disabledBtnText: {
-    color: '#475569',
-    fontSize: 9.5,
   },
   emptyScrollContent: {
     flexGrow: 1,

@@ -1,13 +1,17 @@
 // =============================================================================
 // src/components/RightTransitAndCarePanel.js
-// Right Column Panel for Hotel Portal:
-// 1. Healthcare Gateways (Hospitals & Pharmacies compact cards with Image + Title)
-//    Clicking navigates to dedicated Hospital and Pharmacy list screens!
-// 2. Transportation & Mobility Links (Simple list style WITHOUT large images)
-//    Includes: Title, Subtitle, Link, Directions
+// Middle Right Column (~28%): Healthcare & Transit Hubs
+// Requirements matching original design & commit 0f56733:
+// 1. Vertical list
+// 2. Thumbnail
+// 3. Category/tag (HEALTHCARE, HOSPITAL CARE, TRANSIT HUB)
+// 4. Title
+// 5. Subtitle/address
+// 6. Distance
+// 7. Direction/action button ↗
 // =============================================================================
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   StyleSheet,
   View,
@@ -18,14 +22,12 @@ import {
   Platform,
   Linking,
 } from 'react-native';
-import { getDirectionsUrl, safeVal, HOSPITAL_FALLBACK_IMAGE, PHARMACY_FALLBACK_IMAGE } from '../data/hotelsData';
+import { getDirectionsUrl, safeVal, HOSPITAL_FALLBACK_IMAGE } from '../data/hotelsData';
 
 export default function RightTransitAndCarePanel({
   hotel,
   onSelectTransitItem,
 }) {
-  const transitItems = hotel?.nearby?.transportation || [];
-
   const handleOpenLink = (url) => {
     if (!url) return;
     if (Platform.OS === 'web') {
@@ -35,198 +37,140 @@ export default function RightTransitAndCarePanel({
     }
   };
 
+  const handleAction = (item) => {
+    const directionsUrl = getDirectionsUrl(hotel, item);
+    const link = item.websiteUrl || item.link;
+    if (onSelectTransitItem) {
+      onSelectTransitItem(item);
+    } else if (directionsUrl) {
+      handleOpenLink(directionsUrl);
+    } else if (link) {
+      handleOpenLink(link);
+    }
+  };
+
+  // Combine Healthcare and Transit items for the Middle Right quadrant
+  const combinedItems = useMemo(() => {
+    const hospitals = (hotel?.nearby?.hospitals || []).map((h) => ({
+      ...h,
+      itemType: 'care',
+      tag: h.tag || (h.isEmergency24x7 ? 'HEALTHCARE' : 'HOSPITAL CARE'),
+      imageLink: h.imageLink || HOSPITAL_FALLBACK_IMAGE,
+    }));
+
+    const transit = (hotel?.nearby?.transportation || []).map((t) => ({
+      ...t,
+      itemType: 'transit',
+      tag: t.tag || t.category || 'TRANSIT HUB',
+      imageLink: t.imageLink || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80',
+    }));
+
+    // Interleave or list healthcare first, then transit hubs
+    return [...hospitals, ...transit];
+  }, [hotel]);
+
+  const hotelCity = hotel?.city || 'Local Area';
+
   return (
     <View style={styles.container}>
-      {/* ================================================================= */}
-      {/* DEDICATED TRANSPORTATION & MOBILITY PANEL (Full Right Column)     */}
-      {/* ================================================================= */}
-      <View style={styles.transitSection}>
-        <View style={styles.headerRow}>
-          <View style={styles.headerTitleBox}>
-            <Text style={styles.sectionTitle} numberOfLines={1}>
-              🚆 TRANSIT & MOBILITY
-            </Text>
-            <Text style={styles.sectionSubtitle} numberOfLines={1}>
-              Railway, Metro, Airport & Private Chauffeur
-            </Text>
-          </View>
-          <View style={styles.countBadge}>
-            <Text style={styles.countBadgeText}>{transitItems.length} Links</Text>
-          </View>
+      {/* 1. SECTION HEADER */}
+      <View style={styles.headerRow}>
+        <View style={styles.headerTitleBox}>
+          <Text style={styles.sectionTitle} numberOfLines={1}>
+            🏥 HEALTHCARE & TRANSIT HUBS
+          </Text>
+          <Text style={styles.sectionSubtitle} numberOfLines={1}>
+            {`Emergency hospitals, rapid transit & 24/7 care near ${hotelCity}`}
+          </Text>
         </View>
+        <View style={styles.countBadge}>
+          <Text style={styles.countBadgeText}>{combinedItems.length} Hubs</Text>
+        </View>
+      </View>
 
-        <ScrollView
-          showsVerticalScrollIndicator={true}
-          contentContainerStyle={[styles.scrollContent, transitItems.length === 0 && styles.emptyScrollContent]}
-          style={styles.scrollContainer}
-          scrollIndicatorInsets={{ right: 1 }}
-          nestedScrollEnabled={true}
-        >
-          {transitItems.length === 0 ? (
-            <View style={styles.transitEmptyBox}>
-              <Text style={styles.transitEmptyIcon}>🚆</Text>
-              <Text style={styles.transitEmptyTitle}>No transportation facilities found near this hotel.</Text>
-              <Text style={styles.transitEmptySub}>
-                Real railway, metro, bus or airport hubs near {hotel?.city || 'this stay'} will appear once loaded.
-              </Text>
-            </View>
-          ) : (
-            transitItems.map((item, index) => {
-              const directionsUrl = getDirectionsUrl(hotel, item);
+      {/* 2. SCROLLABLE LIST WITH THUMBNAILS & DETAILS */}
+      <ScrollView
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={[styles.scrollContent, combinedItems.length === 0 && styles.emptyScrollContent]}
+        style={styles.scrollContainer}
+        scrollIndicatorInsets={{ right: 1 }}
+        nestedScrollEnabled={true}
+      >
+        {combinedItems.length === 0 ? (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyIcon}>🏥</Text>
+            <Text style={styles.emptyTitle}>No healthcare or transit facilities found.</Text>
+            <Text style={styles.emptySub}>
+              Hospitals, clinics, and transit stations near {hotelCity} will appear once loaded.
+            </Text>
+          </View>
+        ) : (
+          combinedItems.map((item, index) => {
+            const directionsUrl = getDirectionsUrl(hotel, item);
             const externalLink = item.link || item.websiteUrl;
+            const imgSrc = item.imageLink || item.image || HOSPITAL_FALLBACK_IMAGE;
+            const categoryTag = (item.tag || (item.itemType === 'care' ? 'HEALTHCARE' : 'TRANSIT HUB')).toUpperCase();
+            const distanceText = item.distance || item.hotelDistance || item.location || 'Nearby';
 
             return (
-              <View
-                key={item.id || `transit-${index}`}
+              <TouchableOpacity
+                key={item.id || `care-transit-${index}`}
+                activeOpacity={0.82}
+                onPress={() => handleAction(item)}
                 style={[
                   styles.listItemRow,
                   index % 2 === 1 && styles.listItemRowAlt,
                 ]}
               >
-                {/* Top Badge: Hub Type */}
-                <View style={styles.itemTopRow}>
-                  <View style={styles.transitBadge}>
-                    <Text style={styles.transitBadgeText}>
-                      {safeVal(item.category || item.tag || item.type, 'TRANSIT HUB').toUpperCase()}
+                {/* Left Thumbnail */}
+                <Image
+                  source={{ uri: imgSrc }}
+                  style={styles.thumbnail}
+                  resizeMode="cover"
+                />
+
+                {/* Middle Info */}
+                <View style={styles.infoCol}>
+                  <View style={styles.tagRow}>
+                    <Text style={styles.categoryTagText} numberOfLines={1}>
+                      {categoryTag}
                     </Text>
                   </View>
-                  {item.distance ? (
-                    <Text style={styles.transitDistanceText}>
-                      📍 {item.distance}
-                    </Text>
-                  ) : null}
-                </View>
 
-                {/* Title & Subtitle */}
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => onSelectTransitItem && onSelectTransitItem(item)}
-                >
                   <Text style={styles.itemTitle} numberOfLines={1}>
-                    {safeVal(item.title, 'Transit Station')}
+                    {safeVal(item.title, 'Healthcare / Transit Station')}
                   </Text>
-                </TouchableOpacity>
 
-                <Text style={styles.itemSubtitle} numberOfLines={2}>
-                  {safeVal(item.subtitle || item.description || item.notes, 'Mobility and passenger transit hub')}
-                </Text>
+                  <Text style={styles.itemSubtitle} numberOfLines={1}>
+                    {safeVal(item.subtitle || item.description || item.notes, 'Priority emergency care & passenger transit')}
+                  </Text>
 
-                {/* Actions: Link + Directions */}
-                <View style={styles.actionsRow}>
-                  {externalLink ? (
-                    <TouchableOpacity
-                      style={styles.actionBtnSecondary}
-                      onPress={() => handleOpenLink(externalLink)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={styles.actionBtnSecondaryText}>🔗 Link ↗</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <View style={styles.disabledBtn}>
-                      <Text style={styles.disabledBtnText}>Website unavailable</Text>
-                    </View>
-                  )}
-
-                  {directionsUrl ? (
-                    <TouchableOpacity
-                      style={styles.actionBtnPrimary}
-                      onPress={() => handleOpenLink(directionsUrl)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={styles.actionBtnPrimaryText}>🧭 Directions ↗</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <View style={styles.disabledBtn}>
-                      <Text style={styles.disabledBtnText} numberOfLines={1}>
-                        {!hotel || (!hotel.latitude && !hotel.lat) ? 'Hotel loc. unset' : 'Directions unavailable'}
-                      </Text>
-                    </View>
-                  )}
+                  <Text style={styles.distanceText} numberOfLines={1}>
+                    {distanceText}
+                  </Text>
                 </View>
-              </View>
+
+                {/* Right Action Button */}
+                <TouchableOpacity
+                  style={styles.actionCircleBtn}
+                  onPress={() => {
+                    if (directionsUrl) {
+                      handleOpenLink(directionsUrl);
+                    } else if (externalLink) {
+                      handleOpenLink(externalLink);
+                    } else if (onSelectTransitItem) {
+                      onSelectTransitItem(item);
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.actionArrowText}>↗</Text>
+                </TouchableOpacity>
+              </TouchableOpacity>
             );
           })
         )}
-        </ScrollView>
-      </View>
-    </View>
-  );
-}
-
-// =============================================================================
-// HEALTHCARE & PHARMACY BOTTOM GATEWAYS BAR
-// Mounted at the bottom of the portal above/beside bottom curations
-// =============================================================================
-export function HealthcareGatewaysBar({
-  hotel,
-  onNavigateToHospitals,
-  onNavigateToPharmacies,
-}) {
-  const hospitals = hotel?.nearby?.hospitals || [];
-  const pharmacies = hotel?.nearby?.pharmacies || [];
-
-  const hospitalThumbnail = hospitals[0]?.imageLink || HOSPITAL_FALLBACK_IMAGE;
-  const pharmacyThumbnail = pharmacies[0]?.imageLink || PHARMACY_FALLBACK_IMAGE;
-
-  return (
-    <View style={styles.bottomCareBarContainer}>
-      <View style={styles.bottomCareCardsRow}>
-        {/* Card 1: Emergency Hospitals */}
-        <TouchableOpacity
-          style={styles.bottomCareCompactCard}
-          onPress={onNavigateToHospitals}
-          activeOpacity={0.85}
-        >
-          <Image
-            source={{ uri: hospitalThumbnail }}
-            style={styles.bottomCareCardThumb}
-            resizeMode="cover"
-          />
-          <View style={styles.bottomCareCardOverlay} />
-          <View style={styles.bottomCareCardContent}>
-            <View style={styles.careBadge}>
-              <Text style={styles.careBadgeText}>🚨 24/7 EMERGENCY & TRAUMA</Text>
-            </View>
-            <Text style={styles.bottomCareCardTitle} numberOfLines={1}>
-              Emergency Hospitals & ICU
-            </Text>
-            <Text style={styles.bottomCareCardSubtitle} numberOfLines={1}>
-              {hospitals.length} tertiary care units near {hotel?.city || 'stay'} • Doctors on call 24/7
-            </Text>
-            <View style={styles.careActionPill}>
-              <Text style={styles.careActionPillText}>Open Hospitals Directory ({hospitals.length}) →</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-
-        {/* Card 2: 24/7 Pharmacies */}
-        <TouchableOpacity
-          style={styles.bottomCareCompactCard}
-          onPress={onNavigateToPharmacies}
-          activeOpacity={0.85}
-        >
-          <Image
-            source={{ uri: pharmacyThumbnail }}
-            style={styles.bottomCareCardThumb}
-            resizeMode="cover"
-          />
-          <View style={styles.bottomCareCardOverlay} />
-          <View style={styles.bottomCareCardContent}>
-            <View style={[styles.careBadge, styles.pharmacyBadge]}>
-              <Text style={[styles.careBadgeText, styles.pharmacyBadgeText]}>💊 24/7 CHEMISTS & DISPENSARY</Text>
-            </View>
-            <Text style={styles.bottomCareCardTitle} numberOfLines={1}>
-              Pharmacies & Chemists
-            </Text>
-            <Text style={styles.bottomCareCardSubtitle} numberOfLines={1}>
-              {pharmacies.length} verified chemists near {hotel?.city || 'stay'} • Prescription delivery
-            </Text>
-            <View style={[styles.careActionPill, styles.pharmacyActionPill]}>
-              <Text style={[styles.careActionPillText, styles.pharmacyActionPillText]}>Open Pharmacies Directory ({pharmacies.length}) →</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -238,132 +182,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(226, 192, 130, 0.16)',
-    padding: 10,
+    padding: 8,
     flexDirection: 'column',
-    gap: 10,
     ...Platform.select({
       web: {
         boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
       },
     }),
-  },
-  healthcareSection: {
-    flexDirection: 'column',
-    gap: 6,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(226, 192, 130, 0.12)',
-  },
-  sectionHeaderMini: {
-    gap: 1,
-    paddingHorizontal: 2,
-  },
-  sectionHeaderTitle: {
-    color: '#E2C082',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-  },
-  sectionHeaderSubtitle: {
-    color: '#64748B',
-    fontSize: 8.5,
-  },
-  healthcareCardsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  careCompactCard: {
-    flex: 1,
-    height: 98,
-    borderRadius: 8,
-    overflow: 'hidden',
-    position: 'relative',
-    backgroundColor: '#181A22',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  careCardThumb: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '100%',
-  },
-  careCardOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(10, 11, 15, 0.78)',
-  },
-  careCardContent: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: 7,
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-  },
-  careBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(239, 68, 68, 0.3)',
-    borderRadius: 3,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.5)',
-  },
-  careBadgeText: {
-    color: '#FCA5A5',
-    fontSize: 7.5,
-    fontWeight: '800',
-  },
-  pharmacyBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.25)',
-    borderColor: 'rgba(16, 185, 129, 0.5)',
-  },
-  pharmacyBadgeText: {
-    color: '#6EE7B7',
-  },
-  careCardTitle: {
-    color: '#FFFFFF',
-    fontSize: 11.5,
-    fontWeight: '700',
-    letterSpacing: 0.2,
-  },
-  careCardSubtitle: {
-    color: '#94A3B8',
-    fontSize: 8.5,
-  },
-  careActionPill: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.4)',
-  },
-  careActionPillText: {
-    color: '#FECACA',
-    fontSize: 8.5,
-    fontWeight: '700',
-  },
-  pharmacyActionPill: {
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-    borderColor: 'rgba(16, 185, 129, 0.4)',
-  },
-  pharmacyActionPillText: {
-    color: '#A7F3D0',
-  },
-  transitSection: {
-    flex: 1,
-    flexDirection: 'column',
   },
   headerRow: {
     flexDirection: 'row',
@@ -371,6 +196,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 6,
     paddingHorizontal: 2,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(226, 192, 130, 0.12)',
   },
   headerTitleBox: {
     flex: 1,
@@ -378,7 +206,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#F8F6F0',
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.5,
     ...Platform.select({
@@ -389,7 +217,7 @@ const styles = StyleSheet.create({
   },
   sectionSubtitle: {
     color: '#94A3B8',
-    fontSize: 9,
+    fontSize: 8.5,
   },
   countBadge: {
     backgroundColor: 'rgba(226, 192, 130, 0.12)',
@@ -409,7 +237,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexDirection: 'column',
-    gap: 6,
+    gap: 5,
     paddingBottom: 4,
   },
   listItemRow: {
@@ -417,157 +245,74 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
-    padding: 8,
-    flexDirection: 'column',
-    gap: 3,
+    padding: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    ...Platform.select({
+      web: {
+        cursor: 'pointer',
+        transition: 'all 0.15s ease',
+      },
+    }),
   },
   listItemRowAlt: {
     backgroundColor: '#181A24',
   },
-  itemTopRow: {
+  thumbnail: {
+    width: 44,
+    height: 44,
+    borderRadius: 6,
+    backgroundColor: '#1C1F2B',
+    flexShrink: 0,
+  },
+  infoCol: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 1,
+    minWidth: 0,
+  },
+  tagRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  transitBadge: {
-    backgroundColor: 'rgba(226, 192, 130, 0.1)',
-    paddingHorizontal: 5,
-    paddingVertical: 1.5,
-    borderRadius: 3,
-  },
-  transitBadgeText: {
+  categoryTagText: {
     color: '#E2C082',
-    fontSize: 8,
+    fontSize: 7.5,
     fontWeight: '800',
-  },
-  transitDistanceText: {
-    color: '#94A3B8',
-    fontSize: 8.5,
-    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   itemTitle: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
   itemSubtitle: {
     color: '#94A3B8',
-    fontSize: 9.5,
-    lineHeight: 13,
+    fontSize: 8.5,
+    lineHeight: 12,
   },
-  actionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 3,
-    paddingTop: 3,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.04)',
+  distanceText: {
+    color: '#64748B',
+    fontSize: 7.5,
+    fontWeight: '600',
   },
-  actionBtnSecondary: {
-    flex: 1,
-    backgroundColor: 'rgba(226, 192, 130, 0.08)',
+  actionCircleBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.25)',
-    borderRadius: 4,
-    paddingVertical: 4,
-    alignItems: 'center',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
   },
-  actionBtnSecondaryText: {
+  actionArrowText: {
     color: '#E2C082',
-    fontSize: 9.5,
-    fontWeight: '700',
-  },
-  actionBtnPrimary: {
-    flex: 1,
-    backgroundColor: '#E2C082',
-    borderRadius: 4,
-    paddingVertical: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionBtnPrimaryText: {
-    color: '#0D0E12',
-    fontSize: 9.5,
+    fontSize: 10,
     fontWeight: '800',
-  },
-  disabledBtn: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    borderRadius: 4,
-    paddingVertical: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  disabledBtnText: {
-    color: '#475569',
-    fontSize: 9,
-  },
-
-  // ---------------------------------------------------------------------------
-  // Bottom Healthcare & Pharmacy Gateways Styles
-  // ---------------------------------------------------------------------------
-  bottomCareBarContainer: {
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-    marginBottom: 3,
-  },
-  bottomCareCardsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  bottomCareCompactCard: {
-    flex: 1,
-    height: 68,
-    borderRadius: 8,
-    overflow: 'hidden',
-    position: 'relative',
-    backgroundColor: '#181A22',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    ...Platform.select({
-      web: { cursor: 'pointer', transition: 'all 0.2s ease' },
-    }),
-  },
-  bottomCareCardThumb: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '100%',
-  },
-  bottomCareCardOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(10, 11, 15, 0.82)',
-  },
-  bottomCareCardContent: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-  },
-  bottomCareCardTitle: {
-    color: '#FFFFFF',
-    fontSize: 11.5,
-    fontWeight: '800',
-    letterSpacing: 0.2,
-  },
-  bottomCareCardSubtitle: {
-    color: '#94A3B8',
-    fontSize: 9,
   },
   emptyScrollContent: {
     flexGrow: 1,
@@ -575,23 +320,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 30,
   },
-  transitEmptyBox: {
+  emptyBox: {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
     gap: 6,
   },
-  transitEmptyIcon: {
+  emptyIcon: {
     fontSize: 26,
     color: '#64748B',
   },
-  transitEmptyTitle: {
+  emptyTitle: {
     color: '#CBD5E1',
     fontSize: 12,
     fontWeight: '700',
     textAlign: 'center',
   },
-  transitEmptySub: {
+  emptySub: {
     color: '#64748B',
     fontSize: 10.5,
     textAlign: 'center',
