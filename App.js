@@ -26,6 +26,7 @@ import GymDetailScreen from './src/screens/GymDetailScreen';
 import HospitalListScreen from './src/screens/HospitalListScreen';
 import PharmacyListScreen from './src/screens/PharmacyListScreen';
 import AdminDashboardScreen from './src/screens/AdminDashboardScreen';
+import SuperAdminDashboardScreen from './src/screens/SuperAdminDashboardScreen';
 import AdminLoginScreen from './src/screens/AdminLoginScreen';
 import { authService } from './src/services/authService';
 import { activeHotelService } from './src/services/activeHotelService';
@@ -36,6 +37,10 @@ export default function App() {
   const [currentView, setCurrentView] = useState(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const hash = window.location.hash || '';
+      const pathname = window.location.pathname || '';
+      if (hash.toLowerCase().includes('super-admin') || pathname.toLowerCase().includes('super-admin')) {
+        return 'super-admin';
+      }
       if (hash.toLowerCase().includes('guest') || hash.toLowerCase().includes('home')) {
         return 'guest';
       }
@@ -66,6 +71,11 @@ export default function App() {
         const pathname = window.location.pathname || '';
 
         if (
+          hash.toLowerCase().includes('super-admin') ||
+          pathname.toLowerCase().includes('super-admin')
+        ) {
+          setCurrentView('super-admin');
+        } else if (
           hash.toLowerCase().includes('guest') ||
           hash.toLowerCase().includes('home')
         ) {
@@ -173,6 +183,13 @@ export default function App() {
   }, []);
 
   // Navigation handlers
+  const switchToSuperAdmin = () => {
+    setCurrentView('super-admin');
+    if (Platform.OS === 'web') {
+      window.location.hash = '#/super-admin';
+    }
+  };
+
   const switchToAdmin = () => {
     setCurrentView('admin');
     if (Platform.OS === 'web') {
@@ -240,7 +257,31 @@ export default function App() {
 
       {/* Screen View Rendering */}
       <View style={styles.contentContainer}>
-        {currentView === 'admin' ? (
+        {currentView === 'super-admin' ? (
+          isAdminLoggedIn && authService.isSuperAdmin() ? (
+            <SuperAdminDashboardScreen
+              onBackToGuestPortal={switchToGuest}
+              onSwitchToOwnerAdmin={switchToAdmin}
+              onLogout={() => {
+                authService.logout();
+                setIsAdminLoggedIn(false);
+                switchToGuest();
+              }}
+            />
+          ) : (
+            <AdminLoginScreen
+              onLoginSuccess={(user) => {
+                setIsAdminLoggedIn(true);
+                if (user?.role === 'superadmin') {
+                  switchToSuperAdmin();
+                } else {
+                  switchToAdmin();
+                }
+              }}
+              onBackToGuestPortal={switchToGuest}
+            />
+          )
+        ) : currentView === 'admin' ? (
           isAdminLoggedIn ? (
             <AdminDashboardScreen
               activeHotel={currentHotel}
@@ -256,6 +297,7 @@ export default function App() {
                 switchToGuest();
               }}
               onBackToGuestPortal={switchToGuest}
+              onOpenSuperAdmin={switchToSuperAdmin}
               onLogout={() => {
                 authService.logout();
                 setIsAdminLoggedIn(false);
@@ -263,8 +305,13 @@ export default function App() {
             />
           ) : (
             <AdminLoginScreen
-              onLoginSuccess={() => {
+              onLoginSuccess={(user) => {
                 setIsAdminLoggedIn(true);
+                if (user?.role === 'superadmin') {
+                  switchToSuperAdmin();
+                } else {
+                  switchToAdmin();
+                }
               }}
               onBackToGuestPortal={switchToGuest}
             />

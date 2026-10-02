@@ -477,6 +477,8 @@ class ApiService {
       availability: doc.availability || 'Available',
       paymentMethods: doc.paymentMethods || ['UPI', 'Credit Card', 'Cash', 'Net Banking'],
       paidTill: doc.paidTill,
+      status: doc.status || 'pending',
+      rejectionReason: doc.rejectionReason || '',
     };
   }
 
@@ -501,12 +503,99 @@ class ApiService {
       paymentMethods: data.paymentMethods || ['UPI', 'Credit Card', 'Cash', 'Net Banking'],
       availability: data.availability || 'Available',
       paidTill: data.paidTill || (Date.now() + 365 * 86400000),
+      status: data.status || 'pending',
+      rejectionReason: data.rejectionReason || '',
     };
   }
 
-  async fetchHotels() {
+  // Public Guest API: Strictly loads ONLY approved hotels from the backend
+  async fetchPublicHotels() {
     try {
-      const url = `${BASE_URL}/api/hotel-properties`;
+      const url = `${BASE_URL}/api/hotel-properties/public`;
+      console.log(`[REST API] GET ${url}`);
+      const res = await fetch(url, { headers: { Accept: 'application/json' } });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(`[HTTP ${res.status}] GET ${url} failed: ${json.error || res.statusText}`);
+      }
+      const list = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
+      const mapped = list.map((doc) => this.mapHotelPropertyToFrontend(doc));
+      return { success: true, data: mapped };
+    } catch (err) {
+      console.error(`[REST API Error] fetchPublicHotels failed:`, err.message);
+      return { success: false, error: err.message, data: [] };
+    }
+  }
+
+  // Super Admin API: Loads pending hotels awaiting approval
+  async fetchPendingHotels() {
+    try {
+      const url = `${BASE_URL}/api/hotel-properties/pending`;
+      console.log(`[REST API] GET ${url}`);
+      const res = await fetch(url, { headers: this.getHeaders() });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(`[HTTP ${res.status}] GET ${url} failed: ${json.error || res.statusText}`);
+      }
+      const list = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
+      const mapped = list.map((doc) => this.mapHotelPropertyToFrontend(doc));
+      return { success: true, data: mapped };
+    } catch (err) {
+      console.error(`[REST API Error] fetchPendingHotels failed:`, err.message);
+      return { success: false, error: err.message, data: [] };
+    }
+  }
+
+  // Super Admin API: Approve a hotel
+  async approveHotel(id) {
+    try {
+      const url = `${BASE_URL}/api/hotel-properties/${encodeURIComponent(id)}/approve`;
+      console.log(`[REST API] PATCH ${url}`);
+      const res = await fetch(url, {
+        method: 'PATCH',
+        headers: this.getHeaders(),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(`[HTTP ${res.status}] PATCH ${url} failed: ${json.error || res.statusText}`);
+      }
+      const mapped = this.mapHotelPropertyToFrontend(json.data);
+      return { success: true, data: mapped };
+    } catch (err) {
+      console.error(`[REST API Error] approveHotel failed:`, err.message);
+      throw err;
+    }
+  }
+
+  // Super Admin API: Reject a hotel with a rejection reason
+  async rejectHotel(id, rejectionReason) {
+    try {
+      const url = `${BASE_URL}/api/hotel-properties/${encodeURIComponent(id)}/reject`;
+      console.log(`[REST API] PATCH ${url}`);
+      const res = await fetch(url, {
+        method: 'PATCH',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ rejectionReason }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(`[HTTP ${res.status}] PATCH ${url} failed: ${json.error || res.statusText}`);
+      }
+      const mapped = this.mapHotelPropertyToFrontend(json.data);
+      return { success: true, data: mapped };
+    } catch (err) {
+      console.error(`[REST API Error] rejectHotel failed:`, err.message);
+      throw err;
+    }
+  }
+
+  async fetchHotels(options = {}) {
+    try {
+      const params = [];
+      if (options.hotelAdminId) params.push(`hotelAdminId=${encodeURIComponent(options.hotelAdminId)}`);
+      if (options.status) params.push(`status=${encodeURIComponent(options.status)}`);
+      const queryStr = params.length > 0 ? `?${params.join('&')}` : '';
+      const url = `${BASE_URL}/api/hotel-properties${queryStr}`;
       console.log(`[REST API] GET ${url}`);
       const res = await fetch(url, { headers: this.getHeaders() });
       const json = await res.json();

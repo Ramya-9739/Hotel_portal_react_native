@@ -176,6 +176,10 @@ class AuthService {
     return this.currentUser?.role === 'superadmin';
   }
 
+  isHotelOwner() {
+    return this.currentUser?.role === 'clientadmin';
+  }
+
   /**
    * Logs out admin and cleans session
    */

@@ -32,10 +32,13 @@ async function seed() {
         adminContactNumber: '+91 98765 00000',
         adminAddress: 'Hotel Portal HQ',
         adminEmail: 'admin@hotelportal.com',
+        role: 'superadmin',
       });
-      console.log('Seeded admin: username "admin" / password "admin123"');
+      console.log('Seeded admin: username "admin" / password "admin123" (role: superadmin)');
     } else {
-      console.log('Admin user already exists.');
+      existingAdmin.role = 'superadmin';
+      await existingAdmin.save();
+      console.log('Admin user exists and ensured role: superadmin.');
     }
 
     // 2. Hotel Property
@@ -49,11 +52,12 @@ async function seed() {
         hotelAddress: '42 MG Road, Ashok Nagar, Bengaluru, Karnataka 560001',
         hotelLatLong: '12.9753,77.6062',
         hotelContactNumber: '+91 98765 43210',
+        status: 'approved',
         paidTill: Date.now() + 365 * 24 * 60 * 60 * 1000,
       },
       { upsert: true, new: true }
     );
-    console.log('Seeded Hotel Property: "The Grand Horizon Palace & Resort" (ID: 1000000001)');
+    console.log('Seeded Hotel Property: "The Grand Horizon Palace & Resort" (ID: 1000000001, status: approved)');
 
     // 3. Sub Components
     const sampleSubComponents = [

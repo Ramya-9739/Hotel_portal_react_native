@@ -138,6 +138,7 @@ export default function AdminDashboardScreen({
   onSetActiveHotel,
   onLaunchGuestWebsite,
   onBackToGuestPortal,
+  onOpenSuperAdmin,
   onLogout,
 }) {
   const { width } = useWindowDimensions();
@@ -548,17 +549,22 @@ export default function AdminDashboardScreen({
       pricePerNight: hotelConfigForm.pricePerNight.trim() || '',
       rating: parseFloat(hotelConfigForm.rating) || null,
       nearby: cur.nearby || undefined,
+      status: cur.status || 'pending',
     };
 
-    const saved = activeHotelService.saveAndActivateHotel(hotelPayload);
+    let saved = activeHotelService.saveAndActivateHotel(hotelPayload);
 
     // Save directly to MongoDB backend via apiService
     try {
       const propId = saved.hotelPropertyId || saved.id || cur.hotelPropertyId || cur.id;
+      let apiRes = null;
       if (propId && !String(propId).startsWith('hotel-')) {
-        await apiService.updateHotel(propId, saved);
+        apiRes = await apiService.updateHotel(propId, saved);
       } else {
-        await apiService.createHotel(saved);
+        apiRes = await apiService.createHotel(saved);
+      }
+      if (apiRes && apiRes.data) {
+        saved = { ...saved, ...apiRes.data };
       }
     } catch (e) {
       console.warn('[AdminDashboard] MongoDB saveHotel warning:', e.message);
@@ -567,7 +573,7 @@ export default function AdminDashboardScreen({
     setCurrentActiveHotel(saved);
     if (onSetActiveHotel) onSetActiveHotel(saved);
 
-    showToast('"' + saved.name + '" saved to MongoDB & activated!', 'success');
+    showToast('Your hotel has been submitted for approval. Please wait for Super Admin approval.', 'info');
 
     // Trigger nearby scan ONLY if coordinates valid AND no places exist yet
     const hasAnyPlaces = Object.values(saved.nearby || {}).some((arr) => Array.isArray(arr) && arr.length > 0);
@@ -583,10 +589,14 @@ export default function AdminDashboardScreen({
     }
 
     if (andLaunchGuest) {
-      if (onLaunchGuestWebsite) {
-        onLaunchGuestWebsite(saved);
-      } else if (onBackToGuestPortal) {
-        onBackToGuestPortal();
+      if (saved.status === 'approved') {
+        if (onLaunchGuestWebsite) {
+          onLaunchGuestWebsite(saved);
+        } else if (onBackToGuestPortal) {
+          onBackToGuestPortal();
+        }
+      } else {
+        showToast('Hotel is pending Super Admin approval. It cannot be launched for guests until approved.', 'info');
       }
     }
   };
@@ -1675,6 +1685,68 @@ export default function AdminDashboardScreen({
 
       {/* Hotel Configuration Form */}
       <View style={styles.configFormCard}>
+        {/* Hotel Approval Status Notice */}
+        <View style={{
+          backgroundColor: currentActiveHotel?.status === 'approved'
+            ? 'rgba(34, 197, 94, 0.12)'
+            : currentActiveHotel?.status === 'rejected'
+            ? 'rgba(239, 68, 68, 0.12)'
+            : 'rgba(245, 158, 11, 0.12)',
+          borderWidth: 1,
+          borderColor: currentActiveHotel?.status === 'approved'
+            ? 'rgba(34, 197, 94, 0.35)'
+            : currentActiveHotel?.status === 'rejected'
+            ? 'rgba(239, 68, 68, 0.35)'
+            : 'rgba(245, 158, 11, 0.35)',
+          borderRadius: 12,
+          padding: 16,
+          marginBottom: 20,
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1.2, color: '#94A3B8', textTransform: 'uppercase' }}>
+              APPROVAL STATUS
+            </Text>
+            <View style={{
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 20,
+              backgroundColor: currentActiveHotel?.status === 'approved'
+                ? '#15803D'
+                : currentActiveHotel?.status === 'rejected'
+                ? '#B91C1C'
+                : '#B45309',
+            }}>
+              <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>
+                {currentActiveHotel?.status === 'approved'
+                  ? 'APPROVED'
+                  : currentActiveHotel?.status === 'rejected'
+                  ? 'REJECTED'
+                  : 'PENDING'}
+              </Text>
+            </View>
+          </View>
+          {currentActiveHotel?.status === 'approved' ? (
+            <Text style={{ color: '#86EFAC', fontSize: 13, lineHeight: 18 }}>
+              ✅ Your hotel has been approved by Super Admin and is publicly active on the guest portal.
+            </Text>
+          ) : currentActiveHotel?.status === 'rejected' ? (
+            <View>
+              <Text style={{ color: '#FCA5A5', fontSize: 13, lineHeight: 18 }}>
+                ❌ Your hotel submission was rejected by Super Admin.
+              </Text>
+              {currentActiveHotel?.rejectionReason ? (
+                <Text style={{ color: '#FECACA', fontSize: 12, marginTop: 4, fontStyle: 'italic' }}>
+                  Reason: {currentActiveHotel.rejectionReason}
+                </Text>
+              ) : null}
+            </View>
+          ) : (
+            <Text style={{ color: '#FCD34D', fontSize: 13, lineHeight: 18 }}>
+              ⏳ Your hotel has been submitted for approval. Please wait for Super Admin approval.
+            </Text>
+          )}
+        </View>
+
         <Text style={styles.configFormTitle}>📝 HOTEL SPECIFICATIONS & GPS ORIGIN</Text>
 
         <View style={styles.formRow}>
@@ -1918,16 +1990,21 @@ export default function AdminDashboardScreen({
             onPress={() => handleSaveHotelConfig(false)}
             activeOpacity={0.8}
           >
-            <Text style={styles.saveOnlyBtnText}>💾 Save Configuration</Text>
+            <Text style={styles.saveOnlyBtnText}>💾 Submit for Approval</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.saveAndLaunchBtn}
+            style={[
+              styles.saveAndLaunchBtn,
+              currentActiveHotel?.status !== 'approved' && { opacity: 0.7, borderColor: '#64748B' }
+            ]}
             onPress={() => handleSaveHotelConfig(true)}
             activeOpacity={0.85}
           >
             <Text style={styles.saveAndLaunchBtnText}>
-              🚀 SAVE HOTEL & LAUNCH GUEST WEBSITE →
+              {currentActiveHotel?.status === 'approved'
+                ? '🚀 LAUNCH GUEST WEBSITE →'
+                : '⏳ SUBMIT HOTEL FOR APPROVAL'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -4050,6 +4127,16 @@ export default function AdminDashboardScreen({
               🚀 Open Guest Website ({currentActiveHotel?.name ? (currentActiveHotel.city || 'Active') : 'Portal'}) →
             </Text>
           </TouchableOpacity>
+
+          {authService.isSuperAdmin() && onOpenSuperAdmin && (
+            <TouchableOpacity
+              style={[styles.logoutBtn, { borderColor: '#D4AF37', backgroundColor: 'rgba(212, 175, 55, 0.15)' }]}
+              onPress={onOpenSuperAdmin}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.logoutBtnText, { color: '#E2C082' }]}>👑 Super Admin</Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
             style={styles.logoutBtn}

@@ -265,13 +265,13 @@ export default function AdminLoginScreen({ onLoginSuccess, onBackToGuestPortal }
     }
   };
 
-  const handleInstantLogin = async () => {
-    setUsername('admin');
-    setPassword('admin123');
+  const handleInstantLogin = async (targetUser = 'admin', targetPass = 'admin123') => {
+    setUsername(targetUser);
+    setPassword(targetPass);
     setErrorMessage('');
     setIsLoading(true);
     try {
-      const result = await authService.login('admin', 'admin123');
+      const result = await authService.login(targetUser, targetPass);
       if (result.success) {
         setIsSuccess(true);
         setTimeout(() => {
@@ -497,18 +497,30 @@ export default function AdminLoginScreen({ onLoginSuccess, onBackToGuestPortal }
                   </View>
                 </View>
 
-                {/* Instant 1-Click Login Box (Requirement 8) */}
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={handleInstantLogin}
-                  className="quick-fill-pill"
-                  style={styles.quickFillPill}
-                >
-                  <Text style={styles.quickFillIcon}>⚡</Text>
-                  <Text style={styles.quickFillText}>
-                    Instant One-Click Login: <Text style={styles.highlightText}>admin / admin123</Text>
-                  </Text>
-                </TouchableOpacity>
+                {/* Instant 1-Click Login Options for Roles */}
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => handleInstantLogin('admin', 'admin123')}
+                    style={[styles.quickFillPill, { flex: 1, marginBottom: 0 }]}
+                  >
+                    <Text style={styles.quickFillIcon}>👑</Text>
+                    <Text style={styles.quickFillText} numberOfLines={1}>
+                      Super Admin: <Text style={styles.highlightText}>admin</Text>
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => handleInstantLogin('client', 'client123')}
+                    style={[styles.quickFillPill, { flex: 1, marginBottom: 0 }]}
+                  >
+                    <Text style={styles.quickFillIcon}>🏨</Text>
+                    <Text style={styles.quickFillText} numberOfLines={1}>
+                      Hotel Owner: <Text style={styles.highlightText}>client</Text>
+                    </Text>
+                  </TouchableOpacity>
+                </View>
 
                 {/* Login Button with Hover & Success State (Requirement 7) */}
                 <TouchableOpacity

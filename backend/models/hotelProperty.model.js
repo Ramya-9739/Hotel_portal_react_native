@@ -16,6 +16,13 @@ const hotelPropertySchema = new mongoose.Schema(
     paymentMethods: [{ type: String }],
     availability: { type: String, default: "Available" },
     paidTill: { type: Number }, // epoch millis/seconds, your convention
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+      index: true,
+    },
+    rejectionReason: { type: String, default: "" },
   },
   { timestamps: true }
 );

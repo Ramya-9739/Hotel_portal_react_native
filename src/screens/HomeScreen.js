@@ -145,8 +145,8 @@ export default function HomeScreen({
   const loadData = async () => {
     setIsSyncing(true);
     try {
-      // 1. Fetch live hotels from MongoDB
-      const hRes = await apiService.fetchHotels();
+      // 1. Fetch ONLY approved hotels from MongoDB public endpoint
+      const hRes = await apiService.fetchPublicHotels();
       let currentActive = activeHotel;
       if (hRes && hRes.success && Array.isArray(hRes.data) && hRes.data.length > 0) {
         setHotelsList(hRes.data);

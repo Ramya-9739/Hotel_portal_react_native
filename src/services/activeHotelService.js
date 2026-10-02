@@ -332,7 +332,8 @@ class ActiveHotelService {
   async syncFromBackend() {
     try {
       const { apiService } = await import('./apiService.js');
-      const res = await apiService.fetchHotels();
+      // Strictly load ONLY approved hotels for the public guest experience
+      const res = await apiService.fetchPublicHotels();
       if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
         this.customHotels = res.data;
         const currentId = this.activeHotel?.hotelPropertyId || this.activeHotel?.id || this.activeHotel?._id;
@@ -503,6 +504,11 @@ class ActiveHotelService {
       }
       this.notify();
       return null;
+    }
+    // Only approved hotels can be activated for the public guest portal
+    if (hotel.status && hotel.status !== 'approved') {
+      console.log(`[ActiveHotelService] Hotel status is "${hotel.status}", not activating for public guests.`);
+      return hotel;
     }
     this.activeHotel = hotel;
     if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
@@ -815,6 +821,8 @@ class ActiveHotelService {
       customCategories: Array.isArray(hotelData.customCategories)
         ? hotelData.customCategories
         : (this.activeHotel?.customCategories || []),
+      status: hotelData.status || 'pending',
+      rejectionReason: hotelData.rejectionReason || '',
     };
 
     // Persist to custom hotels list
@@ -836,7 +844,10 @@ class ActiveHotelService {
       apiService.createHotel(newHotel).catch(() => { });
     }).catch(() => { });
 
-    return this.setActiveHotel(newHotel);
+    if (newHotel.status === 'approved') {
+      return this.setActiveHotel(newHotel);
+    }
+    return newHotel;
   }
 
   /**
