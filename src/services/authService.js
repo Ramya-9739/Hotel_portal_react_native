@@ -37,6 +37,11 @@ class AuthService {
           this.token = storedToken;
           this.currentUser = JSON.parse(storedUser);
           console.log('[AuthService] Restored admin session for:', this.currentUser.username);
+          try {
+            import('./apiService.js').then(({ apiService }) => {
+              apiService.setAuthToken(storedToken);
+            });
+          } catch (e) {}
         }
       } catch (e) {
         console.warn('[AuthService] Failed to read stored session:', e);
@@ -178,6 +183,47 @@ class AuthService {
 
   isHotelOwner() {
     return this.currentUser?.role === 'clientadmin';
+  }
+
+  /**
+   * Registers a new administrator (Hotel Admin or Super Admin)
+   */
+  async register({ username, password, email, contactNumber, address, role = 'clientadmin' }) {
+    const userTrim = (username || '').trim().toLowerCase();
+    const passTrim = (password || '').trim();
+
+    if (!userTrim || !passTrim) {
+      return { success: false, error: 'Username and password are required.' };
+    }
+
+    try {
+      const response = await fetch(`${AUTH_API_URL}/register`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          hotelAdminId: `admin_${Date.now()}`,
+          username: userTrim,
+          password: passTrim,
+          adminEmail: email || `${userTrim}@hotelportal.com`,
+          adminContactNumber: contactNumber || '+91 98765 43210',
+          adminAddress: address || 'Hotel Property Office',
+          role: role || 'clientadmin',
+        }),
+      });
+
+      const json = await response.json();
+      if (response.ok && json.success) {
+        return { success: true, data: json.data };
+      } else {
+        return { success: false, error: json.error || json.message || 'Registration failed' };
+      }
+    } catch (err) {
+      console.warn('[AuthService] Registration request failed:', err.message);
+      return { success: false, error: 'Backend server not reachable for registration.' };
+    }
   }
 
   /**

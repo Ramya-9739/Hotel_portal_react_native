@@ -178,10 +178,10 @@ export default function BookingModal({
   // Dietary Options (mainly for dining)
   const dietaryOptions = [
     'Standard / No Restrictions',
-    'Vegetarian 🥗',
-    'Vegan 🌱',
-    'Gluten-Free 🌾',
-    'Halal 🥩',
+    'Vegetarian',
+    'Vegan',
+    'Gluten-Free',
+    'Halal',
     'Jain Dietary',
   ];
 
@@ -239,7 +239,7 @@ export default function BookingModal({
   // WhatsApp Share Handler
   const handleShareWhatsApp = () => {
     if (!confirmedBooking) return;
-    const text = `🛎️ *${isHotel ? 'HOTEL SUITE RESERVATION' : 'HOTEL CONCIERGE VIP RESERVATION'}*\nRef: ${confirmedBooking.id}\nHotel/Venue: ${confirmedBooking.componentTitle}\nGuest: ${confirmedBooking.guestName}\nPhone: ${confirmedBooking.phone || 'N/A'}\nDates: ${confirmedBooking.bookingDate}\nArrival/Time: ${confirmedBooking.timeSlot}\nGuests: ${confirmedBooking.guestCount}\nSuite/Experience: ${confirmedBooking.experienceType}\nStatus: ${confirmedBooking.status}`;
+    const text = `*${isHotel ? 'HOTEL SUITE RESERVATION' : 'HOTEL CONCIERGE VIP RESERVATION'}*\nRef: ${confirmedBooking.id}\nHotel/Venue: ${confirmedBooking.componentTitle}\nGuest: ${confirmedBooking.guestName}\nPhone: ${confirmedBooking.phone || 'N/A'}\nDates: ${confirmedBooking.bookingDate}\nArrival/Time: ${confirmedBooking.timeSlot}\nGuests: ${confirmedBooking.guestCount}\nSuite/Experience: ${confirmedBooking.experienceType}\nStatus: ${confirmedBooking.status}`;
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     if (Platform.OS === 'web') {
       window.open(url, '_blank');
@@ -264,7 +264,7 @@ export default function BookingModal({
           <View style={styles.modalHeader}>
             <View style={styles.headerTitleColumn}>
               <View style={styles.badgeRow}>
-                <Text style={styles.headerIcon}>🛎️</Text>
+                <Text style={styles.headerIcon}>✦</Text>
                 <Text style={styles.headerBadgeText}>
                   {confirmedBooking
                     ? 'BOOKING CONFIRMED'
@@ -373,7 +373,7 @@ export default function BookingModal({
 
                   {/* Concierge Assurance Bar */}
                   <View style={styles.assuranceBar}>
-                    <Text style={styles.assuranceIcon}>🛎️</Text>
+                    <Text style={styles.assuranceIcon}>✓</Text>
                     <Text style={styles.assuranceText}>
                       Our Concierge Desk has received this request. You can also pick up physical VIP passes at the Main Lobby Concierge Counter.
                     </Text>
@@ -387,7 +387,7 @@ export default function BookingModal({
                     onPress={handleShareWhatsApp}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.whatsappButtonText}>📱 Share to WhatsApp</Text>
+                    <Text style={styles.whatsappButtonText}>Share to WhatsApp</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -411,7 +411,7 @@ export default function BookingModal({
                   <View style={styles.venueDetails}>
                     <Text style={styles.venueName} numberOfLines={1}>{component.title}</Text>
                     <Text style={styles.venueLoc} numberOfLines={1}>
-                      📍 {component.location || 'Near Hotel'} • ⭐ {component.customerRatings || component.rating || '4.9'}
+                      {component.location || 'Near Hotel'} • Rating: {component.customerRatings || component.rating || '4.9'}
                     </Text>
                   </View>
                 </View>
@@ -419,14 +419,14 @@ export default function BookingModal({
                 {/* Error Banner */}
                 {errorMessage ? (
                   <View style={styles.errorBox}>
-                    <Text style={styles.errorBoxText}>⚠️ {errorMessage}</Text>
+                    <Text style={styles.errorBoxText}>{errorMessage}</Text>
                   </View>
                 ) : null}
 
                 {/* Official Registration & Direct Links */}
                 {isHotel ? (
                   <View style={styles.registrationLinksContainer}>
-                    <Text style={styles.registrationLinksTitle}>🔗 DIRECT REGISTRATION & RESERVATION LINKS</Text>
+                    <Text style={styles.registrationLinksTitle}>DIRECT REGISTRATION & RESERVATION LINKS</Text>
                     <View style={styles.registrationLinksRow}>
                       <TouchableOpacity
                         style={styles.registrationLinkCard}
@@ -437,7 +437,7 @@ export default function BookingModal({
                         }}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.registrationLinkIcon}>🌐</Text>
+                        <Text style={styles.registrationLinkIcon}>↗</Text>
                         <View style={{ flex: 1 }}>
                           <Text style={styles.registrationLinkText}>Official Hotel Link</Text>
                           <Text style={styles.registrationLinkSub}>Direct property location & site</Text>
@@ -454,7 +454,7 @@ export default function BookingModal({
                         }}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.registrationLinkIcon}>🏨</Text>
+                        <Text style={styles.registrationLinkIcon}>↗</Text>
                         <View style={{ flex: 1 }}>
                           <Text style={styles.registrationLinkText}>Booking.com Listing</Text>
                           <Text style={styles.registrationLinkSub}>Verified rates & instant check-in</Text>
@@ -470,7 +470,7 @@ export default function BookingModal({
                         }}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.registrationLinkIcon}>📞</Text>
+                        <Text style={styles.registrationLinkIcon}>↗</Text>
                         <View style={{ flex: 1 }}>
                           <Text style={styles.registrationLinkText}>Front Desk Direct Line</Text>
                           <Text style={styles.registrationLinkSub}>+91 821 241 5566 (24/7 Concierge)</Text>
@@ -574,7 +574,7 @@ export default function BookingModal({
                     activeOpacity={0.75}
                   >
                     <Text style={[styles.pillBtnText, dateMode === 'today' && styles.pillBtnTextActive]}>
-                      📅 Today
+                      Today
                     </Text>
                     <Text style={[styles.pillSubText, dateMode === 'today' && styles.pillSubTextActive]}>
                       {todayStr}
@@ -587,7 +587,7 @@ export default function BookingModal({
                     activeOpacity={0.75}
                   >
                     <Text style={[styles.pillBtnText, dateMode === 'tomorrow' && styles.pillBtnTextActive]}>
-                      📅 Tomorrow
+                      Tomorrow
                     </Text>
                     <Text style={[styles.pillSubText, dateMode === 'tomorrow' && styles.pillSubTextActive]}>
                       {tomorrowStr}
@@ -600,7 +600,7 @@ export default function BookingModal({
                     activeOpacity={0.75}
                   >
                     <Text style={[styles.pillBtnText, dateMode === 'custom' && styles.pillBtnTextActive]}>
-                      🗓️ Custom Date
+                      Custom Date
                     </Text>
                     <Text style={[styles.pillSubText, dateMode === 'custom' && styles.pillSubTextActive]}>
                       Pick Date & Nights
@@ -683,7 +683,7 @@ export default function BookingModal({
                     {/* Calculation summary banner */}
                     <View style={styles.dateSummaryChip}>
                       <Text style={styles.dateSummaryText}>
-                        ✨ Check-in: <Text style={styles.goldHighlight}>{computedCheckInFormatted}</Text> ➔ Check-out: <Text style={styles.goldHighlight}>{computedCheckOut}</Text> ({nightsCount} {nightsCount === 1 ? 'Night' : 'Nights'})
+                        Check-in: <Text style={styles.goldHighlight}>{computedCheckInFormatted}</Text> ➔ Check-out: <Text style={styles.goldHighlight}>{computedCheckOut}</Text> ({nightsCount} {nightsCount === 1 ? 'Night' : 'Nights'})
                       </Text>
                     </View>
                   </View>

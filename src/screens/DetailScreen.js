@@ -146,7 +146,7 @@ export default function DetailScreen({ component, hotel, onBack }) {
             onPress={() => setBookingModalVisible(true)}
             activeOpacity={0.8}
           >
-            <Text style={styles.bookNavIcon}>🛎️</Text>
+            <Text style={styles.bookNavIcon}>✦</Text>
             <Text style={styles.bookNavText}>Book / Reserve</Text>
           </TouchableOpacity>
 
@@ -156,7 +156,7 @@ export default function DetailScreen({ component, hotel, onBack }) {
             onPress={() => setScanModalVisible(true)}
             activeOpacity={0.8}
           >
-            <Text style={styles.scanNavIcon}>📱</Text>
+            <Text style={styles.scanNavIcon}>⌕</Text>
             <Text style={styles.scanNavText}>Scan to Phone</Text>
           </TouchableOpacity>
 
@@ -228,7 +228,7 @@ export default function DetailScreen({ component, hotel, onBack }) {
                     onPress={() => setBookingModalVisible(true)}
                     activeOpacity={0.85}
                   >
-                    <Text style={styles.heroBookBtnIcon}>🛎️</Text>
+                    <Text style={styles.heroBookBtnIcon}>✦</Text>
                     <Text style={styles.heroBookBtnText}>
                       {parseInt(component?.componentType, 10) === 4
                         ? 'Reserve Table'
@@ -316,7 +316,7 @@ export default function DetailScreen({ component, hotel, onBack }) {
             onPress={() => setBookingModalVisible(true)}
             activeOpacity={0.88}
           >
-            <Text style={styles.prominentRegisterIcon}>📝</Text>
+            <Text style={styles.prominentRegisterIcon}>✦</Text>
             <Text style={styles.prominentRegisterText}>REGISTER / BOOK NOW</Text>
             <Text style={styles.prominentRegisterArrow}>➔</Text>
           </TouchableOpacity>
@@ -326,7 +326,7 @@ export default function DetailScreen({ component, hotel, onBack }) {
         <View style={styles.routeNavigationCard}>
           <View style={styles.routeNavigationHeader}>
             <View style={styles.routeNavigationTitleRow}>
-              <Text style={styles.routeNavigationIcon}>🧭</Text>
+              <Text style={styles.routeNavigationIcon}>◈</Text>
               <View>
                 <Text style={styles.routeNavigationTitle}>START ➔ ENDING POINT NAVIGATION & DIRECTIONS</Text>
                 <Text style={styles.routeNavigationSubtitle}>
@@ -335,7 +335,7 @@ export default function DetailScreen({ component, hotel, onBack }) {
               </View>
             </View>
             <View style={styles.distanceBadge}>
-              <Text style={styles.distanceBadgeText}>📍 {cleanDistance}</Text>
+              <Text style={styles.distanceBadgeText}>{cleanDistance}</Text>
             </View>
           </View>
 
@@ -347,7 +347,7 @@ export default function DetailScreen({ component, hotel, onBack }) {
                 <Text style={styles.pointDotLetter}>A</Text>
               </View>
               <View style={styles.pointContent}>
-                <Text style={styles.pointTypeStart}>🟢 STARTING POINT (HOTEL ORIGIN)</Text>
+                <Text style={styles.pointTypeStart}>STARTING POINT (HOTEL ORIGIN)</Text>
                 <Text style={styles.pointName}>{originName}</Text>
                 <Text style={styles.pointAddress}>{originAddress}</Text>
               </View>
@@ -358,13 +358,13 @@ export default function DetailScreen({ component, hotel, onBack }) {
               <View style={styles.routeConnectorLine} />
               <View style={styles.travelChipsRow}>
                 <View style={styles.travelChip}>
-                  <Text style={styles.travelChipText}>🚗 Drive: {driveTime}</Text>
+                  <Text style={styles.travelChipText}>Drive: {driveTime}</Text>
                 </View>
                 <View style={styles.travelChip}>
-                  <Text style={styles.travelChipText}>🛺 Auto: {autoTime}</Text>
+                  <Text style={styles.travelChipText}>Auto: {autoTime}</Text>
                 </View>
                 <View style={styles.travelChip}>
-                  <Text style={styles.travelChipText}>🚶 Walk: {walkTime}</Text>
+                  <Text style={styles.travelChipText}>Walk: {walkTime}</Text>
                 </View>
               </View>
             </View>
@@ -375,7 +375,7 @@ export default function DetailScreen({ component, hotel, onBack }) {
                 <Text style={styles.pointDotLetter}>B</Text>
               </View>
               <View style={styles.pointContent}>
-                <Text style={styles.pointTypeEnd}>🔴 ENDING POINT (DESTINATION)</Text>
+                <Text style={styles.pointTypeEnd}>ENDING POINT (DESTINATION)</Text>
                 <Text style={styles.pointName}>{component.title || details.title}</Text>
                 <Text style={styles.pointAddress}>
                   {component.location || details.location || component.address || originCity}
@@ -404,7 +404,7 @@ export default function DetailScreen({ component, hotel, onBack }) {
               onPress={handleOpenGoogleMaps}
               activeOpacity={0.85}
             >
-              <Text style={styles.googleMapsIcon}>🗺️</Text>
+              <Text style={styles.googleMapsIcon}>↗</Text>
               <Text style={styles.googleMapsText}>Open in Google Maps Live Navigation</Text>
               <Text style={styles.googleMapsArrow}>➔</Text>
             </TouchableOpacity>
@@ -414,7 +414,7 @@ export default function DetailScreen({ component, hotel, onBack }) {
               onPress={() => setChauffeurModalVisible(true)}
               activeOpacity={0.85}
             >
-              <Text style={styles.chauffeurRideIcon}>🚗</Text>
+              <Text style={styles.chauffeurRideIcon}>➔</Text>
               <Text style={styles.chauffeurRideText}>Book Chauffeur Ride</Text>
             </TouchableOpacity>
           </View>
@@ -702,7 +702,7 @@ export default function DetailScreen({ component, hotel, onBack }) {
         <View style={styles.bookingPromptCard}>
           <View style={styles.bookingPromptHeader}>
             <View style={styles.bookingPromptIconCircle}>
-              <Text style={styles.bookingPromptIcon}>🛎️</Text>
+              <Text style={styles.bookingPromptIcon}>✦</Text>
             </View>
             <View style={styles.bookingPromptTitles}>
               <Text style={styles.bookingPromptTitle}>
@@ -721,7 +721,7 @@ export default function DetailScreen({ component, hotel, onBack }) {
             onPress={() => setBookingModalVisible(true)}
             activeOpacity={0.85}
           >
-            <Text style={styles.openBookingFormIcon}>✍️</Text>
+            <Text style={styles.openBookingFormIcon}>✦</Text>
             <Text style={styles.openBookingFormText}>Fill Details & Confirm Reservation</Text>
             <Text style={styles.openBookingFormArrow}>→</Text>
           </TouchableOpacity>
@@ -743,7 +743,7 @@ export default function DetailScreen({ component, hotel, onBack }) {
               activeOpacity={0.8}
             >
               <Text style={styles.primaryActionText}>
-                {bookingSuccess ? '✓ Reservation Logged' : '🛎️ Fill Details & Book Now'}
+                {bookingSuccess ? '✓ Reservation Logged' : 'Fill Details & Book Now'}
               </Text>
             </TouchableOpacity>
 
@@ -752,7 +752,7 @@ export default function DetailScreen({ component, hotel, onBack }) {
               onPress={() => setChauffeurModalVisible(true)}
               activeOpacity={0.8}
             >
-              <Text style={styles.secondaryActionText}>🚗 Book Private Chauffeur</Text>
+              <Text style={styles.secondaryActionText}>Book Private Chauffeur</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -760,7 +760,7 @@ export default function DetailScreen({ component, hotel, onBack }) {
               onPress={() => setScanModalVisible(true)}
               activeOpacity={0.85}
             >
-              <Text style={styles.scanFooterIcon}>📱</Text>
+              <Text style={styles.scanFooterIcon}>⌕</Text>
               <Text style={styles.scanFooterText}>Scan QR / GPS Route & VIP Pass</Text>
             </TouchableOpacity>
 

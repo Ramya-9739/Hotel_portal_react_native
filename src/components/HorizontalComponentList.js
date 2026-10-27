@@ -407,8 +407,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(226, 192, 130, 0.14)',
     paddingHorizontal: 8,
-    paddingVertical: 2.5,
-    marginVertical: 1,
+    paddingVertical: 1.5,
+    marginVertical: 0.5,
     flexShrink: 0,
     ...Platform.select({
       web: {

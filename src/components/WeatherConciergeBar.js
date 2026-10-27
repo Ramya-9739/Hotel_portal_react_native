@@ -56,7 +56,7 @@ export default function WeatherConciergeBar({
       {/* Left: Atmospheric Weather & Sunset Indicators */}
       <View style={styles.weatherLeft}>
         <View style={styles.weatherItem}>
-          <Text style={styles.weatherIcon}>☀️</Text>
+          <Text style={styles.weatherGlyph}>☼</Text>
           <Text style={styles.tempText}>29°C</Text>
           <Text style={styles.weatherCondition}>{t.weatherSunny}</Text>
         </View>
@@ -64,20 +64,21 @@ export default function WeatherConciergeBar({
         <View style={styles.divider} />
 
         <View style={styles.breezeItem}>
-          <Text style={styles.breezeIcon}>🌊</Text>
+          <Text style={styles.breezeGlyph}>≋</Text>
           <Text style={styles.breezeText}>{t.weatherBreeze}</Text>
         </View>
 
         <View style={styles.divider} />
 
         <View style={styles.sunsetItem}>
-          <Text style={styles.sunsetIcon}>🌇</Text>
+          <Text style={styles.sunsetGlyph}>◓</Text>
           <Text style={styles.sunsetText}>{t.sunsetAt}</Text>
         </View>
       </View>
 
       {/* Center: Smart Time-of-Day Concierge Tip Pill */}
       <View style={styles.recommendationPill}>
+        <Text style={styles.conciergeTag}>CONCIERGE</Text>
         <Text style={styles.recommendationText} numberOfLines={1}>
           {getRecommendationText()}
         </Text>
@@ -129,8 +130,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  weatherIcon: {
-    fontSize: 12,
+  weatherGlyph: {
+    fontSize: 13,
+    color: '#FDE68A',
+    fontWeight: '700',
   },
   tempText: {
     color: '#FDE68A',
@@ -155,8 +158,10 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
-  breezeIcon: {
-    fontSize: 11,
+  breezeGlyph: {
+    fontSize: 12,
+    color: '#BAE6FD',
+    fontWeight: '700',
   },
   breezeText: {
     color: '#BAE6FD',
@@ -168,8 +173,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  sunsetIcon: {
-    fontSize: 11,
+  sunsetGlyph: {
+    fontSize: 12,
+    color: '#FBBF24',
+    fontWeight: '700',
   },
   sunsetText: {
     color: '#FBBF24',
@@ -178,6 +185,7 @@ const styles = StyleSheet.create({
   },
   recommendationPill: {
     flex: 1,
+    flexDirection: 'row',
     backgroundColor: 'rgba(99, 102, 241, 0.12)',
     borderWidth: 1,
     borderColor: 'rgba(99, 102, 241, 0.3)',
@@ -187,6 +195,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
+  },
+  conciergeTag: {
+    color: '#E2C082',
+    fontSize: 8.5,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    backgroundColor: 'rgba(226, 192, 130, 0.15)',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
   },
   recommendationText: {
     color: '#C7D2FE',

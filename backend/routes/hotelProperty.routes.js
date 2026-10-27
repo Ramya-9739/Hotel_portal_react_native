@@ -12,7 +12,8 @@ router.get("/pending", authMiddleware, requireSuperAdmin, ctrl.getPending);
 router.patch("/:id/approve", authMiddleware, requireSuperAdmin, ctrl.approve);
 router.patch("/:id/reject", authMiddleware, requireSuperAdmin, ctrl.reject);
 
-// 3. Hotel Directory & Specific Item
+// 3. Hotel Directory & Search
+router.get("/search", ctrl.search);
 router.get("/", ctrl.getAll);
 router.get("/:id", ctrl.getById);
 

@@ -247,13 +247,13 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'column',
     backgroundColor: '#111217',
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(226, 192, 130, 0.16)',
-    padding: 10,
+    padding: 6,
     justifyContent: 'space-between',
     height: '100%',
-    minHeight: 280,
+    minHeight: 160,
     ...Platform.select({
       web: {
         boxShadow: '0 8px 30px rgba(0, 0, 0, 0.45)',
@@ -323,24 +323,24 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     gap: 8,
-    minHeight: 220,
+    minHeight: 140,
   },
   mainRowMobile: {
     flexDirection: 'column',
-    minHeight: 480,
+    minHeight: 400,
   },
 
   // LEFT SIDE: Image Card (Wider and cinematic)
   leftImageCard: {
     flex: 55,
-    borderRadius: 10,
+    borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(226, 192, 130, 0.2)',
     backgroundColor: '#16181F',
     position: 'relative',
     height: '100%',
-    minHeight: 200,
+    minHeight: 130,
     ...Platform.select({
       web: {
         cursor: 'pointer',
@@ -474,17 +474,17 @@ const styles = StyleSheet.create({
   rightMapCard: {
     flex: 45,
     backgroundColor: '#16181F',
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(226, 192, 130, 0.18)',
     overflow: 'hidden',
     height: '100%',
-    minHeight: 200,
+    minHeight: 130,
   },
   rightMapCardMobile: {
     flex: 0,
-    height: 240,
-    minHeight: 200,
+    height: 220,
+    minHeight: 180,
     marginTop: 8,
   },
 });

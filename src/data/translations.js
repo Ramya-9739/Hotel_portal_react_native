@@ -36,10 +36,10 @@ export const TRANSLATIONS = {
     weatherSunny: 'Pleasant & Sunny 26°C',
     weatherBreeze: 'Gentle Evening Breeze',
     sunsetAt: 'Sunset at 6:45 PM',
-    recommendationMorning: '🌅 Morning: Enjoy artisanal breakfast at the hotel or scenic morning walks.',
-    recommendationAfternoon: '☀️ Afternoon: Explore premier shopping destinations and local craft ateliers.',
-    recommendationEvening: '🌇 Evening: Stroll through illuminated evening landmarks and city squares.',
-    recommendationNight: '🌙 Night: Fine dining and relaxation in our lounge and tranquil courtyards.',
+    recommendationMorning: 'Morning: Enjoy artisanal breakfast at the hotel or scenic morning walks.',
+    recommendationAfternoon: 'Afternoon: Explore premier shopping destinations and local craft ateliers.',
+    recommendationEvening: 'Evening: Stroll through illuminated evening landmarks and city squares.',
+    recommendationNight: 'Night: Fine dining and relaxation in our lounge and tranquil courtyards.',
 
     // Card Details
     rating: 'rating',
@@ -75,10 +75,10 @@ export const TRANSLATIONS = {
     weatherSunny: 'सुहाना व धूपदार 26°C',
     weatherBreeze: 'सुखद ठंडी हवा',
     sunsetAt: 'सूर्यास्त शाम 6:45 बजे',
-    recommendationMorning: '🌅 सुबह की पसंद: होटल में ताजा नाश्ते का आनंद लें या सुबह की सैर करें।',
-    recommendationAfternoon: '☀️ दोपहर की पसंद: स्थानीय शॉपिंग मॉल एवं बाजारों में खरीदारी करें।',
-    recommendationEvening: '🌇 शाम की पसंद: दर्शनीय स्थलों और फव्वारों की रोशनी देखें।',
-    recommendationNight: '🌙 रात की पसंद: रूफटॉप डिनर और कोर्टयार्ड में शांति का आनंद लें।',
+    recommendationMorning: 'सुबह की पसंद: होटल में ताजा नाश्ते का आनंद लें या सुबह की सैर करें।',
+    recommendationAfternoon: 'दोपहर की पसंद: स्थानीय शॉपिंग मॉल एवं बाजारों में खरीदारी करें।',
+    recommendationEvening: 'शाम की पसंद: दर्शनीय स्थलों और फव्वारों की रोशनी देखें।',
+    recommendationNight: 'रात की पसंद: रूफटॉप डिनर और कोर्टयार्ड में शांति का आनंद लें।',
 
     // Card Details
     rating: 'रेटिंग',
@@ -114,10 +114,10 @@ export const TRANSLATIONS = {
     weatherSunny: 'مشمس ولطيف 26°م',
     weatherBreeze: 'نسيم عليل ومنعش',
     sunsetAt: 'غروب الشمس 6:45 مساءً',
-    recommendationMorning: '🌅 خيار الصباح: إفطار شهي في الفندق وجولة صباحية منعشة.',
-    recommendationAfternoon: '☀️ خيار الظهيرة: تسوق في أشهر المراكز التجارية والأسواق.',
-    recommendationEvening: '🌇 خيار الغروب: الاستمتاع بإضاءة المعالم والساحات المسائية.',
-    recommendationNight: '🌙 خيار الليل: عشاء راقٍ والاسترخاء في حدائق الفندق.',
+    recommendationMorning: 'خيار الصباح: إفطار شهي في الفندق وجولة صباحية منعشة.',
+    recommendationAfternoon: 'خيار الظهيرة: تسوق في أشهر المراكز التجارية والأسواق.',
+    recommendationEvening: 'خيار الغروب: الاستمتاع بإضاءة المعالم والساحات المسائية.',
+    recommendationNight: 'خيار الليل: عشاء راقٍ والاسترخاء في حدائق الفندق.',
 
     // Card Details
     rating: 'تقييم',
@@ -153,10 +153,10 @@ export const TRANSLATIONS = {
     weatherSunny: 'Ensoleillé et Agréable 26°C',
     weatherBreeze: 'Brise Douce et Agréable',
     sunsetAt: 'Coucher du Soleil à 18h45',
-    recommendationMorning: '🌅 Matinée: Petit-déjeuner artisanal à l’hôtel ou promenade matinale.',
-    recommendationAfternoon: '☀️ Après-midi: Découvrez les boutiques de luxe et centres commerciaux.',
-    recommendationEvening: '🌇 Soirée: Admirez les monuments illuminés et places animées.',
-    recommendationNight: '🌙 Nuit: Dîner gastronomique et détente dans les jardins intérieurs.',
+    recommendationMorning: 'Matinée: Petit-déjeuner artisanal à l’hôtel ou promenade matinale.',
+    recommendationAfternoon: 'Après-midi: Découvrez les boutiques de luxe et centres commerciaux.',
+    recommendationEvening: 'Soirée: Admirez les monuments illuminés et places animées.',
+    recommendationNight: 'Nuit: Dîner gastronomique et détente dans les jardins intérieurs.',
 
     // Card Details
     rating: 'note',
@@ -192,10 +192,10 @@ export const TRANSLATIONS = {
     weatherSunny: 'Soleado y Agradable 26°C',
     weatherBreeze: 'Brisa Suave y Fresca',
     sunsetAt: 'Puesta del Sol a las 18:45',
-    recommendationMorning: '🌅 Mañana: Desayuno artesanal en el hotel o paseo matutino panorámico.',
-    recommendationAfternoon: '☀️ Tarde: Explore boutiques de diseño y centros comerciales destacados.',
-    recommendationEvening: '🌇 Atardecer: Disfrute de los monumentos iluminados y plazas.',
-    recommendationNight: '🌙 Noche: Cena gourmet en la azotea o relajación en el patio con jardín.',
+    recommendationMorning: 'Mañana: Desayuno artesanal en el hotel o paseo matutino panorámico.',
+    recommendationAfternoon: 'Tarde: Explore boutiques de diseño y centros comerciales destacados.',
+    recommendationEvening: 'Atardecer: Disfrute de los monumentos iluminados y plazas.',
+    recommendationNight: 'Noche: Cena gourmet en la azotea o relajación en el patio con jardín.',
 
     // Card Details
     rating: 'calificación',

@@ -36,13 +36,58 @@ const getPending = async (req, res) => {
   }
 };
 
-// GET /api/hotel-properties?hotelAdminId=xxx&status=xxx
+// GET /api/hotel-properties/search?q=...&status=...&hotelAdminId=...&limit=20
+const search = async (req, res) => {
+  try {
+    const { q, query, status, hotelAdminId, limit = 20 } = req.query;
+    const searchParam = (q || query || "").trim();
+
+    const filter = {};
+    if (status) filter.status = status;
+    if (hotelAdminId) filter.hotelAdminId = hotelAdminId;
+
+    if (searchParam) {
+      // Escape regex special chars to prevent regex injection
+      const escaped = searchParam.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escaped, "i");
+      filter.$or = [
+        { hotelName: regex },
+        { city: regex },
+        { hotelAddress: regex },
+        { hotelPropertyId: regex },
+      ];
+    }
+
+    const maxLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 50);
+    const items = await HotelProperty.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(maxLimit);
+
+    sendSuccess(res, items);
+  } catch (err) {
+    sendError(res, err.message);
+  }
+};
+
+// GET /api/hotel-properties?hotelAdminId=xxx&status=xxx&search=xxx
 const getAll = async (req, res) => {
   try {
-    const { hotelAdminId, status } = req.query;
+    const { hotelAdminId, status, search: searchQ, q } = req.query;
     const filter = {};
     if (hotelAdminId) filter.hotelAdminId = hotelAdminId;
     if (status) filter.status = status;
+
+    const searchTerm = (searchQ || q || "").trim();
+    if (searchTerm) {
+      const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escaped, "i");
+      filter.$or = [
+        { hotelName: regex },
+        { city: regex },
+        { hotelAddress: regex },
+        { hotelPropertyId: regex },
+      ];
+    }
 
     const items = await HotelProperty.find(filter).sort({ createdAt: -1 });
     sendSuccess(res, items);
@@ -191,6 +236,7 @@ module.exports = {
   getPublic,
   getPending,
   getAll,
+  search,
   getById,
   create,
   update,

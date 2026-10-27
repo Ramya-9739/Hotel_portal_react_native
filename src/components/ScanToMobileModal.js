@@ -44,7 +44,7 @@ export default function ScanToMobileModal({
 
   // Prefilled WhatsApp message
   const whatsappText = encodeURIComponent(
-    `Hello! Here is the route and Hotel Guest Privilege Pass for *${targetItem.title}*:\n📍 Directions: ${googleMapsUrl}\n🎟️ Resident Pass Code: ${passCode}`
+    `Hello! Here is the route and Hotel Guest Privilege Pass for *${targetItem.title}*:\nDirections: ${googleMapsUrl}\nResident Pass Code: ${passCode}`
   );
   const whatsappUrl = `https://wa.me/?text=${whatsappText}`;
 
@@ -73,7 +73,7 @@ export default function ScanToMobileModal({
           <View style={styles.headerBar}>
             <View style={styles.headerLeft}>
               <View style={styles.crestCircle}>
-                <Text style={styles.crestIcon}>📱</Text>
+                <Text style={styles.crestIcon}>✦</Text>
               </View>
               <View>
                 <Text style={styles.brandTitle}>{hotelName.toUpperCase()} CONCIERGE</Text>
@@ -118,7 +118,7 @@ export default function ScanToMobileModal({
                 />
               </View>
               <Text style={styles.scanHelper}>
-                📷 Point your phone camera to scan directions
+                Point your phone camera to scan directions
               </Text>
 
               {/* Direct Buttons */}
@@ -128,7 +128,7 @@ export default function ScanToMobileModal({
                   onPress={handleOpenMaps}
                   style={styles.btnMaps}
                 >
-                  <Text style={styles.btnMapsIcon}>🗺️</Text>
+                  <Text style={styles.btnMapsIcon}>↗</Text>
                   <Text style={styles.btnMapsText}>Open Google Maps</Text>
                 </TouchableOpacity>
 
@@ -137,7 +137,7 @@ export default function ScanToMobileModal({
                   onPress={handleShareWhatsApp}
                   style={styles.btnWhatsApp}
                 >
-                  <Text style={styles.btnWhatsAppIcon}>💬</Text>
+                  <Text style={styles.btnWhatsAppIcon}>➔</Text>
                   <Text style={styles.btnWhatsAppText}>WhatsApp</Text>
                 </TouchableOpacity>
               </View>
@@ -146,7 +146,7 @@ export default function ScanToMobileModal({
             {/* Right Box: Luxury VIP Privilege Pass */}
             <View style={styles.vipPassCard}>
               <View style={styles.vipPassHeader}>
-                <Text style={styles.vipCrown}>👑</Text>
+                <Text style={styles.vipCrown}>★</Text>
                 <Text style={styles.vipPassTitle}>HOTEL GUEST PRIVILEGE PASS</Text>
               </View>
 

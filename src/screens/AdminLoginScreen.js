@@ -1,19 +1,7 @@
 // =============================================================================
 // src/screens/AdminLoginScreen.js
-// Modern Luxury Administrator Login Screen
-// Features:
-// 1. Subtle looping background video with luxury hotel atmosphere & graceful fallback
-// 2. Smooth GPU-accelerated entrance animation for the login card
-// 3. Elegant pulsing crest logo & shimmering star animation
-// 4. Staggered fade-in for hotel branding
-// 5. Input focus interactions with soft gold border glow and transitions
-// 6. Smooth show/hide password toggle
-// 7. Interactive Sign-In button with hover elevation and instant success transition
-// 8. Integrated One-Click Login (admin / admin123) with hover effect
-// 9. Ambient slow-drifting lighting blobs (gold, purple, cyan)
-// 10. Security footer notice with graceful delayed reveal
-// 11. Responsive design across Desktop, Tablet, and Mobile
-// 12. Full accessibility and prefers-reduced-motion support
+// Modern Luxury Administrator Login & Registration Screen
+// Designed to fit 100% in a single viewport (Zero Scrolling Required)
 // =============================================================================
 
 import React, { useState, useEffect } from 'react';
@@ -31,200 +19,95 @@ import {
 import { authService } from '../services/authService';
 import { activeHotelService } from '../services/activeHotelService';
 
-export default function AdminLoginScreen({ onLoginSuccess, onBackToGuestPortal }) {
+export default function AdminLoginScreen({
+  initialRole = 'clientadmin',
+  onLoginSuccess,
+  onBackToGuestPortal,
+}) {
   const { width } = useWindowDimensions();
   const isMobile = width < 480;
 
   const activeHotel = activeHotelService.getActiveHotel();
-  const brandTitle = activeHotel?.name ? activeHotel.name.toUpperCase() : 'HOTEL MANAGEMENT CONSOLE';
+  const brandTitle = activeHotel?.name ? activeHotel.name.toUpperCase() : 'HOTEL MANAGEMENT PORTAL';
 
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  // Mode: 'login' | 'register'
+  const [authMode, setAuthMode] = useState('login');
+
+  // Role: 'superadmin' | 'clientadmin'
+  const [selectedRole, setSelectedRole] = useState(() => {
+    if (initialRole === 'superadmin') return 'superadmin';
+    if (typeof window !== 'undefined' && window.location.hash.toLowerCase().includes('super-admin')) {
+      return 'superadmin';
+    }
+    return 'clientadmin';
+  });
+
+  // Login form state
+  const isSuper = selectedRole === 'superadmin';
+  const [username, setUsername] = useState(() => (isSuper ? 'admin' : 'client'));
+  const [password, setPassword] = useState(() => (isSuper ? 'admin123' : 'client123'));
   const [showPassword, setShowPassword] = useState(false);
+
+  // Register form state
+  const [regUsername, setRegUsername] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regRole, setRegRole] = useState('clientadmin');
+
+  // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-
-  // Interactive focus states
-  const [usernameFocused, setUsernameFocused] = useState(false);
-  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [focusedField, setFocusedField] = useState(null);
 
   // Background video state
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
 
-  // Inject Scoped Luxury CSS Keyframes & Micro-Interactions on Web
+  // Switch role tab
+  const handleRoleChange = (role) => {
+    setSelectedRole(role);
+    setErrorMessage('');
+    setSuccessMessage('');
+    if (role === 'superadmin') {
+      setUsername('admin');
+      setPassword('admin123');
+    } else {
+      setUsername('client');
+      setPassword('client123');
+    }
+  };
+
+  // Inject keyframes on web
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
-      const styleId = 'admin-login-luxury-keyframes';
+      const styleId = 'admin-login-compact-keyframes';
       if (!document.getElementById(styleId)) {
         const style = document.createElement('style');
         style.id = styleId;
         style.innerHTML = `
-          /* 1. Entrance animation for the login card */
-          @keyframes loginCardEntrance {
-            0% {
-              opacity: 0;
-              transform: translateY(22px);
-            }
-            100% {
-              opacity: 1;
-              transform: translateY(0);
-            }
+          @keyframes cardFadeIn {
+            from { opacity: 0; transform: translateY(14px) scale(0.99); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
           }
-
-          /* 2. Slow breathing glow & subtle floating for crest circle */
-          @keyframes crestPulse {
-            0% {
-              transform: scale(1);
-              box-shadow: 0 0 16px rgba(212, 175, 55, 0.22), 0 0 0 1px rgba(212, 175, 55, 0.35);
-            }
-            50% {
-              transform: scale(1.045);
-              box-shadow: 0 0 30px rgba(212, 175, 55, 0.5), 0 0 0 1.5px rgba(212, 175, 55, 0.7);
-            }
-            100% {
-              transform: scale(1);
-              box-shadow: 0 0 16px rgba(212, 175, 55, 0.22), 0 0 0 1px rgba(212, 175, 55, 0.35);
-            }
+          .compact-login-card {
+            animation: cardFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both !important;
           }
-
-          /* 3. Star shimmer animation */
-          @keyframes starShimmer {
-            0%, 100% {
-              transform: rotate(0deg) scale(1);
-              opacity: 0.92;
-            }
-            50% {
-              transform: rotate(14deg) scale(1.1);
-              opacity: 1;
-            }
+          .login-btn-interactive {
+            transition: all 0.2s ease !important;
           }
-
-          /* 4. Staggered brand header fade-in */
-          @keyframes brandFadeIn {
-            0% {
-              opacity: 0;
-              transform: translateY(8px);
-            }
-            100% {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-
-          /* 5. Slow ambient drifting light blobs */
-          @keyframes ambientBlobFloat1 {
-            0% {
-              transform: translate3d(0, 0, 0) scale(1);
-            }
-            50% {
-              transform: translate3d(35px, -30px, 0) scale(1.09);
-            }
-            100% {
-              transform: translate3d(0, 0, 0) scale(1);
-            }
-          }
-
-          @keyframes ambientBlobFloat2 {
-            0% {
-              transform: translate3d(0, 0, 0) scale(1);
-            }
-            50% {
-              transform: translate3d(-35px, 25px, 0) scale(1.07);
-            }
-            100% {
-              transform: translate3d(0, 0, 0) scale(1);
-            }
-          }
-
-          /* Class bindings */
-          .login-card-animated {
-            animation: loginCardEntrance 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-          }
-
-          .crest-circle-animated {
-            animation: crestPulse 5.5s ease-in-out infinite !important;
-          }
-
-          .star-animated {
-            animation: starShimmer 5.5s ease-in-out infinite !important;
-            display: inline-block !important;
-          }
-
-          .brand-header-animated {
-            animation: brandFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.16s both !important;
-          }
-
-          .footer-note-animated {
-            animation: brandFadeIn 0.8s ease 0.36s both !important;
-          }
-
-          .ambient-blob-1 {
-            animation: ambientBlobFloat1 22s ease-in-out infinite !important;
-          }
-
-          .ambient-blob-2 {
-            animation: ambientBlobFloat2 26s ease-in-out infinite !important;
-          }
-
-          /* Button Hover Interactions */
-          .admin-login-btn {
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
-          }
-          .admin-login-btn:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 8px 26px rgba(99, 102, 241, 0.55), 0 0 22px rgba(212, 175, 55, 0.3) !important;
-            filter: brightness(1.08) !important;
-          }
-          .admin-login-btn:active {
-            transform: translateY(0px) scale(0.98) !important;
-          }
-
-          .quick-fill-pill {
-            transition: all 0.22s ease !important;
-          }
-          .quick-fill-pill:hover {
+          .login-btn-interactive:hover {
+            filter: brightness(1.12) !important;
             transform: translateY(-1px) !important;
-            border-color: rgba(212, 175, 55, 0.5) !important;
-            background-color: rgba(99, 102, 241, 0.2) !important;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 14px rgba(212, 175, 55, 0.18) !important;
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45) !important;
           }
-
-          .back-btn-hover {
-            transition: all 0.2s ease !important;
+          .login-btn-interactive:active {
+            transform: translateY(0) scale(0.985) !important;
           }
-          .back-btn-hover:hover {
-            background-color: rgba(226, 192, 130, 0.18) !important;
-            border-color: rgba(226, 192, 130, 0.45) !important;
-            transform: translateX(-2px) !important;
-          }
-
-          .show-hide-toggle {
-            transition: all 0.2s ease !important;
-          }
-          .show-hide-toggle:hover {
-            color: #E2C082 !important;
-            transform: scale(1.04) !important;
-          }
-
-          /* Accessibility: Respect Reduced Motion */
-          @media (prefers-reduced-motion: reduce) {
-            .login-card-animated,
-            .crest-circle-animated,
-            .star-animated,
-            .brand-header-animated,
-            .footer-note-animated,
-            .ambient-blob-1,
-            .ambient-blob-2,
-            .admin-login-btn,
-            .quick-fill-pill,
-            .back-btn-hover,
-            .show-hide-toggle {
-              animation: none !important;
-              transition: none !important;
-              transform: none !important;
-            }
+          .quick-chip:hover {
+            border-color: #E2C082 !important;
+            background-color: rgba(226, 192, 130, 0.2) !important;
           }
         `;
         document.head.appendChild(style);
@@ -232,77 +115,113 @@ export default function AdminLoginScreen({ onLoginSuccess, onBackToGuestPortal }
     }
   }, []);
 
-  const handleLogin = async () => {
-    if (!username.trim()) {
-      setErrorMessage('Please enter your administrator username.');
+  // Submit Login
+  const handleLogin = async (userToSubmit, passToSubmit) => {
+    const finalUser = (userToSubmit !== undefined ? userToSubmit : username).trim();
+    const finalPass = (passToSubmit !== undefined ? passToSubmit : password).trim();
+
+    if (!finalUser) {
+      setErrorMessage('Please enter your username.');
       return;
     }
-    if (!password) {
+    if (!finalPass) {
       setErrorMessage('Please enter your password.');
       return;
     }
 
     setIsLoading(true);
     setErrorMessage('');
+    setSuccessMessage('');
 
     try {
-      const result = await authService.login(username.trim(), password);
+      const result = await authService.login(finalUser, finalPass);
       if (result.success) {
         setIsSuccess(true);
-        // Short tactical feedback animation before navigating
+        setSuccessMessage(`Welcome, ${result.user?.name || result.user?.username || 'Admin'}!`);
         setTimeout(() => {
           if (onLoginSuccess) {
             onLoginSuccess(result.user);
           }
-        }, 340);
+        }, 250);
       } else {
-        setErrorMessage(result.error || 'Authentication failed. Please verify credentials.');
+        setErrorMessage(result.error || 'Invalid credentials. Please verify username and password.');
         setIsLoading(false);
       }
     } catch (err) {
-      setErrorMessage('Network error connecting to auth server.');
+      setErrorMessage('Connection failed: ' + err.message);
       setIsLoading(false);
     }
   };
 
-  const handleInstantLogin = async (targetUser = 'admin', targetPass = 'admin123') => {
-    setUsername(targetUser);
-    setPassword(targetPass);
-    setErrorMessage('');
+  // Submit 1-Click Instant Login
+  const handleQuickLogin = (roleKey) => {
+    if (roleKey === 'superadmin') {
+      setSelectedRole('superadmin');
+      setUsername('admin');
+      setPassword('admin123');
+      handleLogin('admin', 'admin123');
+    } else {
+      setSelectedRole('clientadmin');
+      setUsername('client');
+      setPassword('client123');
+      handleLogin('client', 'client123');
+    }
+  };
+
+  // Submit Registration
+  const handleRegister = async () => {
+    if (!regUsername.trim()) {
+      setErrorMessage('Username is required.');
+      return;
+    }
+    if (!regPassword || regPassword.length < 4) {
+      setErrorMessage('Password must be at least 4 characters.');
+      return;
+    }
+
     setIsLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
     try {
-      const result = await authService.login(targetUser, targetPass);
-      if (result.success) {
-        setIsSuccess(true);
-        setTimeout(() => {
-          if (onLoginSuccess) {
-            onLoginSuccess(result.user);
-          }
-        }, 340);
+      const regRes = await authService.register({
+        username: regUsername.trim(),
+        password: regPassword,
+        email: regEmail.trim(),
+        role: regRole,
+      });
+
+      if (regRes.success) {
+        setSuccessMessage('Account created! Signing in...');
+        const logRes = await authService.login(regUsername.trim(), regPassword);
+        if (logRes.success && onLoginSuccess) {
+          setIsSuccess(true);
+          setTimeout(() => onLoginSuccess(logRes.user), 250);
+        } else {
+          setAuthMode('login');
+          setUsername(regUsername.trim());
+          setPassword(regPassword);
+          setIsLoading(false);
+        }
       } else {
-        setErrorMessage(result.error || 'Authentication failed.');
+        setErrorMessage(regRes.error || 'Registration failed.');
         setIsLoading(false);
       }
     } catch (err) {
-      setErrorMessage('Network error connecting to auth server.');
+      setErrorMessage('Registration error: ' + err.message);
       setIsLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      {/* =================================================================== */}
-      {/* 1. LAYER 0: BASE LUXURY HOTEL BACKGROUND IMAGE (Guaranteed Fallback) */}
-      {/* =================================================================== */}
+    <View style={styles.viewportContainer}>
       <ImageBackground
         source={{ uri: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1600&q=80' }}
         style={styles.backgroundImage}
-        blurRadius={Platform.OS === 'web' ? 12 : 8}
+        blurRadius={Platform.OS === 'web' ? 10 : 6}
         resizeMode="cover"
       >
-        {/* =================================================================== */}
-        {/* 2. LAYER 1: AMBIENT LUXURY HOTEL LOOPING VIDEO (Web)                */}
-        {/* =================================================================== */}
+        {/* Ambient Video */}
         {Platform.OS === 'web' && !videoFailed && (
           <video
             autoPlay
@@ -318,246 +237,337 @@ export default function AdminLoginScreen({ onLoginSuccess, onBackToGuestPortal }
               width: '100%',
               height: '100%',
               objectFit: 'cover',
-              zIndex: 0,
-              opacity: videoLoaded ? 0.72 : 0,
-              transition: 'opacity 1.2s ease-in-out',
+              opacity: videoLoaded ? 0.35 : 0,
               pointerEvents: 'none',
-              filter: 'brightness(0.68) saturate(1.2)',
             }}
           >
-            {/* High-reliability luxury hotel chandelier & lobby video stream */}
             <source
-              src="https://assets.mixkit.co/videos/preview/mixkit-luxury-hotel-reception-hall-and-chandelier-43750-large.mp4"
+              src="https://assets.mixkit.co/videos/preview/mixkit-hotel-lobby-with-a-modern-interior-41551-large.mp4"
               type="video/mp4"
             />
           </video>
         )}
 
-        {/* =================================================================== */}
-        {/* 3. LAYER 2: DARK LUXURY SCRIM WITH VIGNETTE OVERLAY                  */}
-        {/* =================================================================== */}
         <View style={styles.scrimOverlay}>
-          {/* ================================================================= */}
-          {/* 4. LAYER 3: SUBTLE DRIFTING LIGHT BLOBS (Requirement 9)           */}
-          {/* ================================================================= */}
-          <View style={styles.ambientLightingContainer} pointerEvents="none">
-            {/* Golden hotel light aura */}
-            <View
-              className="ambient-blob-1"
-              style={[styles.ambientBlob, styles.ambientBlobGold]}
-            />
-            {/* Deep purple concierge glow */}
-            <View
-              className="ambient-blob-2"
-              style={[styles.ambientBlob, styles.ambientBlobPurple]}
-            />
-            {/* Ambient cyan sheen */}
-            <View style={[styles.ambientBlob, styles.ambientBlobBlue]} />
-          </View>
-
-          {/* ================================================================= */}
-          {/* 5. TOP HEADER BAR                                                 */}
-          {/* ================================================================= */}
-          <View style={styles.topBar}>
+          {/* Top Bar */}
+          <View style={styles.compactTopBar}>
             {onBackToGuestPortal ? (
               <TouchableOpacity
-                style={styles.backBtn}
-                className="back-btn-hover"
                 onPress={onBackToGuestPortal}
                 activeOpacity={0.8}
-                accessibilityLabel="Back to Hotel Portal"
+                style={styles.backButton}
               >
-                <Text style={styles.backBtnIcon}>←</Text>
-                <Text style={styles.backBtnText}>Back to Hotel Portal</Text>
+                <Text style={styles.backButtonIcon}>←</Text>
+                <Text style={styles.backButtonText}>Guest Portal</Text>
               </TouchableOpacity>
-            ) : (
-              <View />
-            )}
+            ) : <View />}
 
-            <View style={styles.portalBadge}>
-              <Text style={styles.portalBadgeDot}>●</Text>
-              <Text style={styles.portalBadgeText}>ADMIN CONSOLE • SECURE ACCESS</Text>
+            <View style={[styles.roleBadge, isSuper ? styles.roleBadgeSuper : styles.roleBadgeOwner]}>
+              <Text style={styles.roleBadgeText}>
+                {isSuper ? 'SUPER ADMIN ACCESS' : 'HOTEL ADMIN ACCESS'}
+              </Text>
             </View>
           </View>
 
-          {/* ================================================================= */}
-          {/* 6. CENTER LOGIN CARD (Requirements 2, 3, 4, 5, 6, 7, 8, 10)       */}
-          {/* ================================================================= */}
-          <View style={styles.centerContainer}>
-            <View
-              className="login-card-animated"
-              style={[styles.loginCard, isMobile && styles.loginCardMobile]}
-            >
-              {/* Hotel Brand Crest & Header */}
-              <View className="brand-header-animated" style={styles.brandHeader}>
-                {/* Circular Crest with Pulsing Glow (Requirement 3) */}
-                <View className="crest-circle-animated" style={styles.crestCircle}>
-                  <Text className="star-animated" style={styles.crestIcon}>
-                    ✦
-                  </Text>
+          {/* Centered Login Card */}
+          <View style={styles.cardCenterArea}>
+            <View className="compact-login-card" style={[styles.loginCard, isMobile && styles.loginCardMobile]}>
+              
+              {/* Header Crest & Title */}
+              <View style={styles.headerBlock}>
+                <View style={[styles.crestCircle, isSuper && styles.crestCircleSuper]}>
+                  <Text style={styles.crestIcon}>✦</Text>
                 </View>
-
-                {/* Hotel Title & Console Subtitle (Requirement 4) */}
-                <Text style={styles.hotelBrandName}>{brandTitle}</Text>
-                <Text style={styles.portalTitle}>Management & Concierge Console</Text>
-                <Text style={styles.portalDescription}>
-                  Authenticate to manage hotels, places, guest payment status, and execute CRUD operations.
+                <Text style={styles.hotelBrandName} numberOfLines={1}>{brandTitle}</Text>
+                <Text style={styles.portalTitle}>
+                  {authMode === 'register'
+                    ? 'Register Administrator'
+                    : isSuper
+                    ? 'Super Admin Console'
+                    : 'Hotel Admin Console'}
                 </Text>
               </View>
 
-              {/* Error Banner */}
-              {errorMessage ? (
-                <View style={styles.errorBanner}>
-                  <Text style={styles.errorIcon}>⚠️</Text>
-                  <Text style={styles.errorText}>{errorMessage}</Text>
-                </View>
-              ) : null}
-
-              {/* Form Controls */}
-              <View style={styles.formContainer}>
-                {/* Username Input (Requirement 5) */}
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.inputLabel, usernameFocused && styles.inputLabelFocused]}>
-                    Admin Username
-                  </Text>
-                  <View
-                    style={[
-                      styles.inputWrapper,
-                      usernameFocused && styles.inputWrapperFocused,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.inputPrefixIcon,
-                        usernameFocused && styles.inputPrefixIconFocused,
-                      ]}
-                    >
-                      👤
-                    </Text>
-                    <TextInput
-                      style={styles.textInput}
-                      placeholder="Enter admin username"
-                      placeholderTextColor="#64748B"
-                      value={username}
-                      onFocus={() => setUsernameFocused(true)}
-                      onBlur={() => setUsernameFocused(false)}
-                      onChangeText={(text) => {
-                        setUsername(text);
-                        if (errorMessage) setErrorMessage('');
-                      }}
-                      autoCapitalize="none"
-                    />
-                  </View>
-                </View>
-
-                {/* Password Input (Requirement 5 & 6) */}
-                <View style={styles.inputGroup}>
-                  <View style={styles.passwordLabelRow}>
-                    <Text style={[styles.inputLabel, passwordFocused && styles.inputLabelFocused]}>
-                      Password
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => setShowPassword(!showPassword)}
-                      activeOpacity={0.7}
-                      className="show-hide-toggle"
-                      style={styles.showHideButton}
-                    >
-                      <Text style={styles.showHideText}>
-                        {showPassword ? 'Hide 👁️' : 'Show 👁️'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                  <View
-                    style={[
-                      styles.inputWrapper,
-                      passwordFocused && styles.inputWrapperFocused,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.inputPrefixIcon,
-                        passwordFocused && styles.inputPrefixIconFocused,
-                      ]}
-                    >
-                      🔒
-                    </Text>
-                    <TextInput
-                      style={styles.textInput}
-                      placeholder="Enter password"
-                      placeholderTextColor="#64748B"
-                      secureTextEntry={!showPassword}
-                      value={password}
-                      onFocus={() => setPasswordFocused(true)}
-                      onBlur={() => setPasswordFocused(false)}
-                      onChangeText={(text) => {
-                        setPassword(text);
-                        if (errorMessage) setErrorMessage('');
-                      }}
-                    />
-                  </View>
-                </View>
-
-                {/* Instant 1-Click Login Option for Hotel Owner */}
-                <View style={{ marginBottom: 12 }}>
+              {/* Dual-Role Selector Tabs */}
+              {authMode === 'login' && (
+                <View style={styles.roleSwitcherRow}>
                   <TouchableOpacity
+                    style={[styles.roleTab, isSuper && styles.roleTabActiveSuper]}
+                    onPress={() => handleRoleChange('superadmin')}
                     activeOpacity={0.8}
-                    onPress={() => handleInstantLogin('client', 'client123')}
-                    style={[styles.quickFillPill, { marginBottom: 0 }]}
                   >
-                    <Text style={styles.quickFillIcon}>🏨</Text>
-                    <Text style={styles.quickFillText} numberOfLines={1}>
-                      Hotel Owner Demo: <Text style={styles.highlightText}>client</Text>
+                    <Text style={styles.roleTabIcon}>◈</Text>
+                    <Text style={[styles.roleTabLabel, isSuper && styles.roleTabLabelActive]}>
+                      Super Admin
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.roleTab, !isSuper && styles.roleTabActiveOwner]}
+                    onPress={() => handleRoleChange('clientadmin')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.roleTabIcon}>◈</Text>
+                    <Text style={[styles.roleTabLabel, !isSuper && styles.roleTabLabelActive]}>
+                      Hotel Admin
                     </Text>
                   </TouchableOpacity>
                 </View>
-
-                {/* Login Button with Hover & Success State (Requirement 7) */}
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={handleLogin}
-                  disabled={isLoading || isSuccess}
-                  className="admin-login-btn"
-                  style={[
-                    styles.loginButton,
-                    isLoading && styles.loginButtonDisabled,
-                    isSuccess && styles.loginButtonSuccess,
-                  ]}
-                >
-                  {isSuccess ? (
-                    <>
-                      <Text style={styles.loginButtonSuccessIcon}>✓</Text>
-                      <Text style={styles.loginButtonText}>Access Granted • Entering Console...</Text>
-                    </>
-                  ) : isLoading ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <>
-                      <Text style={styles.loginButtonText}>Sign In to Admin Console</Text>
-                      <Text style={styles.loginButtonIcon}>→</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </View>
-
-              {/* Security Footer Notice (Requirement 10) */}
-              <View className="footer-note-animated" style={styles.cardFooter}>
-                <Text style={styles.footerNote}>
-                  🔒 Protected by Bearer Token Authentication & Internal SQLite Sync.
-                </Text>
-              </View>
-
-              {/* Direct Link to Guest Portal */}
-              {onBackToGuestPortal && (
-                <TouchableOpacity
-                  style={styles.guestLinkCard}
-                  onPress={onBackToGuestPortal}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.guestLinkCardText}>
-                    🌐 Go directly to Hotel Guest Portal →
-                  </Text>
-                </TouchableOpacity>
               )}
+
+              {/* Status Banners */}
+              {errorMessage ? (
+                <View style={styles.errorBanner}>
+                  <Text style={styles.bannerIcon}>✕</Text>
+                  <Text style={styles.errorText} numberOfLines={2}>{errorMessage}</Text>
+                </View>
+              ) : null}
+
+              {successMessage ? (
+                <View style={styles.successBanner}>
+                  <Text style={styles.bannerIcon}>✓</Text>
+                  <Text style={styles.successText} numberOfLines={1}>{successMessage}</Text>
+                </View>
+              ) : null}
+
+              {/* ============================================================= */}
+              {/* LOGIN VIEW                                                    */}
+              {/* ============================================================= */}
+              {authMode === 'login' ? (
+                <View style={styles.formContainer}>
+                  {/* Username Field */}
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>
+                      {isSuper ? 'Super Admin Username' : 'Hotel Admin Username'}
+                    </Text>
+                    <View style={[styles.inputBox, focusedField === 'user' && styles.inputBoxFocused]}>
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder={isSuper ? 'admin' : 'client'}
+                        placeholderTextColor="#64748B"
+                        value={username}
+                        onFocus={() => setFocusedField('user')}
+                        onBlur={() => setFocusedField(null)}
+                        onChangeText={(t) => {
+                          setUsername(t);
+                          if (errorMessage) setErrorMessage('');
+                        }}
+                        autoCapitalize="none"
+                        onSubmitEditing={() => handleLogin()}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Password Field */}
+                  <View style={styles.fieldRow}>
+                    <View style={styles.labelWithToggle}>
+                      <Text style={styles.fieldLabel}>Password</Text>
+                      <TouchableOpacity
+                        onPress={() => setShowPassword(!showPassword)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.showHideLink}>{showPassword ? 'Hide' : 'Show'}</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={[styles.inputBox, focusedField === 'pass' && styles.inputBoxFocused]}>
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="••••••••"
+                        placeholderTextColor="#64748B"
+                        secureTextEntry={!showPassword}
+                        value={password}
+                        onFocus={() => setFocusedField('pass')}
+                        onBlur={() => setFocusedField(null)}
+                        onChangeText={(t) => {
+                          setPassword(t);
+                          if (errorMessage) setErrorMessage('');
+                        }}
+                        onSubmitEditing={() => handleLogin()}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Instant 1-Click Login Row */}
+                  <View style={styles.quickLoginRow}>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => handleQuickLogin('superadmin')}
+                      className="quick-chip"
+                      style={[styles.quickChip, isSuper && styles.quickChipActive]}
+                    >
+                      <Text style={styles.quickChipText}>
+                        Super: <Text style={styles.quickChipBold}>admin / admin123</Text>
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => handleQuickLogin('clientadmin')}
+                      className="quick-chip"
+                      style={[styles.quickChip, !isSuper && styles.quickChipActive]}
+                    >
+                      <Text style={styles.quickChipText}>
+                        Hotel: <Text style={styles.quickChipBold}>client / client123</Text>
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Prominent Sign In Button */}
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => handleLogin()}
+                    disabled={isLoading || isSuccess}
+                    className="login-btn-interactive"
+                    style={[
+                      styles.signInButton,
+                      isSuper ? styles.signInButtonSuper : styles.signInButtonOwner,
+                      isLoading && styles.buttonDisabled,
+                      isSuccess && styles.buttonSuccess,
+                    ]}
+                  >
+                    {isSuccess ? (
+                      <>
+                        <Text style={styles.btnIcon}>✓</Text>
+                        <Text style={styles.btnText}>Access Granted • Entering Console...</Text>
+                      </>
+                    ) : isLoading ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <>
+                        <Text style={styles.btnText}>
+                          Sign In as {isSuper ? 'Super Admin' : 'Hotel Admin'}
+                        </Text>
+                        <Text style={styles.btnArrow}>→</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+
+                  {/* Footer Action Links */}
+                  <View style={styles.bottomLinkRow}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setAuthMode('register');
+                        setErrorMessage('');
+                        setSuccessMessage('');
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.bottomLinkText}>
+                        Need account? <Text style={styles.bottomLinkGold}>Register Here</Text>
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                /* ============================================================= */
+                /* REGISTRATION VIEW (COMPACT)                                   */
+                /* ============================================================= */
+                <View style={styles.formContainer}>
+                  {/* Account Role Selector */}
+                  <View style={styles.regRoleRow}>
+                    <TouchableOpacity
+                      style={[styles.regRoleBtn, regRole === 'clientadmin' && styles.regRoleBtnActive]}
+                      onPress={() => setRegRole('clientadmin')}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.regRoleBtnText, regRole === 'clientadmin' && styles.regRoleBtnTextActive]}>
+                        🏨 Hotel Admin
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.regRoleBtn, regRole === 'superadmin' && styles.regRoleBtnActive]}
+                      onPress={() => setRegRole('superadmin')}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.regRoleBtnText, regRole === 'superadmin' && styles.regRoleBtnTextActive]}>
+                        🛡️ Super Admin
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>New Username *</Text>
+                    <View style={styles.inputBox}>
+                      <Text style={styles.inputPrefix}>👤</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="e.g. hotel_manager"
+                        placeholderTextColor="#64748B"
+                        value={regUsername}
+                        onChangeText={setRegUsername}
+                        autoCapitalize="none"
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>Password *</Text>
+                    <View style={styles.inputBox}>
+                      <Text style={styles.inputPrefix}>🔒</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="Minimum 4 characters"
+                        placeholderTextColor="#64748B"
+                        secureTextEntry={!showPassword}
+                        value={regPassword}
+                        onChangeText={setRegPassword}
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>Email Address</Text>
+                    <View style={styles.inputBox}>
+                      <Text style={styles.inputPrefix}>✉️</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="manager@hotel.com"
+                        placeholderTextColor="#64748B"
+                        value={regEmail}
+                        onChangeText={setRegEmail}
+                        autoCapitalize="none"
+                      />
+                    </View>
+                  </View>
+
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={handleRegister}
+                    disabled={isLoading}
+                    className="login-btn-interactive"
+                    style={[styles.signInButton, styles.signInButtonRegister]}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <>
+                        <Text style={styles.btnText}>Create Account & Sign In</Text>
+                        <Text style={styles.btnArrow}>→</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+
+                  <View style={styles.bottomLinkRow}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setAuthMode('login');
+                        setErrorMessage('');
+                        setSuccessMessage('');
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.bottomLinkText}>
+                        Already have an account? <Text style={styles.bottomLinkGold}>Sign In</Text>
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              {/* Micro Security Notice */}
+              <Text style={styles.microSecurityText}>
+                🔒 Verified Bearer Token Auth • Local MongoDB (hotelApiDb)
+              </Text>
             </View>
           </View>
         </View>
@@ -567,9 +577,18 @@ export default function AdminLoginScreen({ onLoginSuccess, onBackToGuestPortal }
 }
 
 const styles = StyleSheet.create({
-  container: {
+  viewportContainer: {
     flex: 1,
+    height: '100%',
+    maxHeight: '100%',
     backgroundColor: '#08090C',
+    ...Platform.select({
+      web: {
+        height: '100vh',
+        maxHeight: '100vh',
+        overflow: 'hidden',
+      },
+    }),
   },
   backgroundImage: {
     flex: 1,
@@ -578,387 +597,413 @@ const styles = StyleSheet.create({
   },
   scrimOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(8, 10, 16, 0.84)',
+    backgroundColor: 'rgba(7, 9, 15, 0.88)',
+    display: 'flex',
+    flexDirection: 'column',
     justifyContent: 'space-between',
-    position: 'relative',
     ...Platform.select({
       web: {
         backgroundImage:
-          'radial-gradient(circle at center, rgba(12, 16, 26, 0.74) 0%, rgba(6, 8, 14, 0.92) 100%)',
+          'radial-gradient(circle at center, rgba(15, 23, 42, 0.72) 0%, rgba(5, 7, 12, 0.95) 100%)',
       },
     }),
   },
 
-  // Ambient lighting blobs
-  ambientLightingContainer: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
-    zIndex: 1,
-  },
-  ambientBlob: {
-    position: 'absolute',
-    borderRadius: 999,
-    ...Platform.select({
-      web: {
-        filter: 'blur(90px)',
-        pointerEvents: 'none',
-      },
-    }),
-  },
-  ambientBlobGold: {
-    width: 360,
-    height: 360,
-    top: '18%',
-    left: '12%',
-    backgroundColor: 'rgba(212, 175, 55, 0.12)',
-  },
-  ambientBlobPurple: {
-    width: 420,
-    height: 420,
-    bottom: '12%',
-    right: '12%',
-    backgroundColor: 'rgba(99, 102, 241, 0.14)',
-  },
-  ambientBlobBlue: {
-    width: 280,
-    height: 280,
-    top: '42%',
-    right: '28%',
-    backgroundColor: 'rgba(56, 189, 248, 0.08)',
-  },
-
-  topBar: {
+  // Top Bar
+  compactTopBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     zIndex: 10,
   },
-  backBtn: {
+  backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
     backgroundColor: 'rgba(226, 192, 130, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(226, 192, 130, 0.3)',
-    gap: 8,
+    gap: 6,
     ...Platform.select({
-      web: {
-        cursor: 'pointer',
-      },
+      web: { cursor: 'pointer' },
     }),
   },
-  backBtnIcon: {
-    color: '#E2C082',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  backBtnText: {
+  backButtonIcon: {
     color: '#E2C082',
     fontSize: 12,
+    fontWeight: 'bold',
+  },
+  backButtonText: {
+    color: '#E2C082',
+    fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.3,
   },
-  portalBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    backgroundColor: 'rgba(99, 102, 241, 0.16)',
+  roleBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.35)',
-    gap: 6,
   },
-  portalBadgeDot: {
-    color: '#10B981',
-    fontSize: 9,
+  roleBadgeSuper: {
+    backgroundColor: 'rgba(99, 102, 241, 0.18)',
+    borderColor: 'rgba(99, 102, 241, 0.45)',
   },
-  portalBadgeText: {
-    color: '#A5B4FC',
+  roleBadgeOwner: {
+    backgroundColor: 'rgba(226, 192, 130, 0.14)',
+    borderColor: 'rgba(226, 192, 130, 0.4)',
+  },
+  roleBadgeText: {
+    color: '#F8FAFC',
     fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.8,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
-  centerContainer: {
+
+  // Centered Card Area
+  cardCenterArea: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 30,
+    paddingVertical: 6,
     zIndex: 10,
   },
   loginCard: {
     width: '100%',
-    maxWidth: 440,
-    backgroundColor: 'rgba(15, 19, 30, 0.94)',
-    borderRadius: 20,
+    maxWidth: 420,
+    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(226, 192, 130, 0.28)',
-    padding: 32,
+    paddingVertical: 18,
+    paddingHorizontal: 22,
     ...Platform.select({
       web: {
         boxShadow:
-          '0 25px 60px rgba(0, 0, 0, 0.85), 0 0 40px rgba(99, 102, 241, 0.2), 0 0 15px rgba(226, 192, 130, 0.15)',
+          '0 20px 50px rgba(0, 0, 0, 0.85), 0 0 35px rgba(99, 102, 241, 0.2), 0 0 14px rgba(226, 192, 130, 0.12)',
         backdropFilter: 'blur(16px)',
-      },
-      default: {
-        elevation: 14,
       },
     }),
   },
   loginCardMobile: {
-    padding: 22,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
-  brandHeader: {
-    alignItems: 'center',
-    marginBottom: 22,
-  },
-  crestCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(212, 175, 55, 0.12)',
-    borderWidth: 1.5,
-    borderColor: '#D4AF37',
-    justifyContent: 'center',
+
+  // Header
+  headerBlock: {
     alignItems: 'center',
     marginBottom: 12,
   },
+  crestCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(226, 192, 130, 0.15)',
+    borderWidth: 1.5,
+    borderColor: '#E2C082',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  crestCircleSuper: {
+    backgroundColor: 'rgba(99, 102, 241, 0.18)',
+    borderColor: '#818CF8',
+  },
   crestIcon: {
-    fontSize: 26,
-    color: '#E2C082',
-    lineHeight: 28,
+    fontSize: 20,
   },
   hotelBrandName: {
     color: '#E2C082',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 2,
-    marginBottom: 4,
-    fontFamily: Platform.OS === 'web' ? "'Playfair Display', Georgia, serif" : 'serif',
+    letterSpacing: 1.5,
+    marginBottom: 2,
   },
   portalTitle: {
     color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: 0.3,
-    marginBottom: 6,
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: 0.2,
   },
-  portalDescription: {
+
+  // Role Switcher Tabs
+  roleSwitcherRow: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(10, 15, 28, 0.9)',
+    borderRadius: 8,
+    padding: 3,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 4,
+  },
+  roleTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    borderRadius: 6,
+    gap: 6,
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  roleTabActiveSuper: {
+    backgroundColor: 'rgba(99, 102, 241, 0.22)',
+    borderWidth: 1,
+    borderColor: '#818CF8',
+  },
+  roleTabActiveOwner: {
+    backgroundColor: 'rgba(226, 192, 130, 0.2)',
+    borderWidth: 1,
+    borderColor: '#E2C082',
+  },
+  roleTabIcon: {
+    fontSize: 13,
+  },
+  roleTabLabel: {
     color: '#94A3B8',
     fontSize: 12,
-    textAlign: 'center',
-    lineHeight: 17,
+    fontWeight: '700',
   },
+  roleTabLabelActive: {
+    color: '#F8FAFC',
+    fontWeight: '900',
+  },
+
+  // Status Banners
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(239, 68, 68, 0.15)',
     borderLeftWidth: 3,
     borderLeftColor: '#EF4444',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 6,
-    marginBottom: 16,
-    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 5,
+    marginBottom: 10,
+    gap: 6,
   },
-  errorIcon: {
-    fontSize: 14,
+  successBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.18)',
+    borderLeftWidth: 3,
+    borderLeftColor: '#10B981',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 5,
+    marginBottom: 10,
+    gap: 6,
+  },
+  bannerIcon: {
+    fontSize: 12,
   },
   errorText: {
     color: '#FCA5A5',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     flex: 1,
   },
+  successText: {
+    color: '#A7F3D0',
+    fontSize: 11,
+    fontWeight: '700',
+    flex: 1,
+  },
+
+  // Form
   formContainer: {
-    gap: 15,
+    gap: 10,
   },
-  inputGroup: {
-    gap: 6,
+  fieldRow: {
+    gap: 4,
   },
-  passwordLabelRow: {
+  fieldLabel: {
+    color: '#CBD5E1',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  labelWithToggle: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  inputLabel: {
-    color: '#CBD5E1',
-    fontSize: 12,
-    fontWeight: '700',
-    transition: 'color 0.2s ease',
-  },
-  inputLabelFocused: {
-    color: '#F8FAFC',
-  },
-  showHideButton: {
-    paddingVertical: 2,
-    paddingHorizontal: 4,
-    ...Platform.select({
-      web: {
-        cursor: 'pointer',
-      },
-    }),
-  },
-  showHideText: {
+  showHideLink: {
     color: '#A5B4FC',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
   },
-  inputWrapper: {
+  inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(11, 14, 22, 0.85)',
+    backgroundColor: 'rgba(11, 15, 25, 0.88)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    ...Platform.select({
-      web: {
-        transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-      },
-    }),
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 38,
   },
-  inputWrapperFocused: {
+  inputBoxFocused: {
     borderColor: '#E2C082',
-    backgroundColor: 'rgba(18, 22, 34, 0.95)',
-    ...Platform.select({
-      web: {
-        boxShadow:
-          '0 0 0 3px rgba(226, 192, 130, 0.2), 0 0 16px rgba(226, 192, 130, 0.15)',
-      },
-    }),
+    backgroundColor: 'rgba(18, 24, 38, 0.98)',
   },
-  inputPrefixIcon: {
-    fontSize: 14,
-    marginRight: 8,
+  inputPrefix: {
+    fontSize: 13,
+    marginRight: 6,
     color: '#64748B',
-    ...Platform.select({
-      web: {
-        transition: 'color 0.2s ease',
-      },
-    }),
-  },
-  inputPrefixIconFocused: {
-    color: '#E2C082',
   },
   textInput: {
     flex: 1,
-    paddingVertical: 12,
     color: '#FFFFFF',
-    fontSize: 14,
-    ...Platform.select({
-      web: {
-        outlineStyle: 'none',
-      },
-    }),
-  },
-  quickFillPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(99, 102, 241, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.35)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    gap: 8,
-    ...Platform.select({
-      web: {
-        cursor: 'pointer',
-      },
-    }),
-  },
-  quickFillIcon: {
     fontSize: 13,
-    color: '#E2C082',
+    paddingVertical: 0,
+    ...Platform.select({
+      web: { outlineStyle: 'none' },
+    }),
   },
-  quickFillText: {
-    color: '#CBD5E1',
-    fontSize: 11,
+
+  // Quick 1-Click Login Row
+  quickLoginRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginVertical: 2,
+  },
+  quickChip: {
     flex: 1,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
   },
-  highlightText: {
+  quickChipActive: {
+    borderColor: 'rgba(226, 192, 130, 0.4)',
+    backgroundColor: 'rgba(226, 192, 130, 0.12)',
+  },
+  quickChipText: {
+    color: '#CBD5E1',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  quickChipBold: {
     color: '#E2C082',
-    fontWeight: '700',
+    fontWeight: '800',
   },
-  loginButton: {
+
+  // Main Submit Button
+  signInButton: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#6366F1',
-    borderRadius: 10,
-    paddingVertical: 14,
-    gap: 8,
-    marginTop: 4,
+    borderRadius: 8,
+    height: 40,
+    gap: 6,
+    marginTop: 2,
     ...Platform.select({
-      web: {
-        cursor: 'pointer',
-        boxShadow: '0 4px 16px rgba(99, 102, 241, 0.4)',
-      },
+      web: { cursor: 'pointer' },
     }),
   },
-  loginButtonDisabled: {
+  signInButtonSuper: {
+    backgroundColor: '#4F46E5',
+    borderWidth: 1,
+    borderColor: '#818CF8',
+  },
+  signInButtonOwner: {
+    backgroundColor: '#D97706',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+  },
+  signInButtonRegister: {
+    backgroundColor: '#059669',
+    borderWidth: 1,
+    borderColor: '#34D399',
+  },
+  buttonDisabled: {
     opacity: 0.6,
   },
-  loginButtonSuccess: {
+  buttonSuccess: {
     backgroundColor: '#10B981',
-    ...Platform.select({
-      web: {
-        boxShadow: '0 4px 20px rgba(16, 185, 129, 0.5)',
-      },
-    }),
   },
-  loginButtonText: {
+  btnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  btnArrow: {
     color: '#FFFFFF',
     fontSize: 14,
+    fontWeight: '900',
+  },
+  btnIcon: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+
+  // Links
+  bottomLinkRow: {
+    alignItems: 'center',
+    paddingVertical: 2,
+  },
+  bottomLinkText: {
+    color: '#94A3B8',
+    fontSize: 11,
+  },
+  bottomLinkGold: {
+    color: '#E2C082',
     fontWeight: '800',
-    letterSpacing: 0.3,
+    textDecorationLine: 'underline',
   },
-  loginButtonIcon: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
+
+  // Registration specifics
+  regRoleRow: {
+    flexDirection: 'row',
+    gap: 6,
   },
-  loginButtonSuccessIcon: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  cardFooter: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  footerNote: {
-    color: '#64748B',
-    fontSize: 10,
-    textAlign: 'center',
-    lineHeight: 15,
-  },
-  guestLinkCard: {
-    marginTop: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: 'rgba(226, 192, 130, 0.1)',
+  regRoleBtn: {
+    flex: 1,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: 'rgba(11, 15, 25, 0.8)',
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.35)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
-    justifyContent: 'center',
     ...Platform.select({
-      web: {
-        cursor: 'pointer',
-      },
+      web: { cursor: 'pointer' },
     }),
   },
-  guestLinkCardText: {
-    color: '#E2C082',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.3,
+  regRoleBtnActive: {
+    borderColor: '#E2C082',
+    backgroundColor: 'rgba(226, 192, 130, 0.16)',
+  },
+  regRoleBtnText: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  regRoleBtnTextActive: {
+    color: '#F8FAFC',
+    fontWeight: '800',
+  },
+
+  microSecurityText: {
+    color: '#64748B',
+    fontSize: 9,
+    textAlign: 'center',
+    marginTop: 10,
   },
 });

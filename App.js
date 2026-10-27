@@ -54,6 +54,14 @@ export default function App() {
   const [selectedGym, setSelectedGym] = useState(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(authService.isAuthenticated());
 
+  // Subscribe to authService for reactive login & logout states
+  useEffect(() => {
+    const unsubAuth = authService.subscribe((user, isAuth) => {
+      setIsAdminLoggedIn(isAuth);
+    });
+    return () => unsubAuth();
+  }, []);
+
   // Subscribe to activeHotelService for live synchronisation across all views
   useEffect(() => {
     const unsubscribe = activeHotelService.subscribe((updatedHotel) => {
@@ -270,6 +278,7 @@ export default function App() {
             />
           ) : (
             <AdminLoginScreen
+              initialRole="superadmin"
               onLoginSuccess={(user) => {
                 setIsAdminLoggedIn(true);
                 if (user?.role === 'superadmin') {
@@ -305,6 +314,7 @@ export default function App() {
             />
           ) : (
             <AdminLoginScreen
+              initialRole="clientadmin"
               onLoginSuccess={(user) => {
                 setIsAdminLoggedIn(true);
                 if (user?.role === 'superadmin') {

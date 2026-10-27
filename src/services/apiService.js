@@ -589,11 +589,49 @@ class ApiService {
     }
   }
 
+  // Search hotels across MongoDB with partial match, case-insensitivity, location, city, name
+  async searchHotels(query = '', options = {}) {
+    try {
+      const q = (query || '').trim();
+      const params = [];
+      if (q) params.push(`q=${encodeURIComponent(q)}`);
+      if (options.status) params.push(`status=${encodeURIComponent(options.status)}`);
+      if (options.hotelAdminId) params.push(`hotelAdminId=${encodeURIComponent(options.hotelAdminId)}`);
+      if (options.limit) params.push(`limit=${encodeURIComponent(options.limit)}`);
+
+      const queryStr = params.length > 0 ? `?${params.join('&')}` : '';
+      const url = `${BASE_URL}/api/hotel-properties/search${queryStr}`;
+      console.log(`[REST API] GET ${url}`);
+      const res = await fetch(url, { headers: this.getHeaders() });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(`[HTTP ${res.status}] GET ${url} failed: ${json.error || res.statusText}`);
+      }
+      const list = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
+      // Deduplicate results by hotelPropertyId or id
+      const seen = new Set();
+      const uniqueList = [];
+      for (const item of list) {
+        const idKey = item.hotelPropertyId || item._id || item.id;
+        if (idKey && !seen.has(idKey)) {
+          seen.add(idKey);
+          uniqueList.push(item);
+        }
+      }
+      const mapped = uniqueList.map((doc) => this.mapHotelPropertyToFrontend(doc));
+      return { success: true, data: mapped };
+    } catch (err) {
+      console.error(`[REST API Error] searchHotels failed:`, err.message);
+      return { success: false, error: err.message, data: [] };
+    }
+  }
+
   async fetchHotels(options = {}) {
     try {
       const params = [];
       if (options.hotelAdminId) params.push(`hotelAdminId=${encodeURIComponent(options.hotelAdminId)}`);
       if (options.status) params.push(`status=${encodeURIComponent(options.status)}`);
+      if (options.search || options.q) params.push(`search=${encodeURIComponent(options.search || options.q)}`);
       const queryStr = params.length > 0 ? `?${params.join('&')}` : '';
       const url = `${BASE_URL}/api/hotel-properties${queryStr}`;
       console.log(`[REST API] GET ${url}`);

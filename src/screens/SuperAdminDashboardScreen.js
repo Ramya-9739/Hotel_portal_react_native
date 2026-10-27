@@ -85,7 +85,7 @@ export default function SuperAdminDashboardScreen({
     try {
       const res = await apiService.approveHotel(id);
       if (res.success) {
-        showToast(`✅ "${hotel.name || hotel.title}" has been APPROVED and is now live for guests!`, 'success');
+        showToast(`"${hotel.name || hotel.title}" has been APPROVED and is now live for guests!`, 'success');
         setHotels((prev) =>
           prev.map((h) => {
             const hId = h.hotelPropertyId || h.id || h._id;
@@ -115,7 +115,7 @@ export default function SuperAdminDashboardScreen({
     try {
       const res = await apiService.rejectHotel(id, rejectionReasonInput.trim());
       if (res.success) {
-        showToast(`❌ "${rejectingHotel.name || rejectingHotel.title}" has been REJECTED.`, 'info');
+        showToast(`"${rejectingHotel.name || rejectingHotel.title}" has been REJECTED.`, 'info');
         setHotels((prev) =>
           prev.map((h) => {
             const hId = h.hotelPropertyId || h.id || h._id;
@@ -173,7 +173,7 @@ export default function SuperAdminDashboardScreen({
       <View style={styles.headerBar}>
         <View style={styles.headerLeft}>
           <View style={styles.crestCircle}>
-            <Text style={styles.crestIcon}>👑</Text>
+            <Text style={styles.crestIcon}>★</Text>
           </View>
           <View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -194,7 +194,7 @@ export default function SuperAdminDashboardScreen({
             onPress={onSwitchToOwnerAdmin}
             activeOpacity={0.8}
           >
-            <Text style={styles.headerNavBtnText}>🏨 Hotel Owner View</Text>
+            <Text style={styles.headerNavBtnText}>Hotel Owner View</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -202,7 +202,7 @@ export default function SuperAdminDashboardScreen({
             onPress={onBackToGuestPortal}
             activeOpacity={0.8}
           >
-            <Text style={styles.headerNavBtnText}>🌐 Guest Website</Text>
+            <Text style={styles.headerNavBtnText}>Guest Website</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -210,7 +210,7 @@ export default function SuperAdminDashboardScreen({
             onPress={onLogout}
             activeOpacity={0.8}
           >
-            <Text style={styles.logoutBtnText}>🚪 Logout</Text>
+            <Text style={styles.logoutBtnText}>Logout</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -238,7 +238,7 @@ export default function SuperAdminDashboardScreen({
           >
             <View style={styles.metricHeader}>
               <Text style={styles.metricLabel}>APPROVED HOTELS</Text>
-              <Text style={styles.metricIcon}>✅</Text>
+              <Text style={styles.metricIcon}>✓</Text>
             </View>
             <Text style={[styles.metricValue, { color: '#10B981' }]}>{approvedCount}</Text>
             <Text style={styles.metricFootnote}>Active on public guest website</Text>
@@ -251,7 +251,7 @@ export default function SuperAdminDashboardScreen({
           >
             <View style={styles.metricHeader}>
               <Text style={styles.metricLabel}>REJECTED HOTELS</Text>
-              <Text style={styles.metricIcon}>❌</Text>
+              <Text style={styles.metricIcon}>✕</Text>
             </View>
             <Text style={[styles.metricValue, { color: '#EF4444' }]}>{rejectedCount}</Text>
             <Text style={styles.metricFootnote}>Blocked from public access</Text>
@@ -264,7 +264,7 @@ export default function SuperAdminDashboardScreen({
           >
             <View style={styles.metricHeader}>
               <Text style={styles.metricLabel}>TOTAL REGISTERED</Text>
-              <Text style={styles.metricIcon}>🏢</Text>
+              <Text style={styles.metricIcon}>◈</Text>
             </View>
             <Text style={[styles.metricValue, { color: '#E2C082' }]}>{hotels.length}</Text>
             <Text style={styles.metricFootnote}>Across all hotel owners</Text>
@@ -311,7 +311,7 @@ export default function SuperAdminDashboardScreen({
               onPress={loadHotels}
               activeOpacity={0.8}
             >
-              <Text style={styles.refreshBtnText}>🔄 Refresh</Text>
+              <Text style={styles.refreshBtnText}>Refresh</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -414,7 +414,7 @@ export default function SuperAdminDashboardScreen({
                     <View style={[styles.tdCell, { flex: 1.2 }]}>
                       <View style={styles.ownerBadge}>
                         <Text style={styles.ownerBadgeText} numberOfLines={1}>
-                          👤 {item.hotelAdminId || 'admin'}
+                          {item.hotelAdminId || 'admin'}
                         </Text>
                       </View>
                     </View>
@@ -422,7 +422,7 @@ export default function SuperAdminDashboardScreen({
                     {/* Location */}
                     <View style={[styles.tdCell, { flex: 1.4 }]}>
                       <Text style={styles.locationText} numberOfLines={1}>
-                        📍 {item.city || item.location || 'Local Area'}
+                        {item.city || item.location || 'Local Area'}
                       </Text>
                     </View>
 
@@ -456,7 +456,7 @@ export default function SuperAdminDashboardScreen({
                         onPress={() => setViewingHotel(item)}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.actionBtnViewText}>👁️ View</Text>
+                        <Text style={styles.actionBtnViewText}>View</Text>
                       </TouchableOpacity>
 
                       {status !== 'approved' && (

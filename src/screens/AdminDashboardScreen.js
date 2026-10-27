@@ -13,7 +13,7 @@
 // 9. Guest Bookings Manager (View, Filter, Cancel & Delete Bookings)
 // =============================================================================
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -408,37 +408,176 @@ export default function AdminDashboardScreen({
     showToast(`Reordered picture slot ${fromIndex + 1} ➔ ${toIndex + 1}`, 'info');
   };
 
-  // Hotel Search Handlers — Real Place Search (No hardcoded presets)
-  const handleHotelSearch = async () => {
-    if (!hotelSearchQuery.trim()) {
-      showToast('Please enter a hotel name to search.', 'error');
+  // Debounce ref for dynamic Google-style live typing search
+  const searchDebounceRef = useRef(null);
+
+  // Clear search input and results
+  const handleClearHotelSearch = () => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    setHotelSearchQuery('');
+    setHotelSearchResults([]);
+    setHotelSearchError(null);
+    setHotelSearchLoading(false);
+    setSelectedSearchResult(null);
+  };
+
+  // Live input change with dynamic Google-style debounced search
+  const handleHotelSearchChange = (text) => {
+    setHotelSearchQuery(text);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    const trimmed = text.trim();
+    if (!trimmed) {
+      setHotelSearchResults([]);
+      setHotelSearchError(null);
+      setHotelSearchLoading(false);
       return;
     }
+
+    // Debounce 250ms for smooth live search as user types
+    searchDebounceRef.current = setTimeout(() => {
+      executeHotelSearch(trimmed);
+    }, 250);
+  };
+
+  // Core Hotel Search Executor: connects directly to MongoDB backend API
+  const executeHotelSearch = async (queryText) => {
+    const q = (queryText !== undefined ? queryText : hotelSearchQuery).trim();
+    if (!q) {
+      setHotelSearchResults([]);
+      setHotelSearchError(null);
+      setHotelSearchLoading(false);
+      return;
+    }
+
     setHotelSearchLoading(true);
     setHotelSearchError(null);
-    setHotelSearchResults([]);
-    setSelectedSearchResult(null);
-    setConfirmedHotelData(null);
+
     try {
-      const result = await searchHotelByName(hotelSearchQuery.trim());
-      if (result.success && result.results && result.results.length > 0) {
-        setHotelSearchResults(result.results);
-        showToast('Found ' + result.results.length + ' results. Select your hotel.', 'success');
-      } else if (result.error === 'API_KEY_NOT_CONFIGURED') {
-        setHotelSearchError('Google Places API key not configured. You can still fill in the hotel details manually below.');
+      // 1. Search actual MongoDB database via REST API
+      const apiRes = await apiService.searchHotels(q);
+      let results = [];
+
+      if (apiRes && apiRes.success && Array.isArray(apiRes.data) && apiRes.data.length > 0) {
+        results = apiRes.data.map((h) => ({
+          placeId: h.hotelPropertyId || h.id || h._id,
+          id: h.hotelPropertyId || h.id || h._id,
+          hotelPropertyId: h.hotelPropertyId || h.id || h._id,
+          name: h.name || h.title || h.hotelName,
+          mainText: h.name || h.title || h.hotelName,
+          secondaryText: [h.city, h.address || h.hotelAddress].filter(Boolean).join(' • '),
+          city: h.city || '',
+          address: h.address || h.hotelAddress || '',
+          rating: h.rating || 4.8,
+          pricePerNight: h.pricePerNight || '',
+          image: h.imageLink || (h.images && h.images[0]) || '',
+          images: h.images || (h.imageLink ? [h.imageLink] : []),
+          latitude: h.latitude != null ? h.latitude : (h.hotelLatLong ? h.hotelLatLong[0] : null),
+          longitude: h.longitude != null ? h.longitude : (h.hotelLatLong ? h.hotelLatLong[1] : null),
+          status: h.status || 'approved',
+          isDatabaseMatch: true,
+          raw: h,
+        }));
+      }
+
+      // 2. If no MongoDB matches found, fallback to place search (if configured)
+      if (results.length === 0) {
+        try {
+          const placeRes = await searchHotelByName(q);
+          if (placeRes.success && placeRes.results && placeRes.results.length > 0) {
+            results = placeRes.results;
+          }
+        } catch (_) {}
+      }
+
+      // Deduplicate results by id / placeId / name
+      const uniqueResults = [];
+      const seenKeys = new Set();
+      for (const item of results) {
+        const key = (item.placeId || item.id || item.name || '').toLowerCase();
+        if (key && !seenKeys.has(key)) {
+          seenKeys.add(key);
+          uniqueResults.push(item);
+        }
+      }
+
+      setHotelSearchResults(uniqueResults);
+
+      if (uniqueResults.length === 0) {
+        setHotelSearchError(`No hotels found matching "${q}". Try checking the spelling, searching by city/address, or add a new hotel below.`);
       } else {
-        setHotelSearchError('No results found. Try a different search term or fill in the details manually.');
+        setHotelSearchError(null);
       }
     } catch (err) {
-      setHotelSearchError('Search failed: ' + err.message);
+      console.error('Hotel search error:', err);
+      setHotelSearchError(`Search request failed: ${err.message}`);
     } finally {
       setHotelSearchLoading(false);
     }
   };
 
+  const handleHotelSearch = () => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    executeHotelSearch();
+  };
+
   const handleSelectSearchResult = async (result) => {
     setSelectedSearchResult(result);
     setHotelSearchResults([]);
+    setHotelSearchError(null);
+
+    // If it's a database match from MongoDB, populate directly!
+    if (result.isDatabaseMatch && result.raw) {
+      const h = result.raw;
+      const hotelObj = {
+        id: result.id || h.hotelPropertyId || h.id || h._id,
+        hotelPropertyId: result.hotelPropertyId || h.hotelPropertyId,
+        name: result.name || h.name || h.title || h.hotelName,
+        title: result.name || h.name || h.title || h.hotelName,
+        city: result.city || h.city || '',
+        location: result.city || h.city || '',
+        address: result.address || h.address || h.hotelAddress || '',
+        latitude: result.latitude != null ? result.latitude : (h.latitude != null ? h.latitude : null),
+        longitude: result.longitude != null ? result.longitude : (h.longitude != null ? h.longitude : null),
+        imageLink: result.image || h.imageLink || (h.images && h.images[0]) || '',
+        images: result.images || h.images || (result.image ? [result.image] : []),
+        pricePerNight: result.pricePerNight || h.pricePerNight || '₹18,500 / night',
+        rating: result.rating || h.rating || 4.8,
+        status: result.status || h.status || 'approved',
+        paymentMethods: h.paymentMethods || ['Credit Card', 'Debit Card', 'UPI / QR', 'Cash at Reception'],
+        availability: h.availability || 'Available',
+      };
+
+      setConfirmedHotelData(hotelObj);
+      setHotelConfigForm({
+        name: hotelObj.name || '',
+        city: hotelObj.city || '',
+        address: hotelObj.address || '',
+        latitude: hotelObj.latitude != null ? String(hotelObj.latitude) : '',
+        longitude: hotelObj.longitude != null ? String(hotelObj.longitude) : '',
+        imageLink: hotelObj.imageLink || '',
+        subtitle: hotelObj.address || '',
+        pricePerNight: hotelObj.pricePerNight || '',
+        rating: hotelObj.rating ? String(hotelObj.rating) : '',
+      });
+
+      if (hotelObj.images && hotelObj.images.length > 0) {
+        setHotelImages(hotelObj.images.map((img, idx) => ({
+          id: generate10DigitId(),
+          url: typeof img === 'string' ? img : (img?.url || ''),
+          caption: typeof img === 'object' && img?.caption ? img.caption : `Hotel Photo ${idx + 1}`,
+        })).filter((img) => img.url));
+      }
+
+      // Automatically activate and save this MongoDB hotel
+      const activated = activeHotelService.saveAndActivateHotel(hotelObj);
+      setCurrentActiveHotel(activated);
+      if (onSetActiveHotel) onSetActiveHotel(activated);
+
+      showToast(`Selected "${hotelObj.name}" (${hotelObj.city || 'Active Hotel'}) from database.`, 'success');
+      return;
+    }
+
+    // Otherwise fallback to place details
     setIsFetchingDetails(true);
     setConfirmedHotelData(null);
     try {
@@ -446,7 +585,6 @@ export default function AdminDashboardScreen({
       if (detailResult.success && detailResult.hotel) {
         const h = detailResult.hotel;
         setConfirmedHotelData(h);
-        // Pre-fill the manual form fields with fetched data
         setHotelConfigForm({
           name: h.name || '',
           city: h.city || (h.address ? h.address.split(',').pop().trim() : '') || '',
@@ -458,7 +596,6 @@ export default function AdminDashboardScreen({
           pricePerNight: '',
           rating: h.rating ? String(h.rating) : '',
         });
-        // Populate images from place photos (up to 8)
         if (h.imageObjects && h.imageObjects.length > 0) {
           setHotelImages(h.imageObjects.slice(0, 8).map((img, idx) => ({ id: generate10DigitId(), url: img.url || '', caption: img.caption || ('Hotel Photo ' + (idx + 1)) })).filter((img) => img.url));
         }
@@ -831,6 +968,7 @@ export default function AdminDashboardScreen({
 
   // Data Collections — start empty, loaded from API
   const [hotels, setHotels] = useState([]);
+  const [hotelsDirectorySearch, setHotelsDirectorySearch] = useState('');
   const [restaurants, setRestaurants] = useState([]);
   const [gyms, setGyms] = useState([]);
   const [pools, setPools] = useState([]);
@@ -1614,70 +1752,205 @@ export default function AdminDashboardScreen({
         </View>
       </View>
 
-      {/* API Configuration Status */}
-      {!apiConfigStatus.configured && (
-        <View style={[styles.activeStatusCard, styles.activeStatusCardEmpty, { marginBottom: 12 }]}>
-          <Text style={[styles.activeStatusTitle, { marginBottom: 6 }]}>
-            🔑 GOOGLE PLACES API KEY NOT CONFIGURED
-          </Text>
-          <Text style={styles.activeStatusDetails}>
-            To enable real hotel search & automatic nearby places: add your Google Places API key.{'\n'}
-            In index.html add before the app script:{'\n'}
-            {'  '}window.__HOTEL_PORTAL_CONFIG__ = {'{ '}googlePlacesApiKey: "YOUR_KEY"{'}'};
-          </Text>
-          <Text style={[styles.activeStatusDetails, { marginTop: 6, color: '#E2C082' }]}>
-            You can still manually enter hotel name, address, and GPS coordinates below.
+      {/* Hotel Database Connection Status */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: 'rgba(34, 197, 94, 0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(34, 197, 94, 0.25)',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        marginBottom: 12,
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22C55E' }} />
+          <Text style={{ color: '#F1F5F9', fontSize: 12, fontWeight: '700' }}>
+            HOTEL DATABASE: CONNECTED (MongoDB hotelApiDb)
           </Text>
         </View>
-      )}
-
-      {/* Real Hotel Search */}
-      <View style={styles.presetSection}>
-        <Text style={styles.presetSectionTitle}>🔍 SEARCH & SELECT YOUR ACTUAL HOTEL</Text>
-        <Text style={styles.presetSectionSub}>
-          Type your hotel name and search to find it in Google Places. All coordinates, address, and photos will be fetched automatically.
+        <Text style={{ color: '#86EFAC', fontSize: 11, fontWeight: '600' }}>
+          Live Google-Style Search Active
         </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+      </View>
+
+      {/* Real Hotel Search — Google-Style Search */}
+      <View style={styles.presetSection}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <Text style={styles.presetSectionTitle}>HOTEL SEARCH DIRECTORY</Text>
+          {hotelSearchLoading && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <ActivityIndicator size="small" color="#E2C082" />
+              <Text style={{ color: '#E2C082', fontSize: 11, fontWeight: '600' }}>Searching database...</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.presetSectionSub}>
+          Search across MongoDB database by hotel name, city, location, or address with instant partial matching.
+        </Text>
+
+        {/* Google-Style Search Input Bar */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: '#12151F',
+          borderRadius: 10,
+          borderWidth: 1,
+          borderColor: hotelSearchQuery ? '#E2C082' : '#2A2E45',
+          paddingHorizontal: 12,
+          paddingVertical: 4,
+          marginBottom: 8,
+          gap: 8,
+        }}>
+          <Text style={{ color: '#E2C082', fontSize: 14, fontWeight: '700' }}>⌕</Text>
           <TextInput
-            style={[styles.formInput, { flex: 1 }]}
+            style={[styles.formInput, { flex: 1, borderWidth: 0, backgroundColor: 'transparent', paddingHorizontal: 0, height: 42 }]}
             value={hotelSearchQuery}
-            onChangeText={setHotelSearchQuery}
-            placeholder="e.g. Search any hotel name or city worldwide..."
+            onChangeText={handleHotelSearchChange}
+            placeholder="Type hotel name, city, or address (e.g. Mango, Emerald, Bengaluru)..."
             placeholderTextColor="#64748B"
             onSubmitEditing={handleHotelSearch}
             returnKeyType="search"
+            autoCapitalize="none"
           />
+          {hotelSearchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={handleClearHotelSearch}
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '700' }}>✕</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
-            style={[styles.saveConfigBtn, { paddingHorizontal: 20, minWidth: 120 }]}
+            style={styles.hotelSearchSubmitBtn}
             onPress={handleHotelSearch}
             disabled={hotelSearchLoading}
             activeOpacity={0.85}
           >
             {hotelSearchLoading ? (
-              <ActivityIndicator size="small" color="#0F1014" />
+              <ActivityIndicator size="small" color="#0A0D14" />
             ) : (
-              <Text style={styles.saveConfigBtnText}>🔍 Search</Text>
+              <Text style={styles.hotelSearchSubmitBtnText}>Search</Text>
             )}
           </TouchableOpacity>
         </View>
 
-        {/* Search Results Dropdown */}
+        {/* Dynamic Search Results Dropdown (Google Search Style) */}
         {hotelSearchResults.length > 0 && (
-          <View style={{ backgroundColor: '#1A1D2A', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E45', marginBottom: 12 }}>
-            <Text style={{ color: '#E2C082', fontSize: 11, padding: 10, borderBottomWidth: 1, borderBottomColor: '#2A2E45' }}>
-              SELECT YOUR HOTEL ({hotelSearchResults.length} RESULTS):
-            </Text>
+          <View style={{
+            backgroundColor: '#151824',
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: '#2A2E45',
+            marginBottom: 12,
+            overflow: 'hidden',
+          }}>
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              backgroundColor: '#1E2235',
+              borderBottomWidth: 1,
+              borderBottomColor: '#2A2E45',
+            }}>
+              <Text style={{ color: '#E2C082', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>
+                DATABASE MATCHES ({hotelSearchResults.length})
+              </Text>
+              <Text style={{ color: '#94A3B8', fontSize: 10 }}>Click to select & activate</Text>
+            </View>
+
             {hotelSearchResults.map((result, idx) => (
               <TouchableOpacity
-                key={result.placeId || idx}
-                style={{ padding: 12, borderBottomWidth: idx < hotelSearchResults.length - 1 ? 1 : 0, borderBottomColor: '#2A2E45' }}
+                key={result.placeId || result.id || idx}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 12,
+                  gap: 12,
+                  borderBottomWidth: idx < hotelSearchResults.length - 1 ? 1 : 0,
+                  borderBottomColor: '#202436',
+                  backgroundColor: '#151824',
+                }}
                 onPress={() => handleSelectSearchResult(result)}
                 activeOpacity={0.7}
               >
-                <Text style={{ color: '#F1F5F9', fontSize: 13, fontWeight: '600' }}>{result.mainText || result.description}</Text>
-                {result.secondaryText ? (
-                  <Text style={{ color: '#94A3B8', fontSize: 11, marginTop: 2 }}>📍 {result.secondaryText}</Text>
-                ) : null}
+                {/* Thumbnail Image */}
+                {result.image ? (
+                  <Image
+                    source={{ uri: result.image }}
+                    style={{ width: 48, height: 48, borderRadius: 6, backgroundColor: '#0B0D14' }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 6,
+                    backgroundColor: '#1F2438',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 1,
+                    borderColor: '#2A2E45',
+                  }}>
+                    <Text style={{ color: '#E2C082', fontSize: 11, fontWeight: '700' }}>HOTEL</Text>
+                  </View>
+                )}
+
+                {/* Hotel Details */}
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                    <Text style={{ color: '#F1F5F9', fontSize: 13, fontWeight: '700' }} numberOfLines={1}>
+                      {result.mainText || result.name || result.description}
+                    </Text>
+                    {result.status ? (
+                      <View style={{
+                        paddingHorizontal: 6,
+                        paddingVertical: 2,
+                        borderRadius: 4,
+                        backgroundColor: result.status === 'approved' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      }}>
+                        <Text style={{
+                          fontSize: 9,
+                          fontWeight: '700',
+                          color: result.status === 'approved' ? '#4ADE80' : '#F87171',
+                          textTransform: 'uppercase',
+                        }}>
+                          {result.status}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+
+                  <Text style={{ color: '#94A3B8', fontSize: 11, marginTop: 2 }} numberOfLines={1}>
+                    {result.secondaryText || result.address || result.city || 'Location registered'}
+                  </Text>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                    <Text style={{ color: '#E2C082', fontSize: 10, fontWeight: '600' }}>
+                      Rating: {result.rating || 4.8} / 5.0
+                    </Text>
+                    {result.pricePerNight ? (
+                      <Text style={{ color: '#94A3B8', fontSize: 10 }}>• {result.pricePerNight}</Text>
+                    ) : null}
+                  </View>
+                </View>
+
+                {/* Select Arrow Indicator */}
+                <View style={{ paddingHorizontal: 6 }}>
+                  <Text style={{ color: '#E2C082', fontSize: 14 }}>➔</Text>
+                </View>
               </TouchableOpacity>
             ))}
           </View>
@@ -1687,36 +1960,46 @@ export default function AdminDashboardScreen({
         {isFetchingDetails && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, backgroundColor: '#1A1D2A', borderRadius: 10, marginBottom: 12 }}>
             <ActivityIndicator size="small" color="#E2C082" />
-            <Text style={{ color: '#E2C082', fontSize: 13 }}>Fetching hotel details from Google Places...</Text>
+            <Text style={{ color: '#E2C082', fontSize: 13 }}>Loading hotel details from database...</Text>
           </View>
         )}
 
         {/* Confirmed Hotel Preview */}
         {confirmedHotelData && (
           <View style={{ backgroundColor: '#0D3B1F', borderRadius: 10, borderWidth: 1, borderColor: '#22C55E', padding: 14, marginBottom: 12 }}>
-            <Text style={{ color: '#22C55E', fontSize: 12, fontWeight: '700', marginBottom: 6 }}>✅ HOTEL FOUND — REVIEW & CONFIRM:</Text>
+            <Text style={{ color: '#22C55E', fontSize: 12, fontWeight: '700', marginBottom: 6 }}>ACTIVE HOTEL SELECTED:</Text>
             <Text style={{ color: '#F1F5F9', fontSize: 14, fontWeight: '700' }}>{confirmedHotelData.name}</Text>
-            <Text style={{ color: '#94A3B8', fontSize: 12, marginTop: 4 }}>📍 {confirmedHotelData.address}</Text>
+            <Text style={{ color: '#94A3B8', fontSize: 12, marginTop: 4 }}>{confirmedHotelData.address || confirmedHotelData.city}</Text>
             <Text style={{ color: '#94A3B8', fontSize: 12, marginTop: 2 }}>
-              GPS: [{confirmedHotelData.latitude != null ? confirmedHotelData.latitude.toFixed(6) : 'N/A'}, {confirmedHotelData.longitude != null ? confirmedHotelData.longitude.toFixed(6) : 'N/A'}]
+              Coordinates: [{confirmedHotelData.latitude != null ? Number(confirmedHotelData.latitude).toFixed(4) : 'N/A'}, {confirmedHotelData.longitude != null ? Number(confirmedHotelData.longitude).toFixed(4) : 'N/A'}]
             </Text>
-            {confirmedHotelData.rating ? (
-              <Text style={{ color: '#E2C082', fontSize: 12, marginTop: 2 }}>★ {confirmedHotelData.rating} Rating</Text>
-            ) : null}
             <TouchableOpacity
               style={[styles.saveConfigBtn, { marginTop: 10 }]}
               onPress={handleConfirmHotelFromSearch}
               activeOpacity={0.85}
             >
-              <Text style={styles.saveConfigBtnText}>✅ USE THIS HOTEL AS ACTIVE HOTEL</Text>
+              <Text style={styles.saveConfigBtnText}>SAVE & ACTIVATE ACROSS PORTAL</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Search Error */}
+        {/* Search Error / No Hotels Found Notice */}
         {hotelSearchError && (
-          <View style={{ backgroundColor: '#1A1118', borderRadius: 8, padding: 10, marginBottom: 8 }}>
-            <Text style={{ color: '#F87171', fontSize: 12 }}>⚠️ {hotelSearchError}</Text>
+          <View style={{
+            backgroundColor: '#1E1419',
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: 'rgba(239, 68, 68, 0.3)',
+            padding: 12,
+            marginBottom: 8,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            <Text style={{ color: '#FCA5A5', fontSize: 12, flex: 1 }}>{hotelSearchError}</Text>
+            <TouchableOpacity onPress={() => setHotelSearchError(null)} style={{ paddingLeft: 8 }}>
+              <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '700' }}>✕</Text>
+            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -2195,40 +2478,90 @@ export default function AdminDashboardScreen({
   // ===========================================================================
   // RENDER TAB: HOTELS (CRUD - VERTICAL LIST WITH PAYMENT STATUS)
   // ===========================================================================
-  const renderHotelsTab = () => (
-    <View style={styles.tabContentContainer}>
-      <View style={styles.sectionHeaderRow}>
-        <View>
-          <Text style={styles.sectionTitle}>🏨 HOTELS DIRECTORY ({hotels.length})</Text>
-          <Text style={styles.sectionSub}>
-            Vertical Hotel View • Live Payment Status (Paid / Not Made) & Integrated Booking Config
-          </Text>
-        </View>
-        <View style={styles.headerButtonsRow}>
-          {authService.isSuperAdmin() && (
+  const renderHotelsTab = () => {
+    const query = hotelsDirectorySearch.trim().toLowerCase();
+    const filteredHotels = query
+      ? hotels.filter((h) =>
+          (h.title || h.name || '').toLowerCase().includes(query) ||
+          (h.location || h.city || h.address || '').toLowerCase().includes(query) ||
+          (h.hotelPropertyId || '').toLowerCase().includes(query)
+        )
+      : hotels;
+
+    return (
+      <View style={styles.tabContentContainer}>
+        <View style={styles.sectionHeaderRow}>
+          <View>
+            <Text style={styles.sectionTitle}>HOTELS DIRECTORY ({hotels.length})</Text>
+            <Text style={styles.sectionSub}>
+              Vertical Hotel View • Live Payment Status (Paid / Not Made) & Integrated Booking Config
+            </Text>
+          </View>
+          <View style={styles.headerButtonsRow}>
+            {authService.isSuperAdmin() && (
+              <TouchableOpacity
+                style={styles.createItemBtn}
+                onPress={() => handleOpenCreateModal('hotels')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.createItemBtnText}>+ Add New Hotel</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
-              style={styles.createItemBtn}
-              onPress={() => handleOpenCreateModal('hotels')}
+              style={styles.addBtn}
+              onPress={() => setActiveTab('payments')}
               activeOpacity={0.8}
             >
-              <Text style={styles.createItemBtnText}>➕ Add New Hotel</Text>
+              <Text style={styles.addBtnText}>Payment Config</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Directory Live Search Input */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: '#12151F',
+          borderRadius: 8,
+          borderWidth: 1,
+          borderColor: '#2A2E45',
+          paddingHorizontal: 12,
+          paddingVertical: 2,
+          marginBottom: 14,
+          gap: 8,
+        }}>
+          <Text style={{ color: '#E2C082', fontSize: 13, fontWeight: '700' }}>⌕</Text>
+          <TextInput
+            style={[styles.formInput, { flex: 1, borderWidth: 0, backgroundColor: 'transparent', height: 38 }]}
+            value={hotelsDirectorySearch}
+            onChangeText={setHotelsDirectorySearch}
+            placeholder="Filter hotels by name, location, or city..."
+            placeholderTextColor="#64748B"
+            autoCapitalize="none"
+          />
+          {hotelsDirectorySearch.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setHotelsDirectorySearch('')}
+              style={{ padding: 4 }}
+              activeOpacity={0.7}
+            >
+              <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '700' }}>✕</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity
-            style={styles.addBtn}
-            onPress={() => setActiveTab('payments')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.addBtnText}>💳 Payment Config</Text>
-          </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Vertical Hotels List */}
-      <View style={styles.verticalHotelsContainer}>
-        {hotels.map((h) => {
-          const isAvail = h.availability === 'Available' || !h.availability;
-          const isPaid = (h.paymentStatus || 'Paid') === 'Paid';
+        {/* Vertical Hotels List */}
+        <View style={styles.verticalHotelsContainer}>
+          {filteredHotels.length === 0 ? (
+            <View style={{ padding: 24, alignItems: 'center', backgroundColor: '#151824', borderRadius: 8 }}>
+              <Text style={{ color: '#E2C082', fontSize: 13, fontWeight: '600' }}>
+                {hotels.length === 0 ? 'No hotels loaded from backend database.' : `No hotels match "${hotelsDirectorySearch}".`}
+              </Text>
+            </View>
+          ) : (
+            filteredHotels.map((h) => {
+              const isAvail = h.availability === 'Available' || !h.availability;
+              const isPaid = (h.paymentStatus || 'Paid') === 'Paid';
 
           return (
             <View key={h.id} style={styles.verticalHotelCard}>
@@ -2352,10 +2685,12 @@ export default function AdminDashboardScreen({
               </View>
             </View>
           );
-        })}
+        })
+      )}
       </View>
     </View>
   );
+};
 
   // ===========================================================================
   // RENDER TAB: RESTAURANTS (CRUD)
@@ -6650,4 +6985,40 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  hotelSearchSubmitBtn: {
+    backgroundColor: '#E2C082',
+    paddingHorizontal: 20,
+    height: 36,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 80,
+    ...Platform.select({
+      web: { cursor: 'pointer', boxShadow: '0 2px 8px rgba(226, 192, 130, 0.3)' },
+    }),
+  },
+  hotelSearchSubmitBtnText: {
+    color: '#0A0D14',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  saveConfigBtn: {
+    backgroundColor: '#22C55E',
+    paddingVertical: 11,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      web: { cursor: 'pointer', boxShadow: '0 2px 10px rgba(34, 197, 94, 0.25)' },
+    }),
+  },
+  saveConfigBtnText: {
+    color: '#0A0D14',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
 });
+

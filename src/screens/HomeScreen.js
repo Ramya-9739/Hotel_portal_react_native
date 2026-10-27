@@ -555,16 +555,16 @@ export default function HomeScreen({
 
     const tabs = [
       { id: 'all', label: 'All Curations', icon: '✦', count: allBottomItems.length },
-      { id: 'cafes', label: 'Bistros & Cafes', icon: '☕', count: hotelCafes.length },
-      { id: 'restaurants', label: 'Restaurants', icon: '🍽️', count: hotelRestaurants.length },
-      { id: 'gyms', label: 'Wellness & Gyms', icon: '🏋️', count: hotelGyms.length },
-      { id: 'pools', label: 'Swimming Pools', icon: '🏊', count: hotelPools.length },
-      { id: 'hospitals', label: 'Hospitals', icon: '🏥', count: hotelHospitals.length },
-      { id: 'pharmacies', label: 'Pharmacies', icon: '💊', count: hotelPharmacies.length },
-      { id: 'spa', label: 'Parlour & Spa', icon: '💆', count: hotelSpa.length },
-      { id: 'atms', label: '24/7 ATMs', icon: '🏧', count: hotelAtms.length },
-      { id: 'takeaway', label: 'Express Takeaway', icon: '🍔', count: hotelTakeaway.length },
-      { id: 'delivery', label: 'Suite Delivery', icon: '🛎️', count: hotelDelivery.length },
+      { id: 'cafes', label: 'Bistros & Cafes', icon: '◈', count: hotelCafes.length },
+      { id: 'restaurants', label: 'Restaurants', icon: '◈', count: hotelRestaurants.length },
+      { id: 'gyms', label: 'Wellness & Gyms', icon: '◈', count: hotelGyms.length },
+      { id: 'pools', label: 'Swimming Pools', icon: '◈', count: hotelPools.length },
+      { id: 'hospitals', label: 'Hospitals', icon: '◈', count: hotelHospitals.length },
+      { id: 'pharmacies', label: 'Pharmacies', icon: '◈', count: hotelPharmacies.length },
+      { id: 'spa', label: 'Parlour & Spa', icon: '◈', count: hotelSpa.length },
+      { id: 'atms', label: '24/7 ATMs', icon: '◈', count: hotelAtms.length },
+      { id: 'takeaway', label: 'Express Takeaway', icon: '◈', count: hotelTakeaway.length },
+      { id: 'delivery', label: 'Suite Delivery', icon: '◈', count: hotelDelivery.length },
       ...customTabs,
     ];
     return tabs;
@@ -692,7 +692,7 @@ export default function HomeScreen({
         <View style={styles.desktopContainer}>
           {/* 1. TOP SECTION: TOP TOURIST PLACES / ATTRACTIONS */}
           <HorizontalComponentList
-            title="🏛️ TOP TOURIST PLACES / ATTRACTIONS"
+            title="TOP TOURIST PLACES & ATTRACTIONS"
             subtitle={activeHotel?.city ? `Curated royal heritage, palaces, gardens and private guided excursions near ${activeHotel.name || activeHotel.city}` : "Curated royal heritage, palaces, gardens and private guided excursions"}
             actionLabel="Explore Curations →"
             items={activeHotel?.nearby?.touristPlaces || []}
@@ -708,7 +708,7 @@ export default function HomeScreen({
             {/* LEFT PANEL (~28%): Shopping Malls & Silk Bazaars */}
             <View style={styles.sideColumn}>
               <SimpleShoppingList
-                title="🛍️ SHOPPING MALLS & SILK BAZAARS"
+                title="SHOPPING MALLS & SILK BAZAARS"
                 subtitle="Royal silk weavers, sandalwood emporiums & yoga shalas"
                 items={activeHotel?.nearby?.shopping || []}
                 hotel={activeHotel}
@@ -800,7 +800,7 @@ export default function HomeScreen({
         >
           {/* 1. TOP ATTRACTIONS */}
           <HorizontalComponentList
-            title="🏛️ TOP TOURIST PLACES / ATTRACTIONS"
+            title="TOP TOURIST PLACES & ATTRACTIONS"
             subtitle={`Real heritage & attractions near ${activeHotel.name}`}
             items={activeHotel?.nearby?.touristPlaces || []}
             emptyMessage="No tourist places found near this hotel."
@@ -835,7 +835,7 @@ export default function HomeScreen({
                   mobileActiveTab === 'left' && styles.mobileTabTextActive,
                 ]}
               >
-                🛍️ Shopping Malls
+                Shopping Malls
               </Text>
             </TouchableOpacity>
 
@@ -852,7 +852,7 @@ export default function HomeScreen({
                   mobileActiveTab === 'right' && styles.mobileTabTextActive,
                 ]}
               >
-                🚕 Transportation
+                Transportation
               </Text>
             </TouchableOpacity>
           </View>
@@ -861,7 +861,7 @@ export default function HomeScreen({
           <View style={styles.mobileVerticalWrapper}>
             {mobileActiveTab === 'left' ? (
               <SimpleShoppingList
-                title="🛍️ SHOPPING MALLS & SILK BAZAARS"
+                title="SHOPPING MALLS & SILK BAZAARS"
                 subtitle={`Premier retail destinations near ${activeHotel.city}`}
                 items={activeHotel?.nearby?.shopping || []}
                 hotel={activeHotel}
@@ -1198,15 +1198,16 @@ const styles = StyleSheet.create({
   desktopContainer: {
     flex: 1,
     paddingHorizontal: 8,
-    paddingTop: 2,
-    paddingBottom: 4,
+    paddingTop: 1,
+    paddingBottom: 2,
     justifyContent: 'space-between',
     display: 'flex',
     flexDirection: 'column',
     ...Platform.select({
       web: {
-        minHeight: 'calc(100vh - 50px)',
-        overflowY: 'auto',
+        height: 'calc(100vh - 38px)',
+        maxHeight: 'calc(100vh - 38px)',
+        overflow: 'hidden',
       },
       default: {
         flex: 1,
@@ -1215,21 +1216,21 @@ const styles = StyleSheet.create({
   },
   middleRow: {
     flex: 1,
-    minHeight: 310,
+    minHeight: 160,
     flexDirection: 'row',
     gap: 8,
-    marginVertical: 4,
+    marginVertical: 2,
     alignItems: 'stretch',
   },
   sideColumn: {
     flex: 28,
     height: '100%',
-    minHeight: 310,
+    minHeight: 160,
   },
   centerColumn40: {
     flex: 44,
     height: '100%',
-    minHeight: 310,
+    minHeight: 160,
   },
 
   // 3. Mobile Layout
@@ -1374,31 +1375,33 @@ const styles = StyleSheet.create({
   bottomSectionWrapper: {
     width: '100%',
     flexDirection: 'column',
-    marginTop: 6,
-    gap: 8,
+    marginTop: 2,
+    gap: 3,
+    flexShrink: 0,
   },
   bottomSectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
     paddingHorizontal: 4,
+    marginBottom: 1,
   },
   bottomHeaderLeft: {
     flex: 1,
-    minWidth: 260,
+    minWidth: 240,
   },
   bottomSectionTitle: {
     color: '#E2C082',
-    fontSize: 12.5,
+    fontSize: 11.5,
     fontWeight: '800',
-    letterSpacing: 0.6,
+    letterSpacing: 0.5,
   },
   bottomSectionSub: {
     color: '#94A3B8',
-    fontSize: 10,
-    marginTop: 2,
+    fontSize: 9,
+    marginTop: 1,
   },
   viewModeToggleRow: {
     flexDirection: 'row',
@@ -1411,8 +1414,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   viewModePill: {
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
     borderRadius: 5,
     backgroundColor: 'transparent',
     ...Platform.select({
@@ -1426,7 +1429,7 @@ const styles = StyleSheet.create({
   },
   viewModePillText: {
     color: '#94A3B8',
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '600',
   },
   viewModePillTextActive: {
@@ -1436,20 +1439,20 @@ const styles = StyleSheet.create({
   bottomFilterTabsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 2,
+    gap: 4,
+    paddingVertical: 1,
     paddingHorizontal: 2,
   },
   bottomTabChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     backgroundColor: '#12141A',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 7,
+    borderRadius: 5,
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
