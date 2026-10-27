@@ -4168,6 +4168,16 @@ export default function AdminDashboardScreen({
         </View>
 
         <View style={styles.adminHeaderRight}>
+          {onOpenSuperAdmin ? (
+            <TouchableOpacity
+              style={styles.superAdminBtn}
+              onPress={onOpenSuperAdmin}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.superAdminBtnText}>🛡️ Super Admin Console</Text>
+            </TouchableOpacity>
+          ) : null}
+
           <TouchableOpacity
             style={styles.addComponentHeaderBtn}
             onPress={() => handleOpenCreateModal('restaurants')}
@@ -4310,6 +4320,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  superAdminBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(99, 102, 241, 0.18)',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#818CF8',
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  superAdminBtnText: {
+    color: '#A5B4FC',
+    fontSize: 11,
+    fontWeight: '800',
   },
   addComponentHeaderBtn: {
     paddingVertical: 6,

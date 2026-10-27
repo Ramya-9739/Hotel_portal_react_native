@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "main": "App.js",
   "scripts": {
-    "dev": "expo start --web --offline",
-    "start": "expo start --offline",
+    "dev": "expo start --web --offline --port 8081",
+    "start": "expo start --offline --port 8081",
     "android": "expo start --android --offline",
     "ios": "expo start --ios --offline",
-    "web": "expo start --web --offline",
+    "web": "expo start --web --offline --port 8081",
     "server": "node backend/server.js"
   },
   "dependencies": {
