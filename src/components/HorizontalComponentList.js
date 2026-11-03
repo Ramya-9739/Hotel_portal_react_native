@@ -10,6 +10,8 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import DisplayComponent from './DisplayComponent';
+import { getDirectionsUrl, openMapLink } from '../data/hotelsData';
+import { activeHotelService } from '../services/activeHotelService';
 
 export default function HorizontalComponentList({
   title = 'ATTRACTIONS',
@@ -26,9 +28,26 @@ export default function HorizontalComponentList({
   onTabChange = null,
   showSortControls = true,
   defaultSort = 'default',
+  hotel = null,
+  onDirections = null,
 }) {
   const scrollRef = useRef(null);
   const { width } = useWindowDimensions();
+
+  const handleDirectionsClick = (item, e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (onDirections) {
+      onDirections(item);
+      return;
+    }
+    const currentHotel = hotel || activeHotelService.getActiveHotel();
+    const url = getDirectionsUrl(currentHotel, item);
+    if (url) {
+      openMapLink(url);
+    } else if (onSelectComponent) {
+      onSelectComponent(item);
+    }
+  };
 
   // Responsive Card Width: Compact proportions for 5-quadrant layout
   const isDesktop = width >= 768;
@@ -375,7 +394,7 @@ export default function HorizontalComponentList({
                 <View style={styles.rankedActionsCol}>
                   <TouchableOpacity
                     style={styles.rankedDirectionBtn}
-                    onPress={() => onSelectComponent && onSelectComponent(item)}
+                    onPress={(e) => handleDirectionsClick(item, e)}
                     activeOpacity={0.8}
                   >
                     <Text style={styles.rankedDirectionBtnIcon}>🗺️</Text>

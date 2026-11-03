@@ -2,7 +2,7 @@
 // src/components/InteractiveHotelMap.js
 // Interactive Map with Direct Google Maps Launcher
 // Displays active hotel location. Clicking anywhere on the map,
-// marker, popup, header, or badge directly opens Google Maps in a new tab.
+// marker, popup, header, or action buttons directly opens Google Maps.
 // =============================================================================
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -12,76 +12,93 @@ import {
   Text,
   TouchableOpacity,
   Platform,
-  Linking,
 } from 'react-native';
-
-const DEFAULT_HOTEL = {
-  name: 'Hotel Location',
-  address: 'Active Hotel Location',
-  lat: 20.5937,
-  lng: 78.9629,
-  googleMapsUrl: '',
-};
+import {
+  extractEntityCoordinates,
+  getHotelLocationUrl,
+  getDirectionsToHotelUrl,
+  getEntityFullAddress,
+  openMapLink,
+} from '../data/hotelsData';
 
 export default function InteractiveHotelMap({
-  hotelName = DEFAULT_HOTEL.name,
-  hotelAddress = DEFAULT_HOTEL.address,
-  initialLat = DEFAULT_HOTEL.lat,
-  initialLng = DEFAULT_HOTEL.lng,
-  googleMapsUrl = DEFAULT_HOTEL.googleMapsUrl,
+  hotelName = 'Active Hotel',
+  hotelAddress = '',
+  hotelLatLong = '',
+  hotelCity = '',
+  initialLat = null,
+  initialLng = null,
+  googleMapsUrl = '',
 }) {
-  const numLat = parseFloat(initialLat);
-  const numLng = parseFloat(initialLng);
-  const validLat = !isNaN(numLat) && numLat !== 0 ? numLat : DEFAULT_HOTEL.lat;
-  const validLng = !isNaN(numLng) && numLng !== 0 ? numLng : DEFAULT_HOTEL.lng;
+  // Extract and validate real coordinates from props
+  const coords = extractEntityCoordinates({
+    latitude: initialLat,
+    longitude: initialLng,
+    hotelLatLong: hotelLatLong,
+    address: hotelAddress,
+    name: hotelName,
+  });
 
-  const [currentLat, setCurrentLat] = useState(validLat);
-  const [currentLng, setCurrentLng] = useState(validLng);
-  const [locationLabel, setLocationLabel] = useState(hotelName || DEFAULT_HOTEL.name);
+  const [currentLat, setCurrentLat] = useState(coords.lat);
+  const [currentLng, setCurrentLng] = useState(coords.lng);
+  const [locationLabel, setLocationLabel] = useState(hotelName || 'Active Hotel Location');
   const [isMoved, setIsMoved] = useState(false);
   const iframeRef = useRef(null);
 
   // Sync state if props change
   useEffect(() => {
-    const nextLat = parseFloat(initialLat);
-    const nextLng = parseFloat(initialLng);
-    const resolvedLat = !isNaN(nextLat) && nextLat !== 0 ? nextLat : DEFAULT_HOTEL.lat;
-    const resolvedLng = !isNaN(nextLng) && nextLng !== 0 ? nextLng : DEFAULT_HOTEL.lng;
-
-    setCurrentLat(resolvedLat);
-    setCurrentLng(resolvedLng);
-    setLocationLabel(hotelName || DEFAULT_HOTEL.name);
+    const fresh = extractEntityCoordinates({
+      latitude: initialLat,
+      longitude: initialLng,
+      hotelLatLong: hotelLatLong,
+      address: hotelAddress,
+      name: hotelName,
+    });
+    setCurrentLat(fresh.lat);
+    setCurrentLng(fresh.lng);
+    setLocationLabel(hotelName || 'Active Hotel Location');
     setIsMoved(false);
-  }, [initialLat, initialLng, hotelName]);
+  }, [initialLat, initialLng, hotelLatLong, hotelAddress, hotelName]);
 
-  // If coordinates are missing, render graceful fallback per requirement
-  if (!validLat || !validLng || isNaN(validLat) || isNaN(validLng)) {
-    return (
-      <View style={styles.unconfiguredContainer}>
-        <Text style={styles.unconfiguredIcon}>📍</Text>
-        <Text style={styles.unconfiguredTitle}>Hotel location not configured</Text>
-        <Text style={styles.unconfiguredSub}>
-          Exact latitude and longitude coordinates are required to display the interactive map and calculate turn-by-turn directions.
-        </Text>
-      </View>
-    );
-  }
+  const hotelObj = {
+    name: hotelName,
+    address: hotelAddress,
+    city: hotelCity,
+    latitude: currentLat != null ? currentLat : coords.lat,
+    longitude: currentLng != null ? currentLng : coords.lng,
+  };
 
-  // Open location directly in Google Maps
+  const safeHotelName = hotelName || 'Active Hotel';
+  const safeHotelAddress = hotelAddress || (hotelCity ? `${hotelCity}, India` : 'Hotel Location');
+  const fullAddress = getEntityFullAddress(hotelObj);
+
+  // Dynamic Google Maps URLs
+  const viewMapsUrl =
+    (coords.isValid && currentLat != null && currentLng != null)
+      ? `https://www.google.com/maps/search/?api=1&query=${currentLat},${currentLng}`
+      : (googleMapsUrl || getHotelLocationUrl(hotelObj));
+
+  const directionsUrl =
+    (coords.isValid && currentLat != null && currentLng != null)
+      ? `https://www.google.com/maps/dir/?api=1&destination=${currentLat},${currentLng}`
+      : getDirectionsToHotelUrl(hotelObj);
+
+  // Open location in Google Maps (View Location mode)
   const handleOpenGoogleMaps = (overrideUrl) => {
-    const fallbackUrl = (validLat && validLng) ? `https://www.google.com/maps/search/?api=1&query=${validLat},${validLng}` : '';
-    const defaultUrl = googleMapsUrl || fallbackUrl;
-    let url = overrideUrl || defaultUrl;
-
-    if (!overrideUrl && isMoved) {
+    let url = overrideUrl || viewMapsUrl;
+    if (!overrideUrl && isMoved && currentLat != null && currentLng != null) {
       url = `https://www.google.com/maps/search/?api=1&query=${currentLat},${currentLng}`;
     }
+    openMapLink(url);
+  };
 
-    if (Platform.OS === 'web') {
-      if (url) window.open(url, '_blank', 'noopener,noreferrer');
-    } else {
-      if (url) Linking.openURL(url).catch((err) => console.error('Error opening maps:', err));
+  // Open driving directions to this hotel
+  const handleOpenDirections = (overrideUrl) => {
+    let url = overrideUrl || directionsUrl;
+    if (!overrideUrl && isMoved && currentLat != null && currentLng != null) {
+      url = `https://www.google.com/maps/dir/?api=1&destination=${currentLat},${currentLng}`;
     }
+    openMapLink(url);
   };
 
   // Handle messages from the Leaflet map iframe
@@ -90,11 +107,14 @@ export default function InteractiveHotelMap({
       const handleMessage = (event) => {
         if (!event.data) return;
 
-        // Directly open Google Maps when map or marker is clicked inside iframe
         if (event.data.type === 'OPEN_GOOGLE_MAPS') {
-          const fallbackUrl = (validLat && validLng) ? `https://www.google.com/maps/search/?api=1&query=${validLat},${validLng}` : '';
-          const targetUrl = event.data.url || googleMapsUrl || fallbackUrl;
-          if (targetUrl) window.open(targetUrl, '_blank', 'noopener,noreferrer');
+          const targetUrl = event.data.url || viewMapsUrl;
+          openMapLink(targetUrl);
+        }
+
+        if (event.data.type === 'OPEN_DIRECTIONS') {
+          const targetUrl = event.data.url || directionsUrl;
+          openMapLink(targetUrl);
         }
 
         if (event.data.type === 'PIN_MOVED') {
@@ -102,37 +122,32 @@ export default function InteractiveHotelMap({
           setCurrentLat(Number(lat.toFixed(5)));
           setCurrentLng(Number(lng.toFixed(5)));
           setIsMoved(true);
-          setLocationLabel(`Selected Pin: ${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`);
+          setLocationLabel(`Pin: ${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`);
         }
       };
 
       window.addEventListener('message', handleMessage);
       return () => window.removeEventListener('message', handleMessage);
     }
-  }, [googleMapsUrl]);
+  }, [viewMapsUrl, directionsUrl]);
 
   // Reset pin back to original hotel location
   const handleResetPin = () => {
-    setCurrentLat(initialLat);
-    setCurrentLng(initialLng);
+    setCurrentLat(coords.lat);
+    setCurrentLng(coords.lng);
     setLocationLabel(hotelName);
     setIsMoved(false);
     if (iframeRef.current && iframeRef.current.contentWindow) {
       iframeRef.current.contentWindow.postMessage(
-        { type: 'RESET_PIN', lat: initialLat, lng: initialLng, name: hotelName },
+        { type: 'RESET_PIN', lat: coords.lat, lng: coords.lng, name: hotelName },
         '*'
       );
     }
   };
 
-  // Direct Google Maps URL dynamically resolved from hotel coordinates or location search
-  const safeHotelName = hotelName || DEFAULT_HOTEL.name;
-  const safeHotelAddress = hotelAddress || DEFAULT_HOTEL.address;
-  const directMapsUrl =
-    googleMapsUrl ||
-    (validLat && validLng
-      ? `https://www.google.com/maps/search/?api=1&query=${validLat},${validLng}`
-      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(safeHotelName + ' ' + safeHotelAddress)}`);
+  // Fallback lat/lng for Leaflet if coordinates are completely absent (fallback to center of Bengaluru/India gracefully)
+  const mapCenterLat = coords.isValid && coords.lat != null ? coords.lat : 12.9753;
+  const mapCenterLng = coords.isValid && coords.lng != null ? coords.lng : 77.6062;
 
   // HTML content for Leaflet map with direct Google Maps launch on click
   const mapHtml = `
@@ -166,6 +181,7 @@ export default function InteractiveHotelMap({
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             font-size: 11px;
             box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+            padding: 2px;
           }
           .leaflet-popup-tip {
             background: #16181F;
@@ -175,22 +191,33 @@ export default function InteractiveHotelMap({
             color: #E2C082 !important;
             border-color: rgba(226, 192, 130, 0.25) !important;
           }
+          .popup-btn-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+          }
           .gmaps-btn {
             display: inline-block;
-            margin-top: 6px;
             background: #E2C082;
             color: #0F1014;
-            padding: 4px 10px;
+            padding: 4px 8px;
             border-radius: 4px;
             font-weight: 700;
             font-size: 10px;
             text-decoration: none;
             cursor: pointer;
             border: none;
-            letter-spacing: 0.3px;
           }
           .gmaps-btn:hover {
             background: #F1D9A7;
+          }
+          .gmaps-btn-dir {
+            background: #1E2333;
+            color: #E2C082;
+            border: 1px solid rgba(226, 192, 130, 0.4);
+          }
+          .gmaps-btn-dir:hover {
+            background: #283045;
           }
         </style>
       </head>
@@ -198,10 +225,12 @@ export default function InteractiveHotelMap({
         <div id="map"></div>
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <script>
-          var hotelLat = ${Number(currentLat || validLat || DEFAULT_HOTEL.lat)};
-          var hotelLng = ${Number(currentLng || validLng || DEFAULT_HOTEL.lng)};
+          var hotelLat = ${Number(mapCenterLat)};
+          var hotelLng = ${Number(mapCenterLng)};
           var hotelTitle = ${JSON.stringify(safeHotelName)};
-          var directMapsUrl = ${JSON.stringify(directMapsUrl)};
+          var viewMapsUrl = ${JSON.stringify(viewMapsUrl)};
+          var directionsUrl = ${JSON.stringify(directionsUrl)};
+          var hasCoords = ${Boolean(coords.isValid)};
           
           var map = L.map('map', {
             zoomControl: true,
@@ -226,12 +255,20 @@ export default function InteractiveHotelMap({
           }).addTo(map);
 
           var safeAddress = ${JSON.stringify(safeHotelAddress)};
-          var popupContent = '<div style="padding:2px 0;"><b>' + hotelTitle + '</b><br><span style="color:#CBD5E1;font-size:10px;">' + safeAddress + '</span></div>';
+          var popupContent = '<div style="padding:4px 2px;">' +
+            '<b>' + hotelTitle + '</b><br>' +
+            '<span style="color:#CBD5E1;font-size:10px;">' + safeAddress + '</span>' +
+            '<div class="popup-btn-row">' +
+              '<button class="gmaps-btn" onclick="launchGoogleMaps(' + hotelLat + ',' + hotelLng + ')">📍 View Map ↗</button>' +
+              '<button class="gmaps-btn gmaps-btn-dir" onclick="launchDirections()">🧭 Directions ↗</button>' +
+            '</div>' +
+          '</div>';
+
           marker.bindPopup(popupContent).openPopup();
 
           function launchGoogleMaps(lat, lng) {
-            var targetUrl = directMapsUrl;
-            if (lat && lng && (Math.abs(lat - hotelLat) > 0.001 || Math.abs(lng - hotelLng) > 0.001)) {
+            var targetUrl = viewMapsUrl;
+            if (hasCoords && lat && lng && (Math.abs(lat - hotelLat) > 0.001 || Math.abs(lng - hotelLng) > 0.001)) {
               targetUrl = 'https://www.google.com/maps/search/?api=1&query=' + lat + ',' + lng;
             }
             if (window.parent) {
@@ -242,13 +279,22 @@ export default function InteractiveHotelMap({
             } catch (e) {}
           }
 
-          // Clicking anywhere on map launches the route / pin in Google Maps
+          function launchDirections() {
+            if (window.parent) {
+              window.parent.postMessage({ type: 'OPEN_DIRECTIONS', url: directionsUrl }, '*');
+            }
+            try {
+              window.open(directionsUrl, '_blank');
+            } catch (e) {}
+          }
+
+          // Clicking map or marker opens Google Maps
           map.on('click', function(e) {
             launchGoogleMaps(e.latlng.lat, e.latlng.lng);
           });
 
           marker.on('click', function(e) {
-            launchGoogleMaps(hotelLat, hotelLng);
+            marker.openPopup();
           });
 
           window.addEventListener('message', function(e) {
@@ -265,7 +311,7 @@ export default function InteractiveHotelMap({
 
   return (
     <View style={styles.mapContainer}>
-      {/* Header Bar with Hotel Name, Move Indicator, and Single Clean Action Button */}
+      {/* Header Bar with Hotel Name, Coordinates/Address, and Quick Map Actions */}
       <View style={styles.mapHeader}>
         <TouchableOpacity
           style={styles.headerLeft}
@@ -281,7 +327,7 @@ export default function InteractiveHotelMap({
             <Text style={styles.mapSubtitle} numberOfLines={1}>
               {isMoved
                 ? `Pin: ${currentLat}°N, ${currentLng}°E`
-                : hotelAddress}
+                : (safeHotelAddress || fullAddress)}
             </Text>
           </View>
         </TouchableOpacity>
@@ -297,13 +343,24 @@ export default function InteractiveHotelMap({
             </TouchableOpacity>
           )}
 
-          {/* SINGLE GOOGLE MAPS BUTTON */}
+          {/* VIEW MAP BUTTON */}
           <TouchableOpacity
             style={styles.googleMapsBtn}
             onPress={() => handleOpenGoogleMaps()}
             activeOpacity={0.8}
+            accessibilityLabel="View Hotel in Google Maps"
           >
-            <Text style={styles.googleMapsBtnText}>Google Maps ↗</Text>
+            <Text style={styles.googleMapsBtnText}>📍 Map ↗</Text>
+          </TouchableOpacity>
+
+          {/* GET DIRECTIONS BUTTON */}
+          <TouchableOpacity
+            style={styles.directionsBtn}
+            onPress={() => handleOpenDirections()}
+            activeOpacity={0.8}
+            accessibilityLabel="Get Directions to Hotel in Google Maps"
+          >
+            <Text style={styles.directionsBtnText}>🧭 Directions ↗</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -319,14 +376,22 @@ export default function InteractiveHotelMap({
           />
         ) : (
           <View style={styles.fallbackContainer}>
-            <Text style={styles.fallbackText}>📍 {hotelName}</Text>
-            <Text style={styles.fallbackSub}>{hotelAddress}</Text>
-            <TouchableOpacity
-              style={styles.googleMapsBtn}
-              onPress={() => handleOpenGoogleMaps()}
-            >
-              <Text style={styles.googleMapsBtnText}>Open in Google Maps ↗</Text>
-            </TouchableOpacity>
+            <Text style={styles.fallbackText}>📍 {safeHotelName}</Text>
+            <Text style={styles.fallbackSub}>{safeHotelAddress}</Text>
+            <View style={styles.fallbackActions}>
+              <TouchableOpacity
+                style={styles.googleMapsBtn}
+                onPress={() => handleOpenGoogleMaps()}
+              >
+                <Text style={styles.googleMapsBtnText}>Open Map ↗</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.directionsBtn}
+                onPress={() => handleOpenDirections()}
+              >
+                <Text style={styles.directionsBtnText}>Get Directions ↗</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </View>
@@ -351,79 +416,98 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#111217',
     paddingHorizontal: 8,
-    paddingVertical: 5,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(15, 17, 24, 0.96)',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(226, 192, 130, 0.15)',
-    gap: 6,
+    borderBottomColor: 'rgba(226, 192, 130, 0.12)',
     flexShrink: 0,
+    gap: 6,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
     flex: 1,
-    overflow: 'hidden',
+    gap: 6,
+    minWidth: 0,
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   pinIcon: {
-    fontSize: 13,
+    fontSize: 14,
   },
   headerTitles: {
     flex: 1,
-    gap: 1,
+    minWidth: 0,
   },
   mapTitle: {
     color: '#F8F6F0',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.3,
   },
   mapSubtitle: {
     color: '#94A3B8',
-    fontSize: 8.5,
-    fontWeight: '500',
+    fontSize: 9.5,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
+    flexShrink: 0,
   },
   resetBtn: {
-    paddingHorizontal: 6,
-    paddingVertical: 2.5,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingVertical: 3,
+    paddingHorizontal: 6,
     borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   resetBtnText: {
     color: '#CBD5E1',
-    fontSize: 8.5,
+    fontSize: 9.5,
     fontWeight: '700',
   },
   googleMapsBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    backgroundColor: 'rgba(226, 192, 130, 0.18)',
-    borderRadius: 4,
+    backgroundColor: 'rgba(226, 192, 130, 0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.5)',
+    borderColor: 'rgba(226, 192, 130, 0.4)',
+    paddingVertical: 3.5,
+    paddingHorizontal: 7,
+    borderRadius: 5,
     ...Platform.select({
-      web: { cursor: 'pointer' },
+      web: {
+        cursor: 'pointer',
+        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.35)',
+      },
     }),
   },
   googleMapsBtnText: {
     color: '#E2C082',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
+  },
+  directionsBtn: {
+    backgroundColor: '#E2C082',
+    paddingVertical: 3.5,
+    paddingHorizontal: 8,
+    borderRadius: 5,
+    ...Platform.select({
+      web: {
+        cursor: 'pointer',
+        boxShadow: '0 2px 8px rgba(226, 192, 130, 0.3)',
+      },
+    }),
+  },
+  directionsBtnText: {
+    color: '#0D0F17',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
   iframeWrapper: {
     flex: 1,
@@ -454,33 +538,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textAlign: 'center',
   },
-  unconfiguredContainer: {
-    flex: 1,
-    height: '100%',
-    backgroundColor: '#111217',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-    gap: 6,
-  },
-  unconfiguredIcon: {
-    fontSize: 26,
-    marginBottom: 4,
-  },
-  unconfiguredTitle: {
-    color: '#F87171',
-    fontSize: 12.5,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  unconfiguredSub: {
-    color: '#94A3B8',
-    fontSize: 9.5,
-    textAlign: 'center',
-    lineHeight: 14,
-    maxWidth: 240,
+  fallbackActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4,
   },
 });

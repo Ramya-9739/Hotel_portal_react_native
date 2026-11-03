@@ -16,6 +16,13 @@
 import { Platform } from 'react-native';
 import { searchNearby } from './placeSearchService';
 import sampleAdminData from '../../sample_admin_data.json';
+import {
+  extractEntityCoordinates,
+  getHotelLocationUrl,
+  getDirectionsToHotelUrl,
+  getDirectionsUrl,
+  getEntityFullAddress,
+} from '../data/hotelsData';
 
 const ACTIVE_HOTEL_STORAGE_KEY = '@hotel_portal_active_hotel';
 const CUSTOM_HOTELS_STORAGE_KEY = '@hotel_portal_custom_hotels';
@@ -342,6 +349,9 @@ class ActiveHotelService {
         );
         const selected = match || res.data[0];
         const seed = buildInitialSeedHotel();
+        const coords = extractEntityCoordinates(selected) || extractEntityCoordinates(this.activeHotel);
+        const resolvedLat = coords.isValid ? coords.lat : (seed.latitude || 12.9753);
+        const resolvedLng = coords.isValid ? coords.lng : (seed.longitude || 77.6062);
         const mergedHotel = {
           ...seed,
           ...this.activeHotel,
@@ -353,6 +363,13 @@ class ActiveHotelService {
           location: selected.location || selected.city || this.activeHotel?.location || seed.location,
           id: selected.id || selected.hotelPropertyId || selected._id,
           hotelPropertyId: selected.hotelPropertyId || selected.id,
+          latitude: resolvedLat,
+          longitude: resolvedLng,
+          lat: resolvedLat,
+          lng: resolvedLng,
+          hotelLatLong: `${resolvedLat},${resolvedLng}`,
+          googleMapsUrl: getHotelLocationUrl({ ...selected, latitude: resolvedLat, longitude: resolvedLng }),
+          directionsUrl: getDirectionsToHotelUrl({ ...selected, latitude: resolvedLat, longitude: resolvedLng }),
           nearby: {
             ...seed.nearby,
             ...(this.activeHotel?.nearby || {}),
@@ -797,6 +814,9 @@ class ActiveHotelService {
       pools: inputNearby.pools || prevNearby.pools || [],
     };
 
+    const hCoords = extractEntityCoordinates(hotelData);
+    const resolvedLat = hCoords.isValid ? hCoords.lat : null;
+    const resolvedLng = hCoords.isValid ? hCoords.lng : null;
     const newHotel = {
       ...hotelData,
       id: id,
@@ -806,17 +826,17 @@ class ActiveHotelService {
       address: hotelData.address || '',
       city: hotelData.city || hotelData.location || '',
       location: hotelData.location || hotelData.city || '',
-      latitude: !isNaN(lat) ? lat : null,
-      longitude: !isNaN(lng) ? lng : null,
-      lat: !isNaN(lat) ? lat : null,
-      lng: !isNaN(lng) ? lng : null,
+      latitude: resolvedLat,
+      longitude: resolvedLng,
+      lat: resolvedLat,
+      lng: resolvedLng,
+      hotelLatLong: (resolvedLat != null && resolvedLng != null) ? `${resolvedLat},${resolvedLng}` : (hotelData.hotelLatLong || ''),
       rating: hotelData.rating ? parseFloat(hotelData.rating) : null,
       images: imagesList,
       imageObjects: Array.isArray(hotelData.imageObjects) ? hotelData.imageObjects.slice(0, 8) : [],
       imageLink: imagesList[0] || null,
-      googleMapsUrl: (!isNaN(lat) && !isNaN(lng))
-        ? ('https://www.google.com/maps/search/?api=1&query=' + lat + ',' + lng)
-        : null,
+      googleMapsUrl: getHotelLocationUrl({ ...hotelData, latitude: resolvedLat, longitude: resolvedLng }),
+      directionsUrl: getDirectionsToHotelUrl({ ...hotelData, latitude: resolvedLat, longitude: resolvedLng }),
       nearby: mergedNearby,
       customCategories: Array.isArray(hotelData.customCategories)
         ? hotelData.customCategories
@@ -1220,60 +1240,5 @@ class ActiveHotelService {
 
 export const activeHotelService = new ActiveHotelService();
 
-/**
- * Dynamic Turn-by-Turn Directions
- * ORIGIN: Active Hotel latitude and longitude (or validated hotel address)
- * DESTINATION: Place latitude and longitude (or validated place title + address + hotel city)
- */
-export function calculateDynamicDirections(hotel, place) {
-  if (!hotel && !place) return null;
-
-  // 1. Resolve Origin
-  let originParam = '';
-  const oLat = hotel?.latitude != null ? parseFloat(hotel.latitude) : (hotel?.lat != null ? parseFloat(hotel.lat) : null);
-  const oLng = hotel?.longitude != null ? parseFloat(hotel.longitude) : (hotel?.lng != null ? parseFloat(hotel.lng) : null);
-
-  if (oLat != null && oLng != null && !isNaN(oLat) && !isNaN(oLng)) {
-    originParam = `${oLat},${oLng}`;
-  } else if (hotel?.address) {
-    originParam = encodeURIComponent(hotel.address);
-  } else if (hotel?.name) {
-    originParam = encodeURIComponent(`${hotel.name}, ${hotel.city || ''}`.trim());
-  }
-
-  if (!originParam) {
-    originParam = encodeURIComponent(hotel?.city ? `${hotel.city}` : 'Hotel');
-  }
-
-  // 2. Resolve Destination
-  if (!place) return null;
-  let destParam = '';
-  const dLat = place?.latitude != null ? parseFloat(place.latitude) : (place?.lat != null ? parseFloat(place.lat) : null);
-  const dLng = place?.longitude != null ? parseFloat(place.longitude) : (place?.lng != null ? parseFloat(place.lng) : null);
-
-  // Check if coordinates exist and are physically sensible (<150km if origin coords exist)
-  let coordsSensible = dLat != null && dLng != null && !isNaN(dLat) && !isNaN(dLng);
-  if (coordsSensible && oLat != null && oLng != null) {
-    const latDiff = Math.abs(dLat - oLat);
-    const lngDiff = Math.abs(dLng - oLng);
-    // If more than ~2 degrees (~220 km) apart, coords likely belong to another city preset
-    if (latDiff > 2.0 || lngDiff > 2.0) {
-      coordsSensible = false;
-    }
-  }
-
-  if (coordsSensible) {
-    destParam = `${dLat},${dLng}`;
-  } else {
-    const cleanTitle = (place.title || place.name || '').replace(/\(.*?\)/g, '').replace(/•.*$/g, '').trim();
-    const cleanAddr = (place.address || place.location || '').replace(/•.*$/g, '').trim();
-    const city = hotel?.city || '';
-    const queryParts = [cleanTitle, cleanAddr, city].filter(Boolean);
-    destParam = encodeURIComponent(queryParts.length > 0 ? queryParts.join(', ') : 'Destination');
-  }
-
-  return `https://www.google.com/maps/dir/?api=1&origin=${originParam}&destination=${destParam}&travelmode=driving`;
-}
-
-export const getDirections = calculateDynamicDirections;
-export const getDirectionsUrl = calculateDynamicDirections;
+export { getDirectionsUrl as calculateDynamicDirections, getDirectionsUrl, getDirectionsToHotelUrl, getHotelLocationUrl };
+export const getDirections = getDirectionsUrl;

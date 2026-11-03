@@ -18,6 +18,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import InteractiveHotelMap from './InteractiveHotelMap';
+import { getDirectionsToHotelUrl, openMapLink } from '../data/hotelsData';
 
 const ORIGINAL_HOTEL_PHOTOS = [
   'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=85',
@@ -119,6 +120,11 @@ export default function CentralDisplay({
     }
   };
 
+  const handleOpenDirections = () => {
+    const url = getDirectionsToHotelUrl(activeHotel);
+    openMapLink(url);
+  };
+
   const currentImage = gallery[currentImageIndex] || gallery[0] || ORIGINAL_HOTEL_PHOTOS[0];
   const photoCaption = photoCaptions[currentImageIndex] || PHOTO_LABELS[0];
 
@@ -143,16 +149,28 @@ export default function CentralDisplay({
           </View>
         </TouchableOpacity>
 
-        {/* Quick Rate Pill */}
-        <TouchableOpacity
-          style={styles.ratePill}
-          onPress={handleHotelClick}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.ratePillText}>
-            ★ {activeHotel.rating || 4.95} · From {activeHotel.pricePerNight || '₹8,500 / night'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.headerRightGroup}>
+          {/* Quick Directions Button */}
+          <TouchableOpacity
+            style={styles.directionsHeaderBtn}
+            onPress={handleOpenDirections}
+            activeOpacity={0.8}
+            accessibilityLabel="Get driving directions to hotel"
+          >
+            <Text style={styles.directionsHeaderBtnText}>🧭 Directions ↗</Text>
+          </TouchableOpacity>
+
+          {/* Quick Rate Pill */}
+          <TouchableOpacity
+            style={styles.ratePill}
+            onPress={handleHotelClick}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.ratePillText}>
+              ★ {activeHotel.rating || 4.95} · From {activeHotel.pricePerNight || '₹8,500 / night'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* 2. Side-by-Side Main Area: Left (Luxury Photo Showcase) | Right (Interactive Leaflet Map) */}
@@ -232,9 +250,11 @@ export default function CentralDisplay({
             key={`map-${activeHotel.id || activeHotel.name}-${activeHotel.latitude ?? activeHotel.lat ?? 'default'}-${activeHotel.longitude ?? activeHotel.lng ?? 'default'}`}
             hotelName={activeHotel.name}
             hotelAddress={activeHotel.address}
-            initialLat={parseFloat(activeHotel.latitude ?? activeHotel.lat) || null}
-            initialLng={parseFloat(activeHotel.longitude ?? activeHotel.lng) || null}
-            googleMapsUrl={activeHotel.googleMapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeHotel.name + ' ' + (activeHotel.address || activeHotel.city || ''))}`}
+            hotelLatLong={activeHotel.hotelLatLong}
+            hotelCity={activeHotel.city}
+            initialLat={activeHotel.latitude ?? activeHotel.lat}
+            initialLng={activeHotel.longitude ?? activeHotel.lng}
+            googleMapsUrl={activeHotel.googleMapsUrl}
           />
         </View>
       </View>
@@ -297,6 +317,30 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.3,
     marginTop: 1,
+  },
+  headerRightGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  directionsHeaderBtn: {
+    backgroundColor: 'rgba(226, 192, 130, 0.16)',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 192, 130, 0.4)',
+    ...Platform.select({
+      web: {
+        cursor: 'pointer',
+      },
+    }),
+  },
+  directionsHeaderBtnText: {
+    color: '#E2C082',
+    fontSize: 9.5,
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
   ratePill: {
     backgroundColor: 'rgba(226, 192, 130, 0.1)',

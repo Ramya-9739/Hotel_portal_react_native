@@ -16,6 +16,7 @@ import {
   Platform,
 } from 'react-native';
 import { getCategoryMeta } from './DisplayComponent';
+import { getDirectionsUrl, openMapLink } from '../data/hotelsData';
 
 export default function ScanToMobileModal({
   visible,
@@ -30,12 +31,8 @@ export default function ScanToMobileModal({
   const hotelName = hotel?.name || 'Hotel Concierge';
   const meta = getCategoryMeta(targetItem.componentType);
 
-  // Dynamic directions URL using active hotel if available
-  const googleMapsUrl = (hotel?.latitude && hotel?.longitude && targetItem?.latitude && targetItem?.longitude)
-    ? `https://www.google.com/maps/dir/?api=1&origin=${hotel.latitude},${hotel.longitude}&destination=${targetItem.latitude},${targetItem.longitude}&travelmode=driving`
-    : (targetItem.externalUrl && targetItem.externalUrl.includes('google.com/maps')
-        ? targetItem.externalUrl
-        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${targetItem.title} ${targetItem.location || targetItem.address || hotel?.city || ''}`)}`);
+  // Dynamic directions URL using active hotel origin and venue destination
+  const googleMapsUrl = getDirectionsUrl(hotel, targetItem);
 
   // QR Code URL encoding the Google Maps link
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(googleMapsUrl)}`;

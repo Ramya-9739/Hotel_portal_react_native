@@ -45,11 +45,12 @@ import { activeHotelService } from '../services/activeHotelService';
 export function extractRowData(item, category, hotel) {
   if (!item) return null;
 
+  const currentHotel = hotel || activeHotelService.getActiveHotel();
   const title = safeVal(item.title || item.name, 'Unnamed Venue');
   const subtitle = safeVal(item.subtitle || item.description || item.address || item.shortDescription, 'Premier Location');
   const categoryBadge = safeVal(item.tag || item.category, category ? category.toUpperCase() : 'CURATION');
   const websiteUrl = item.websiteUrl || item.website || item.link || item.externalUrl || null;
-  const directionsUrl = getDirectionsUrl(hotel, item);
+  const directionsUrl = getDirectionsUrl(currentHotel, item);
 
   // If item explicitly has custom data1..data5, respect them
   if (item.data1 && item.data2 && item.data3 && item.data4 && item.data5) {

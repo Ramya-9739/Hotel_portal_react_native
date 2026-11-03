@@ -28,6 +28,7 @@ import {
 import { HOTEL_START, HOTEL_ORIGIN_QUERY } from '../components/RouteDetailsModal';
 import { apiService } from '../services/apiService';
 import { getDirectionsUrl } from '../data/hotelsData';
+import { activeHotelService } from '../services/activeHotelService';
 
 export default function GymDetailScreen({
   gym,
@@ -74,11 +75,10 @@ export default function GymDetailScreen({
 
   // Google Maps Dynamic Directions calculation from current hotel
   const openDirections = (mode = 'driving') => {
-    const url = getDirectionsUrl(hotel, gym);
+    const currentHotel = hotel || activeHotelService.getActiveHotel();
+    const url = getDirectionsUrl(currentHotel, gym);
     if (!url) {
-      const msg = !hotel || (!hotel.latitude && !hotel.lat)
-        ? 'Hotel location coordinates not configured for turn-by-turn routing.'
-        : 'Directions unavailable for this destination (missing coordinates).';
+      const msg = 'Directions unavailable for this destination.';
       if (Platform.OS === 'web') alert(msg);
       return;
     }
@@ -546,11 +546,11 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   scrollContentDesktop: {
-    maxWidth: 1100,
+    maxWidth: 1040,
     alignSelf: 'center',
     width: '100%',
-    paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   heroSection: {
     borderRadius: 16,
@@ -561,7 +561,7 @@ const styles = StyleSheet.create({
   },
   heroImageWrapper: {
     position: 'relative',
-    height: Platform.OS === 'web' ? 380 : 260,
+    height: Platform.OS === 'web' ? 240 : 200,
     width: '100%',
   },
   heroImage: {

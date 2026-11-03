@@ -698,6 +698,7 @@ export default function HomeScreen({
             items={activeHotel?.nearby?.touristPlaces || []}
             emptyMessage="No tourist places found near this hotel."
             selectedId={selectedComponent?.id}
+                        hotel={activeHotel}
             onSelectComponent={handleOpenDetail}
             onViewDetails={handleOpenDetail}
             onScanPress={handleOpenScan}
@@ -784,6 +785,7 @@ export default function HomeScreen({
               subtitle=""
               items={currentBottomItems}
               selectedId={selectedComponent?.id}
+              hotel={activeHotel}
               onViewDetails={handleOpenDetail}
               onSelectComponent={handleOpenDetail}
               onScanPress={handleOpenScan}
@@ -805,6 +807,7 @@ export default function HomeScreen({
             items={activeHotel?.nearby?.touristPlaces || []}
             emptyMessage="No tourist places found near this hotel."
             selectedId={selectedComponent?.id}
+              hotel={activeHotel}
             onSelectComponent={handleOpenDetail}
             onViewDetails={handleOpenDetail}
             onScanPress={handleOpenScan}
@@ -923,6 +926,7 @@ export default function HomeScreen({
               subtitle=""
               items={currentBottomItems}
               selectedId={selectedComponent?.id}
+              hotel={activeHotel}
               onViewDetails={handleOpenDetail}
               onSelectComponent={handleOpenDetail}
               onScanPress={handleOpenScan}

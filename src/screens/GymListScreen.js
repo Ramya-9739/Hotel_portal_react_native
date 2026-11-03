@@ -28,6 +28,7 @@ import {
 import { apiService } from '../services/apiService';
 import { HOTEL_START } from '../components/RouteDetailsModal';
 import { getDirectionsUrl } from '../data/hotelsData';
+import { activeHotelService } from '../services/activeHotelService';
 
 export default function GymListScreen({
   hotel = null,
@@ -111,11 +112,10 @@ export default function GymListScreen({
 
   // Launch Google Maps directly from card using dynamic origin from hotel
   const handleQuickDirections = (gym) => {
-    const mapsUrl = getDirectionsUrl(hotel, gym);
+    const currentHotel = hotel || activeHotelService.getActiveHotel();
+    const mapsUrl = getDirectionsUrl(currentHotel, gym);
     if (!mapsUrl) {
-      const msg = !hotel || (!hotel.latitude && !hotel.lat)
-        ? 'Hotel location coordinates not configured for turn-by-turn routing.'
-        : 'Directions unavailable for this destination (missing coordinates).';
+      const msg = 'Directions unavailable for this destination.';
       if (Platform.OS === 'web') alert(msg);
       return;
     }

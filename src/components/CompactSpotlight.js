@@ -17,6 +17,7 @@ import {
   useWindowDimensions,
   Linking,
 } from 'react-native';
+import { getHotelLocationUrl, openMapLink } from '../data/hotelsData';
 
 export default function CompactSpotlight({
   hotel,
@@ -41,12 +42,8 @@ export default function CompactSpotlight({
     : ['UPI', 'Credit Card', 'Debit Card', 'Cash'];
 
   const handleOpenWebsite = () => {
-    const url = hotel.externalUrl || hotel.websiteUrl || (hotel.latitude && hotel.longitude ? `https://www.google.com/maps/search/?api=1&query=${hotel.latitude},${hotel.longitude}` : `https://www.google.com/search?q=${encodeURIComponent(title)}`);
-    if (Platform.OS === 'web') {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } else {
-      Linking.openURL(url).catch((err) => console.error('Failed to open external url:', err));
-    }
+    const url = hotel.externalUrl || hotel.websiteUrl || getHotelLocationUrl(hotel);
+    openMapLink(url);
   };
 
   return (

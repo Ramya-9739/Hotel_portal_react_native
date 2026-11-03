@@ -18,6 +18,7 @@ import {
   Platform,
   Linking,
 } from 'react-native';
+import { getDirectionsUrl, openMapLink } from '../data/hotelsData';
 
 export const HOTEL_START = {
   name: 'Hotel Porch',
@@ -81,27 +82,11 @@ export default function RouteDetailsModal({
   const rawDistance = item.distance || item.hotelDistance || item.location || '2.4 km';
   const cleanDistance = String(rawDistance).replace('📍', '').replace('from Hotel', '').trim();
 
-  // Compute Google Maps Directions URL dynamically using active hotel coordinates as origin
-  const originLat = hotel?.latitude ?? hotel?.lat;
-  const originLng = hotel?.longitude ?? hotel?.lng;
-  const originQuery = (originLat && originLng && !isNaN(originLat) && !isNaN(originLng))
-    ? `${originLat},${originLng}`
-    : encodeURIComponent(hotel?.address || hotel?.name || (hotel?.city ? `${hotel.city}, India` : HOTEL_ORIGIN_QUERY));
-
-  const destLat = item?.latitude ?? item?.lat;
-  const destLng = item?.longitude ?? item?.lng;
-  const destinationQuery = (destLat && destLng && !isNaN(destLat) && !isNaN(destLng))
-    ? `${destLat},${destLng}`
-    : encodeURIComponent(getGoogleMapsDestinationQuery(item, hotel));
-
-  const googleMapsDirectionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${originQuery}&destination=${destinationQuery}&travelmode=driving`;
+  // Compute Google Maps Directions URL dynamically using active hotel coordinates/address as origin
+  const googleMapsDirectionsUrl = getDirectionsUrl(hotel, item);
 
   const handleOpenDirections = () => {
-    if (Platform.OS === 'web') {
-      window.open(googleMapsDirectionsUrl, '_blank', 'noopener,noreferrer');
-    } else {
-      Linking.openURL(googleMapsDirectionsUrl).catch((err) => console.error('Error opening maps:', err));
-    }
+    openMapLink(googleMapsDirectionsUrl);
   };
 
   const handleOpenWebsite = () => {
