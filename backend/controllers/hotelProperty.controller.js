@@ -2,6 +2,79 @@ const mongoose = require("mongoose");
 const HotelProperty = require("../models/hotelProperty.model");
 const { sendSuccess, sendError } = require("../utils/responseHelper");
 
+// Helper to compute Levenshtein distance for typo-tolerant matching
+const levenshtein = (a, b) => {
+  const an = a ? a.length : 0;
+  const bn = b ? b.length : 0;
+  if (an === 0) return bn;
+  if (bn === 0) return an;
+  const matrix = [];
+  for (let i = 0; i <= bn; i++) matrix[i] = [i];
+  for (let j = 0; j <= an; j++) matrix[0][j] = j;
+  for (let i = 1; i <= bn; i++) {
+    for (let j = 1; j <= an; j++) {
+      if (b.charAt(i - 1).toLowerCase() === a.charAt(j - 1).toLowerCase()) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  return matrix[bn][an];
+};
+
+// Check if query fuzzily matches target text (allowing 1-2 character typos)
+const isFuzzyMatch = (query, target) => {
+  if (!query || !target) return false;
+  const q = String(query).toLowerCase().trim();
+  const t = String(target).toLowerCase().trim();
+  if (t.includes(q)) return true;
+
+  const tWords = t.split(/[^a-z0-9]+/i).filter(Boolean);
+  const qWords = q.split(/[^a-z0-9]+/i).filter(Boolean);
+  if (qWords.length === 0) return false;
+
+  return qWords.every((qw) =>
+    tWords.some((tw) => {
+      if (tw.includes(qw) || qw.includes(tw)) return true;
+      const maxDist = qw.length <= 4 ? 1 : 2;
+      return levenshtein(qw, tw) <= maxDist;
+    })
+  );
+};
+
+// Score and rank hotels so exact and prefix matches rank highest
+const calculateMatchScore = (query, hotel) => {
+  const q = String(query).toLowerCase().trim();
+  const name = String(hotel.hotelName || '').toLowerCase().trim();
+  const city = String(hotel.city || '').toLowerCase().trim();
+  const addr = String(hotel.hotelAddress || '').toLowerCase().trim();
+
+  let score = 0;
+  if (name === q) score += 2000;
+  else if (name.startsWith(q)) score += 1500;
+  else if (name.includes(q)) score += 1000;
+
+  if (city === q) score += 800;
+  else if (city.startsWith(q)) score += 600;
+  else if (city.includes(q)) score += 400;
+
+  if (addr.includes(q)) score += 300;
+
+  // Typo tolerance match score
+  if (score === 0) {
+    if (isFuzzyMatch(q, name)) score += 200;
+    else if (isFuzzyMatch(q, city)) score += 150;
+    else if (isFuzzyMatch(q, addr)) score += 100;
+  }
+
+  return score;
+};
+
 // Helper to find a hotel by MongoDB _id or hotelPropertyId
 const findHotelById = async (id) => {
   let item = null;
@@ -36,34 +109,106 @@ const getPending = async (req, res) => {
   }
 };
 
-// GET /api/hotel-properties/search?q=...&status=...&hotelAdminId=...&limit=20
+// GET /api/hotel-properties/search?q=...&status=...&hotelAdminId=...&limit=8
 const search = async (req, res) => {
   try {
-    const { q, query, status, hotelAdminId, limit = 20 } = req.query;
+    const { q, query, status, hotelAdminId, limit = 8 } = req.query;
     const searchParam = (q || query || "").trim();
 
-    const filter = {};
-    if (status) filter.status = status;
-    if (hotelAdminId) filter.hotelAdminId = hotelAdminId;
+    // Do not return suggestions if query is less than 2 characters
+    if (searchParam.length < 2) {
+      return sendSuccess(res, []);
+    }
 
-    if (searchParam) {
-      // Escape regex special chars to prevent regex injection
-      const escaped = searchParam.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const regex = new RegExp(escaped, "i");
-      filter.$or = [
+    const baseFilter = {};
+    if (status) baseFilter.status = status;
+    if (hotelAdminId) baseFilter.hotelAdminId = hotelAdminId;
+
+    const maxLimit = Math.min(Math.max(parseInt(limit, 10) || 8, 1), 50);
+
+    // Escape regex special chars to prevent regex injection
+    const escaped = searchParam.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escaped, "i");
+
+    // 1. Direct Regex Match across hotelName, city, hotelAddress, hotelPropertyId
+    const directFilter = {
+      ...baseFilter,
+      $or: [
         { hotelName: regex },
         { city: regex },
         { hotelAddress: regex },
         { hotelPropertyId: regex },
-      ];
+      ],
+    };
+
+    const directItems = await HotelProperty.find(directFilter).lean();
+
+    // Map by unique ID to avoid duplicates
+    const itemMap = new Map();
+    for (const item of directItems) {
+      const key = String(item.hotelPropertyId || item._id);
+      itemMap.set(key, item);
     }
 
-    const maxLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 50);
-    const items = await HotelProperty.find(filter)
-      .sort({ createdAt: -1 })
-      .limit(maxLimit);
+    // 2. Multi-word token match if search query has multiple words (e.g. "Royal Spa")
+    const words = searchParam.split(/\s+/).filter((w) => w.length > 1);
+    if (words.length > 1 && itemMap.size < maxLimit) {
+      const tokenConditions = words.map((w) => {
+        const escW = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const wRegex = new RegExp(escW, "i");
+        return {
+          $or: [
+            { hotelName: wRegex },
+            { city: wRegex },
+            { hotelAddress: wRegex },
+          ],
+        };
+      });
 
-    sendSuccess(res, items);
+      const tokenItems = await HotelProperty.find({
+        ...baseFilter,
+        $and: tokenConditions,
+      }).lean();
+
+      for (const item of tokenItems) {
+        const key = String(item.hotelPropertyId || item._id);
+        if (!itemMap.has(key)) {
+          itemMap.set(key, item);
+        }
+      }
+    }
+
+    // 3. Typo-tolerant fuzzy matching (e.g., "mngo" -> "mango", "emrald" -> "emerald")
+    // If fewer than maxLimit results are found, evaluate candidate hotels
+    if (itemMap.size < maxLimit) {
+      const candidateHotels = await HotelProperty.find(baseFilter).limit(100).lean();
+      for (const candidate of candidateHotels) {
+        const key = String(candidate.hotelPropertyId || candidate._id);
+        if (itemMap.has(key)) continue;
+
+        if (
+          isFuzzyMatch(searchParam, candidate.hotelName) ||
+          isFuzzyMatch(searchParam, candidate.city) ||
+          isFuzzyMatch(searchParam, candidate.hotelAddress)
+        ) {
+          itemMap.set(key, candidate);
+        }
+      }
+    }
+
+    // 4. Rank items so exact and prefix matches appear on top
+    const allResults = Array.from(itemMap.values());
+    allResults.sort((a, b) => {
+      const scoreA = calculateMatchScore(searchParam, a);
+      const scoreB = calculateMatchScore(searchParam, b);
+      if (scoreB !== scoreA) {
+        return scoreB - scoreA;
+      }
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+
+    const finalItems = allResults.slice(0, maxLimit);
+    sendSuccess(res, finalItems);
   } catch (err) {
     sendError(res, err.message);
   }

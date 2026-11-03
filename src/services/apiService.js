@@ -593,19 +593,26 @@ class ApiService {
   async searchHotels(query = '', options = {}) {
     try {
       const q = (query || '').trim();
-      const params = [];
-      if (q) params.push(`q=${encodeURIComponent(q)}`);
-      if (options.status) params.push(`status=${encodeURIComponent(options.status)}`);
-      if (options.hotelAdminId) params.push(`hotelAdminId=${encodeURIComponent(options.hotelAdminId)}`);
-      if (options.limit) params.push(`limit=${encodeURIComponent(options.limit)}`);
+      if (q.length < 2) {
+        return { success: true, data: [] };
+      }
 
-      const queryStr = params.length > 0 ? `?${params.join('&')}` : '';
-      const url = `${BASE_URL}/api/hotel-properties/search${queryStr}`;
-      console.log(`[REST API] GET ${url}`);
-      const res = await fetch(url, { headers: this.getHeaders() });
+      const params = [];
+      params.push('q=' + encodeURIComponent(q));
+      if (options.status) params.push('status=' + encodeURIComponent(options.status));
+      if (options.hotelAdminId) params.push('hotelAdminId=' + encodeURIComponent(options.hotelAdminId));
+      params.push('limit=' + encodeURIComponent(options.limit || 8));
+
+      const queryStr = '?' + params.join('&');
+      const url = BASE_URL + '/api/hotel-properties/search' + queryStr;
+      console.log('[REST API] GET ' + url);
+      const res = await fetch(url, {
+        headers: this.getHeaders(),
+        signal: options.signal,
+      });
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(`[HTTP ${res.status}] GET ${url} failed: ${json.error || res.statusText}`);
+        throw new Error('[HTTP ' + res.status + '] GET ' + url + ' failed: ' + (json.error || res.statusText));
       }
       const list = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
       // Deduplicate results by hotelPropertyId or id
@@ -618,10 +625,22 @@ class ApiService {
           uniqueList.push(item);
         }
       }
-      const mapped = uniqueList.map((doc) => this.mapHotelPropertyToFrontend(doc));
+      const mapped = uniqueList.map((doc) => {
+        const item = this.mapHotelPropertyToFrontend(doc);
+        return {
+          ...item,
+          raw: doc,
+          mainText: item.name || doc.hotelName,
+          secondaryText: [item.city, item.address].filter(Boolean).join(' • '),
+          isDatabaseMatch: true,
+        };
+      });
       return { success: true, data: mapped };
     } catch (err) {
-      console.error(`[REST API Error] searchHotels failed:`, err.message);
+      if (err.name === 'AbortError') {
+        return { success: false, aborted: true, data: [] };
+      }
+      console.error('[REST API Error] searchHotels failed:', err.message);
       return { success: false, error: err.message, data: [] };
     }
   }
