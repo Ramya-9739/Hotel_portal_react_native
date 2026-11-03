@@ -276,6 +276,40 @@ export default function App() {
                 switchToGuest();
               }}
             />
+          ) : isAdminLoggedIn && !authService.isSuperAdmin() ? (
+            /* 403 Forbidden Access Denied for Regular Hotel Admins */
+            <View style={styles.accessDeniedContainer}>
+              <View style={styles.accessDeniedCard}>
+                <Text style={styles.accessDeniedIcon}>🚫</Text>
+                <Text style={styles.accessDeniedTitle}>403 — ACCESS DENIED</Text>
+                <Text style={styles.accessDeniedSub}>
+                  Super Administrator privileges are strictly required to view this console.
+                </Text>
+                <Text style={styles.accessDeniedDetails}>
+                  Your active account is logged in as <Text style={{ color: '#E2C082', fontWeight: '700' }}>{authService.getUser()?.username || 'user'}</Text> with the role <Text style={{ color: '#F87171', fontWeight: '700' }}>{authService.getUser()?.role || 'clientadmin'}</Text>. You do not have permission to access global administration routes.
+                </Text>
+                <View style={styles.accessDeniedBtnRow}>
+                  <TouchableOpacity
+                    style={styles.returnAdminBtn}
+                    onPress={switchToAdmin}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.returnAdminBtnText}>← Return to Hotel Admin Console</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.switchAccountBtn}
+                    onPress={() => {
+                      authService.logout();
+                      setIsAdminLoggedIn(false);
+                      switchToSuperAdmin();
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.switchAccountBtnText}>Switch Account / Log Out</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
           ) : (
             <AdminLoginScreen
               initialRole="superadmin"
@@ -306,7 +340,7 @@ export default function App() {
                 switchToGuest();
               }}
               onBackToGuestPortal={switchToGuest}
-              onOpenSuperAdmin={switchToSuperAdmin}
+              onOpenSuperAdmin={authService.isSuperAdmin() ? switchToSuperAdmin : null}
               onLogout={() => {
                 authService.logout();
                 setIsAdminLoggedIn(false);
@@ -433,6 +467,83 @@ const styles = StyleSheet.create({
   floatingPillTextActive: {
     color: '#070A12',
     fontWeight: '800',
+  },
+  accessDeniedContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: '#0A0C14',
+  },
+  accessDeniedCard: {
+    maxWidth: 540,
+    width: '100%',
+    backgroundColor: '#141824',
+    borderRadius: 14,
+    padding: 32,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#EF4444',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.6,
+    shadowRadius: 24,
+    elevation: 16,
+  },
+  accessDeniedIcon: {
+    fontSize: 44,
+    marginBottom: 12,
+  },
+  accessDeniedTitle: {
+    color: '#EF4444',
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  accessDeniedSub: {
+    color: '#F87171',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  accessDeniedDetails: {
+    color: '#94A3B8',
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  accessDeniedBtnRow: {
+    flexDirection: 'row',
+    gap: 12,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  returnAdminBtn: {
+    backgroundColor: '#E2C082',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  returnAdminBtnText: {
+    color: '#0A0D14',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  switchAccountBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: '#2A2E45',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  switchAccountBtnText: {
+    color: '#CBD5E1',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
 

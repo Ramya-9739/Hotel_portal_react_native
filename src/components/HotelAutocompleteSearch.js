@@ -1,14 +1,20 @@
 // =============================================================================
 // src/components/HotelAutocompleteSearch.js
 // Google-Style Live Hotel Autocomplete Search Component
-// - Real-time suggestions while typing (>= 2 characters)
-// - 300ms debounce delay
-// - Request cancellation via AbortController & sequence ID
-// - Keyboard accessibility (ArrowUp, ArrowDown, Enter, Escape)
-// - Click-outside and Escape to close
-// - Highlights matching search tokens
-// - Real MongoDB data only (no Google Places API or hardcoded dummy data)
-// - Luxury dark-and-gold aesthetic matching Hotel Portal
+// Dual Source:
+//   Source 1: Registered Hotels (MongoDB) - hotels already in database
+//   Source 2: Discover Hotels (Google Places API) - external discovery
+//
+// Features:
+//   - Real-time suggestions while typing (>= 2 characters)
+//   - 300ms debounce delay
+//   - Request cancellation via AbortController & sequence ID
+//   - Two clearly labelled sections (Registered vs Discover)
+//   - Keyboard accessibility (ArrowUp, ArrowDown, Enter, Escape)
+//   - Click-outside and Escape to close
+//   - Highlights matching search tokens in gold
+//   - Prevents duplicate hotel registrations
+//   - Luxury dark-and-gold aesthetic matching Hotel Portal
 // =============================================================================
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -52,7 +58,7 @@ const HighlightedText = ({ text, query, baseStyle, highlightStyle }) => {
     <Text style={baseStyle}>
       {parts.map((part, idx) => {
         const isMatch = regex.test(part);
-        regex.lastIndex = 0; // reset RegExp state
+        regex.lastIndex = 0;
         return isMatch ? (
           <Text key={idx} style={highlightStyle}>
             {part}
@@ -67,12 +73,15 @@ const HighlightedText = ({ text, query, baseStyle, highlightStyle }) => {
 
 export default function HotelAutocompleteSearch({
   onSelectHotel,
-  placeholder = 'Type hotel name, city, or address (e.g. Mango, Emerald, Bengaluru)...',
+  placeholder = 'Type hotel name, city, or address (e.g. Taj, Mango, Emerald, Bengaluru)...',
   maxSuggestions = 8,
   containerStyle,
 }) {
   const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
+  const [registeredHotels, setRegisteredHotels] = useState([]);
+  const [discoveredHotels, setDiscoveredHotels] = useState([]);
+  const [isGoogleConfigured, setIsGoogleConfigured] = useState(true);
+  const [googleNoticeMessage, setGoogleNoticeMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -88,14 +97,12 @@ export default function HotelAutocompleteSearch({
   const containerRef = useRef(null);
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
-  const itemRefs = useRef([]);
 
   // Close dropdown on click outside (Web support)
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       const handleClickOutside = (e) => {
         if (containerRef.current) {
-          // On react-native-web, containerRef.current is the underlying DOM element
           const domNode = containerRef.current;
           if (domNode && typeof domNode.contains === 'function') {
             if (!domNode.contains(e.target)) {
@@ -130,14 +137,21 @@ export default function HotelAutocompleteSearch({
     }
   }, [isOpen]);
 
-  // Core search fetcher
+  // Combined flat list for unified keyboard navigation
+  const allNavigableItems = [
+    ...registeredHotels.map((h) => ({ ...h, _section: 'registered' })),
+    ...discoveredHotels.map((h) => ({ ...h, _section: 'discovered' })),
+  ];
+
+  // Core dual-source search fetcher
   const fetchSuggestions = useCallback(
     async (searchTerm) => {
       const trimmed = (searchTerm || '').trim();
 
-      // Rule 1: Start fetching only after user enters at least 2 characters
+      // Start fetching only after user enters at least 2 characters
       if (trimmed.length < 2) {
-        setSuggestions([]);
+        setRegisteredHotels([]);
+        setDiscoveredHotels([]);
         setIsOpen(false);
         setError(null);
         setIsLoading(false);
@@ -146,7 +160,7 @@ export default function HotelAutocompleteSearch({
       }
 
       // Prevent duplicate API requests if query is unchanged
-      if (trimmed === lastExecutedQueryRef.current && suggestions.length > 0) {
+      if (trimmed === lastExecutedQueryRef.current && (registeredHotels.length > 0 || discoveredHotels.length > 0)) {
         setIsOpen(true);
         return;
       }
@@ -163,37 +177,50 @@ export default function HotelAutocompleteSearch({
       setError(null);
 
       try {
-        const res = await apiService.searchHotels(trimmed, {
-          limit: maxSuggestions,
-          signal: controller.signal,
-        });
+        // Concurrently query both Source 1 (MongoDB) and Source 2 (Google Places API)
+        const [mongoRes, discoverRes] = await Promise.all([
+          apiService.searchHotels(trimmed, {
+            limit: maxSuggestions,
+            signal: controller.signal,
+          }),
+          apiService.discoverHotels(trimmed, {
+            limit: maxSuggestions,
+            signal: controller.signal,
+          }),
+        ]);
 
         // Ensure this response matches the most recent request
         if (requestId !== latestRequestIdRef.current) {
           return;
         }
 
-        if (res && res.aborted) {
-          return; // Request was aborted, ignore
+        if (mongoRes?.aborted || discoverRes?.aborted) {
+          return;
         }
 
-        if (res && res.success) {
-          const list = Array.isArray(res.data) ? res.data.slice(0, maxSuggestions) : [];
-          setSuggestions(list);
-          lastExecutedQueryRef.current = trimmed;
-          setHasSearched(true);
-          setIsOpen(true);
-          setHighlightedIndex(-1);
+        // Process MongoDB Registered Hotels
+        const regList = (mongoRes && mongoRes.success && Array.isArray(mongoRes.data)) ? mongoRes.data : [];
+        setRegisteredHotels(regList);
+
+        // Process Google Places Discovered Hotels
+        if (discoverRes && discoverRes.success) {
+          setIsGoogleConfigured(discoverRes.configured !== false);
+          setGoogleNoticeMessage(discoverRes.message || '');
+          setDiscoveredHotels(Array.isArray(discoverRes.data) ? discoverRes.data : []);
         } else {
-          setError(res?.error || 'Unable to load hotel suggestions.');
-          setSuggestions([]);
-          setIsOpen(true);
+          setIsGoogleConfigured(discoverRes?.configured !== false);
+          setGoogleNoticeMessage(discoverRes?.message || discoverRes?.error || '');
+          setDiscoveredHotels([]);
         }
+
+        lastExecutedQueryRef.current = trimmed;
+        setHasSearched(true);
+        setIsOpen(true);
+        setHighlightedIndex(-1);
       } catch (err) {
         if (err.name === 'AbortError') return;
         if (requestId === latestRequestIdRef.current) {
           setError(`Search failed: ${err.message || 'Network error'}`);
-          setSuggestions([]);
           setIsOpen(true);
         }
       } finally {
@@ -202,7 +229,7 @@ export default function HotelAutocompleteSearch({
         }
       }
     },
-    [maxSuggestions, suggestions.length]
+    [maxSuggestions, registeredHotels.length, discoveredHotels.length]
   );
 
   // Handle live input change with 300ms debounce
@@ -216,7 +243,8 @@ export default function HotelAutocompleteSearch({
     const trimmed = text.trim();
     if (trimmed.length < 2) {
       if (abortControllerRef.current) abortControllerRef.current.abort();
-      setSuggestions([]);
+      setRegisteredHotels([]);
+      setDiscoveredHotels([]);
       setIsOpen(false);
       setError(null);
       setIsLoading(false);
@@ -225,7 +253,6 @@ export default function HotelAutocompleteSearch({
       return;
     }
 
-    // Debounce delay of 300ms
     setIsLoading(true);
     debounceTimerRef.current = setTimeout(() => {
       fetchSuggestions(trimmed);
@@ -237,7 +264,8 @@ export default function HotelAutocompleteSearch({
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     if (abortControllerRef.current) abortControllerRef.current.abort();
     setQuery('');
-    setSuggestions([]);
+    setRegisteredHotels([]);
+    setDiscoveredHotels([]);
     setError(null);
     setIsLoading(false);
     setIsOpen(false);
@@ -262,36 +290,30 @@ export default function HotelAutocompleteSearch({
 
   // Keyboard navigation
   const handleKeyDown = (e) => {
-    // In React Native Web, e.nativeEvent contains the DOM keyboard event
     const key = e.nativeEvent?.key || e.key;
-
     if (!key) return;
+
+    const totalCount = allNavigableItems.length;
 
     if (key === 'ArrowDown') {
       if (e.preventDefault) e.preventDefault();
-      if (!isOpen && suggestions.length > 0) {
+      if (!isOpen && totalCount > 0) {
         setIsOpen(true);
         setHighlightedIndex(0);
         return;
       }
-      if (suggestions.length > 0) {
-        setHighlightedIndex((prev) => {
-          const nextIndex = prev < suggestions.length - 1 ? prev + 1 : 0;
-          return nextIndex;
-        });
+      if (totalCount > 0) {
+        setHighlightedIndex((prev) => (prev < totalCount - 1 ? prev + 1 : 0));
       }
     } else if (key === 'ArrowUp') {
       if (e.preventDefault) e.preventDefault();
-      if (suggestions.length > 0) {
-        setHighlightedIndex((prev) => {
-          const prevIndex = prev > 0 ? prev - 1 : suggestions.length - 1;
-          return prevIndex;
-        });
+      if (totalCount > 0) {
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : totalCount - 1));
       }
     } else if (key === 'Enter') {
-      if (isOpen && highlightedIndex >= 0 && suggestions[highlightedIndex]) {
+      if (isOpen && highlightedIndex >= 0 && allNavigableItems[highlightedIndex]) {
         if (e.preventDefault) e.preventDefault();
-        handleSelectHotel(suggestions[highlightedIndex]);
+        handleSelectHotel(allNavigableItems[highlightedIndex]);
       } else if (!isOpen && query.trim().length >= 2) {
         if (e.preventDefault) e.preventDefault();
         fetchSuggestions(query.trim());
@@ -310,13 +332,13 @@ export default function HotelAutocompleteSearch({
     }
   };
 
-  const showDropdown = isOpen && (suggestions.length > 0 || hasSearched || error || isLoading);
+  const totalResultsCount = registeredHotels.length + discoveredHotels.length;
+  const showDropdown = isOpen && (totalResultsCount > 0 || hasSearched || error || isLoading || !isGoogleConfigured);
 
   return (
     <View
       ref={containerRef}
       style={[styles.wrapper, containerStyle]}
-      // Web accessibility / container identifier
       {...(Platform.OS === 'web' ? { 'data-component': 'hotel-autocomplete-search' } : {})}
     >
       {/* Search Input Bar */}
@@ -337,7 +359,7 @@ export default function HotelAutocompleteSearch({
           onFocus={() => {
             setIsFocused(true);
             if (query.trim().length >= 2) {
-              if (suggestions.length > 0 || hasSearched) {
+              if (registeredHotels.length > 0 || discoveredHotels.length > 0 || hasSearched) {
                 setIsOpen(true);
               } else {
                 fetchSuggestions(query.trim());
@@ -377,27 +399,27 @@ export default function HotelAutocompleteSearch({
         )}
       </View>
 
-      {/* Google-Style Dropdown Suggestions */}
+      {/* Google-Style Dropdown Suggestions with 2 Clearly Labelled Sections */}
       {showDropdown && (
         <View style={styles.dropdown}>
-          {/* Dropdown Header */}
+          {/* Dropdown Master Header */}
           <View style={styles.dropdownHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View style={styles.headerDot} />
               <Text style={styles.dropdownHeaderText}>
-                MONGODB LIVE SUGGESTIONS {suggestions.length > 0 ? `(${suggestions.length})` : ''}
+                HOTEL DISCOVERY DIRECTORY {totalResultsCount > 0 ? `(${totalResultsCount} MATCHES)` : ''}
               </Text>
             </View>
             <Text style={styles.keyboardHintText}>
-              ↑ ↓ to navigate • ↵ Enter to select • Esc to close
+              ↑ ↓ navigate • ↵ Enter select • Esc close
             </Text>
           </View>
 
           {/* Loading state inside dropdown */}
-          {isLoading && suggestions.length === 0 && (
+          {isLoading && totalResultsCount === 0 && (
             <View style={styles.centerStatusBox}>
               <ActivityIndicator size="small" color="#E2C082" />
-              <Text style={styles.statusText}>Searching hotel database...</Text>
+              <Text style={styles.statusText}>Searching MongoDB & Google Places...</Text>
             </View>
           )}
 
@@ -415,27 +437,32 @@ export default function HotelAutocompleteSearch({
             </View>
           )}
 
-          {/* No Matching Hotels Found */}
-          {!isLoading && !error && hasSearched && suggestions.length === 0 && (
-            <View style={styles.noResultsBox}>
-              <Text style={styles.noResultsIcon}>🏨</Text>
-              <Text style={styles.noResultsTitle}>No matching hotels found</Text>
-              <Text style={styles.noResultsSubtitle}>
-                No database records matched "{query.trim()}". Check spelling, or try searching by city (e.g. Bengaluru).
+          <ScrollView
+            ref={scrollRef}
+            style={styles.suggestionsScroll}
+            keyboardShouldPersistTaps="always"
+            nestedScrollEnabled={true}
+          >
+            {/* ============================================================= */}
+            {/* SECTION 1: REGISTERED HOTELS (MongoDB)                         */}
+            {/* ============================================================= */}
+            <View style={styles.sectionHeaderBanner}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.sectionBadgeIcon}>🏢</Text>
+                <Text style={styles.sectionTitleText}>REGISTERED HOTELS</Text>
+                <View style={styles.sectionSourceTag}>
+                  <Text style={styles.sectionSourceTagText}>MongoDB database</Text>
+                </View>
+              </View>
+              <Text style={styles.sectionCounterText}>
+                {registeredHotels.length} {registeredHotels.length === 1 ? 'hotel' : 'hotels'}
               </Text>
             </View>
-          )}
 
-          {/* Suggestions List */}
-          {suggestions.length > 0 && (
-            <ScrollView
-              ref={scrollRef}
-              style={styles.suggestionsScroll}
-              keyboardShouldPersistTaps="always"
-              nestedScrollEnabled={true}
-            >
-              {suggestions.map((hotel, index) => {
-                const isHighlighted = index === highlightedIndex;
+            {registeredHotels.length > 0 ? (
+              registeredHotels.map((hotel, idx) => {
+                const globalIndex = idx;
+                const isHighlighted = globalIndex === highlightedIndex;
                 const hotelName = hotel.name || hotel.title || hotel.hotelName || 'Untitled Hotel';
                 const hotelCity = hotel.city || 'City Registered';
                 const hotelAddress = hotel.address || hotel.hotelAddress || '';
@@ -447,26 +474,19 @@ export default function HotelAutocompleteSearch({
 
                 return (
                   <TouchableOpacity
-                    key={hotel.hotelPropertyId || hotel.id || index}
+                    key={`mongo-${hotel.hotelPropertyId || hotel.id || idx}`}
                     style={[
                       styles.suggestionItem,
                       isHighlighted && styles.suggestionItemHighlighted,
-                      index === suggestions.length - 1 && styles.suggestionItemLast,
                     ]}
                     onPress={() => handleSelectHotel(hotel)}
-                    onMouseEnter={() => setHighlightedIndex(index)}
+                    onMouseEnter={() => setHighlightedIndex(globalIndex)}
                     activeOpacity={0.75}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Select hotel ${hotelName}`}
                   >
-                    {/* Hotel Thumbnail with Fallback Icon */}
+                    {/* Thumbnail */}
                     <View style={styles.thumbnailWrapper}>
                       {thumbnailUri ? (
-                        <Image
-                          source={{ uri: thumbnailUri }}
-                          style={styles.thumbnail}
-                          resizeMode="cover"
-                        />
+                        <Image source={{ uri: thumbnailUri }} style={styles.thumbnail} resizeMode="cover" />
                       ) : (
                         <View style={styles.thumbnailFallback}>
                           <Text style={styles.thumbnailFallbackIcon}>🏨</Text>
@@ -474,7 +494,7 @@ export default function HotelAutocompleteSearch({
                       )}
                     </View>
 
-                    {/* Hotel Details with Highlighted Text */}
+                    {/* Details */}
                     <View style={styles.itemDetails}>
                       <View style={styles.itemTitleRow}>
                         <HighlightedText
@@ -510,12 +530,10 @@ export default function HotelAutocompleteSearch({
                         </View>
                       </View>
 
-                      {/* City & Address */}
                       <Text style={styles.locationText} numberOfLines={1}>
                         📍 {locationText}
                       </Text>
 
-                      {/* Rating & Pricing metadata */}
                       <View style={styles.metaRow}>
                         <Text style={styles.ratingText}>
                           ★ {hotel.rating ? Number(hotel.rating).toFixed(1) : '4.9'}
@@ -523,28 +541,153 @@ export default function HotelAutocompleteSearch({
                         {hotel.pricePerNight ? (
                           <Text style={styles.priceText}>• {hotel.pricePerNight}</Text>
                         ) : null}
-                        <Text style={styles.idBadgeText}>
-                          ID: {hotel.hotelPropertyId || hotel.id}
-                        </Text>
+                        <View style={styles.registeredPill}>
+                          <Text style={styles.registeredPillText}>✓ In Database</Text>
+                        </View>
                       </View>
                     </View>
 
-                    {/* Select indicator */}
+                    {/* Action Arrow */}
                     <View style={[styles.arrowContainer, isHighlighted && styles.arrowContainerActive]}>
-                      <Text style={[styles.arrowText, isHighlighted && styles.arrowTextActive]}>
-                        ➔
-                      </Text>
+                      <Text style={[styles.arrowText, isHighlighted && styles.arrowTextActive]}>➔</Text>
                     </View>
                   </TouchableOpacity>
                 );
-              })}
-            </ScrollView>
-          )}
+              })
+            ) : (
+              !isLoading && (
+                <View style={styles.emptySectionBox}>
+                  <Text style={styles.emptySectionText}>
+                    No registered hotels matching "{query.trim()}" in MongoDB database.
+                  </Text>
+                </View>
+              )
+            )}
+
+            {/* ============================================================= */}
+            {/* SECTION 2: DISCOVER HOTELS (Google Places API)                 */}
+            {/* ============================================================= */}
+            <View style={[styles.sectionHeaderBanner, styles.sectionHeaderBannerExternal]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.sectionBadgeIcon}>🌐</Text>
+                <Text style={styles.sectionTitleText}>DISCOVER HOTELS</Text>
+                <View style={[styles.sectionSourceTag, styles.sectionSourceTagGoogle]}>
+                  <Text style={styles.sectionSourceTagTextGoogle}>Google Places API</Text>
+                </View>
+              </View>
+              <Text style={styles.sectionCounterText}>
+                {isGoogleConfigured ? `${discoveredHotels.length} discovered` : 'Not Configured'}
+              </Text>
+            </View>
+
+            {/* Google Places API Not Configured Notice */}
+            {!isGoogleConfigured ? (
+              <View style={styles.googleNotConfiguredBox}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                  <Text style={{ fontSize: 18 }}>ℹ️</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.googleNotConfiguredTitle}>Google Places API Key Required</Text>
+                    <Text style={styles.googleNotConfiguredText}>
+                      To discover and import hotels worldwide (e.g. Taj, Marriott, Hyatt) directly from Google, add your API key to:
+                    </Text>
+                    <View style={styles.codeSnippetBox}>
+                      <Text style={styles.codeSnippetText}>backend/.env ➔ GOOGLE_PLACES_API_KEY=your_key_here</Text>
+                    </View>
+                    <Text style={styles.googleNotConfiguredSubtext}>
+                      MongoDB database search remains 100% active and functional.
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ) : discoveredHotels.length > 0 ? (
+              discoveredHotels.map((hotel, idx) => {
+                const globalIndex = registeredHotels.length + idx;
+                const isHighlighted = globalIndex === highlightedIndex;
+                const hotelName = hotel.name || hotel.title || 'Discovered Hotel';
+                const hotelAddress = hotel.address || hotel.city || 'Address available';
+                const isAlreadyInDb = hotel.isRegistered;
+
+                return (
+                  <TouchableOpacity
+                    key={`discover-${hotel.placeId || idx}`}
+                    style={[
+                      styles.suggestionItem,
+                      styles.suggestionItemExternal,
+                      isHighlighted && styles.suggestionItemHighlighted,
+                    ]}
+                    onPress={() => handleSelectHotel({ ...hotel, isExternalDiscovery: true })}
+                    onMouseEnter={() => setHighlightedIndex(globalIndex)}
+                    activeOpacity={0.75}
+                  >
+                    {/* Thumbnail */}
+                    <View style={[styles.thumbnailWrapper, styles.thumbnailWrapperExternal]}>
+                      {hotel.imageLink ? (
+                        <Image source={{ uri: hotel.imageLink }} style={styles.thumbnail} resizeMode="cover" />
+                      ) : (
+                        <View style={styles.thumbnailFallbackExternal}>
+                          <Text style={{ fontSize: 20 }}>🌐</Text>
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Details */}
+                    <View style={styles.itemDetails}>
+                      <View style={styles.itemTitleRow}>
+                        <HighlightedText
+                          text={hotelName}
+                          query={query}
+                          baseStyle={styles.hotelName}
+                          highlightStyle={styles.highlightedText}
+                        />
+
+                        {isAlreadyInDb ? (
+                          <View style={styles.alreadyRegisteredBadge}>
+                            <Text style={styles.alreadyRegisteredText}>ALREADY IN PORTAL</Text>
+                          </View>
+                        ) : (
+                          <View style={styles.addToPortalBadge}>
+                            <Text style={styles.addToPortalText}>+ ADD TO PORTAL</Text>
+                          </View>
+                        )}
+                      </View>
+
+                      <Text style={styles.locationText} numberOfLines={1}>
+                        📍 {hotelAddress}
+                      </Text>
+
+                      <View style={styles.metaRow}>
+                        {hotel.rating ? (
+                          <Text style={styles.ratingText}>★ {Number(hotel.rating).toFixed(1)}</Text>
+                        ) : (
+                          <Text style={styles.ratingText}>Google Verified</Text>
+                        )}
+                        <Text style={styles.priceText}>• Google Places</Text>
+                        <Text style={styles.idBadgeText}>Place ID: {hotel.placeId?.slice(0, 16)}...</Text>
+                      </View>
+                    </View>
+
+                    {/* Action Arrow */}
+                    <View style={[styles.arrowContainer, isHighlighted && styles.arrowContainerActive]}>
+                      <Text style={[styles.arrowText, isHighlighted && styles.arrowTextActive]}>＋</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
+            ) : (
+              !isLoading && hasSearched && (
+                <View style={styles.emptySectionBox}>
+                  <Text style={styles.emptySectionText}>
+                    No external hotels found matching "{query.trim()}" on Google Places.
+                  </Text>
+                </View>
+              )
+            )}
+          </ScrollView>
 
           {/* Dropdown Footer */}
           <View style={styles.dropdownFooter}>
             <Text style={styles.footerNoteText}>
-              ⚡ Live database autocomplete — click or press Enter to load hotel management
+              Dual Engine Search: MongoDB Database + Google Places API Discovery
             </Text>
           </View>
         </View>
@@ -570,11 +713,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 48,
     gap: 10,
-    // Web smooth transition
     ...(Platform.OS === 'web'
-      ? {
-          transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
-        }
+      ? { transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }
       : {}),
   },
   inputContainerFocused: {
@@ -602,7 +742,7 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     paddingHorizontal: 0,
     height: '100%',
-    outlineStyle: 'none', // Remove web focus outline
+    outlineStyle: 'none',
   },
   inputSpinnerWrapper: {
     paddingHorizontal: 4,
@@ -668,7 +808,107 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   suggestionsScroll: {
-    maxHeight: 360,
+    maxHeight: 420,
+  },
+  sectionHeaderBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    backgroundColor: '#161A2B',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#22283E',
+  },
+  sectionHeaderBannerExternal: {
+    backgroundColor: '#131B2A',
+    borderTopColor: '#2B3855',
+  },
+  sectionBadgeIcon: {
+    fontSize: 13,
+  },
+  sectionTitleText: {
+    color: '#E2C082',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  sectionSourceTag: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.3)',
+  },
+  sectionSourceTagText: {
+    color: '#4ADE80',
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  sectionSourceTagGoogle: {
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    borderColor: 'rgba(59, 130, 246, 0.35)',
+  },
+  sectionSourceTagTextGoogle: {
+    color: '#60A5FA',
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  sectionCounterText: {
+    color: '#94A3B8',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  emptySectionBox: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: 'rgba(15, 23, 42, 0.3)',
+  },
+  emptySectionText: {
+    color: '#64748B',
+    fontSize: 11,
+    fontStyle: 'italic',
+  },
+  googleNotConfiguredBox: {
+    padding: 14,
+    backgroundColor: '#161928',
+    borderLeftWidth: 3,
+    borderLeftColor: '#3B82F6',
+    marginHorizontal: 10,
+    marginVertical: 8,
+    borderRadius: 6,
+  },
+  googleNotConfiguredTitle: {
+    color: '#93C5FD',
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  googleNotConfiguredText: {
+    color: '#CBD5E1',
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  codeSnippetBox: {
+    backgroundColor: '#0A0C14',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 4,
+    marginVertical: 6,
+    borderWidth: 1,
+    borderColor: '#242B42',
+  },
+  codeSnippetText: {
+    color: '#FCD34D',
+    fontSize: 10,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  googleNotConfiguredSubtext: {
+    color: '#86EFAC',
+    fontSize: 10,
+    fontWeight: '600',
   },
   suggestionItem: {
     flexDirection: 'row',
@@ -682,27 +922,27 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: 'transparent',
     ...(Platform.OS === 'web'
-      ? {
-          cursor: 'pointer',
-          transition: 'background-color 0.12s ease, border-left-color 0.12s ease',
-        }
+      ? { cursor: 'pointer', transition: 'background-color 0.12s ease, border-left-color 0.12s ease' }
       : {}),
+  },
+  suggestionItemExternal: {
+    backgroundColor: '#101422',
   },
   suggestionItemHighlighted: {
     backgroundColor: '#1C2133',
     borderLeftColor: '#E2C082',
   },
-  suggestionItemLast: {
-    borderBottomWidth: 0,
-  },
   thumbnailWrapper: {
-    width: 48,
-    height: 48,
+    width: 46,
+    height: 46,
     borderRadius: 8,
     overflow: 'hidden',
     backgroundColor: '#0A0C14',
     borderWidth: 1,
     borderColor: '#2A2E45',
+  },
+  thumbnailWrapperExternal: {
+    borderColor: '#2A3B58',
   },
   thumbnail: {
     width: '100%',
@@ -713,6 +953,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#1A1E2E',
+  },
+  thumbnailFallbackExternal: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#152136',
   },
   thumbnailFallbackIcon: {
     fontSize: 20,
@@ -764,6 +1010,44 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontSize: 9,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  registeredPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 3,
+    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+  },
+  registeredPillText: {
+    color: '#86EFAC',
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  alreadyRegisteredBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.35)',
+  },
+  alreadyRegisteredText: {
+    color: '#4ADE80',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  addToPortalBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    backgroundColor: 'rgba(226, 192, 130, 0.15)',
+    borderWidth: 1,
+    borderColor: '#E2C082',
+  },
+  addToPortalText: {
+    color: '#E2C082',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   statusBadge: {
     paddingHorizontal: 6,
@@ -867,29 +1151,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  noResultsBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    gap: 6,
-  },
-  noResultsIcon: {
-    fontSize: 28,
-    marginBottom: 4,
-  },
-  noResultsTitle: {
-    color: '#F1F5F9',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  noResultsSubtitle: {
-    color: '#94A3B8',
-    fontSize: 11,
-    textAlign: 'center',
-    lineHeight: 16,
-    maxWidth: 360,
-  },
   dropdownFooter: {
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -904,4 +1165,3 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
-

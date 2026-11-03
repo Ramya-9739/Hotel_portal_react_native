@@ -155,6 +155,7 @@ export default function AdminDashboardScreen({
   const [confirmedHotelData, setConfirmedHotelData] = useState(null); // fetched place details
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const [apiConfigStatus] = useState(() => getApiConfigStatus());
+  const [connectedDbName, setConnectedDbName] = useState('hotelApiDb');
 
   // Active Hotel & Location Configurator State
   const [currentActiveHotel, setCurrentActiveHotel] = useState(
@@ -410,6 +411,84 @@ export default function AdminDashboardScreen({
     if (!result) return;
     setSelectedSearchResult(result);
 
+    // Case 1: External Discovered Hotel (from Google Places API)
+    // Populates the registration form for review WITHOUT automatically saving to MongoDB
+    if (result.isExternalDiscovery || result.source === 'google_places') {
+      setIsFetchingDetails(true);
+      try {
+        let details = null;
+        if (result.placeId && !result.placeId.startsWith('prop-')) {
+          const detRes = await apiService.fetchPlaceDetails(result.placeId);
+          if (detRes && detRes.success && detRes.data) {
+            details = detRes.data;
+          }
+        }
+
+        const h = details || result;
+        const hotelName = h.name || h.title || result.name || 'Discovered Hotel';
+        const hotelAddress = h.address || result.address || '';
+        const hotelCity = h.city || result.city || (hotelAddress ? hotelAddress.split(',').slice(-3, -2)[0]?.trim() : '') || 'Local Area';
+        const hotelLat = h.latitude != null ? h.latitude : result.latitude;
+        const hotelLng = h.longitude != null ? h.longitude : result.longitude;
+        const hotelPhotos = (h.photos && h.photos.length > 0) ? h.photos : (h.images || result.images || []);
+        const heroPhoto = h.imageLink || (hotelPhotos[0]?.url || hotelPhotos[0]) || result.imageLink || '';
+
+        const tempId = 'prop_' + Date.now();
+        const externalHotelObj = {
+          id: tempId,
+          hotelPropertyId: tempId,
+          name: hotelName,
+          title: hotelName,
+          city: hotelCity,
+          location: hotelCity,
+          address: hotelAddress,
+          latitude: hotelLat != null ? hotelLat : null,
+          longitude: hotelLng != null ? hotelLng : null,
+          imageLink: typeof heroPhoto === 'string' ? heroPhoto : (heroPhoto?.url || ''),
+          images: hotelPhotos.map((p) => (typeof p === 'string' ? p : p.url)).filter(Boolean),
+          pricePerNight: '₹18,500 / night',
+          rating: h.rating || result.rating || 4.8,
+          status: 'pending', // Requires admin review and save before database registration
+          paymentMethods: ['Credit Card', 'Debit Card', 'UPI / QR', 'Cash at Reception'],
+          availability: 'Available',
+          source: 'google_places',
+          isExternalDiscovery: true,
+          googlePlaceId: result.placeId,
+        };
+
+        setConfirmedHotelData(externalHotelObj);
+        setHotelConfigForm({
+          name: externalHotelObj.name,
+          city: externalHotelObj.city,
+          address: externalHotelObj.address,
+          latitude: externalHotelObj.latitude != null ? String(externalHotelObj.latitude) : '',
+          longitude: externalHotelObj.longitude != null ? String(externalHotelObj.longitude) : '',
+          imageLink: externalHotelObj.imageLink,
+          subtitle: externalHotelObj.address,
+          pricePerNight: externalHotelObj.pricePerNight,
+          rating: String(externalHotelObj.rating),
+        });
+
+        if (hotelPhotos.length > 0) {
+          setHotelImages(
+            hotelPhotos.slice(0, 8).map((p, idx) => ({
+              id: generate10DigitId(),
+              url: typeof p === 'string' ? p : (p.url || ''),
+              caption: typeof p === 'object' && p.caption ? p.caption : `Hotel Photo ${idx + 1}`,
+            })).filter((img) => img.url)
+          );
+        }
+
+        showToast(`Discovered "${externalHotelObj.name}" via Google Places. Review details below and click "SAVE & ACTIVATE" to register in MongoDB.`, 'info');
+      } catch (err) {
+        showToast(`Could not load place details: ${err.message}`, 'error');
+      } finally {
+        setIsFetchingDetails(false);
+      }
+      return;
+    }
+
+    // Case 2: Registered Hotel in MongoDB
     const h = result.raw || result;
     const hotelPropertyId = result.hotelPropertyId || h.hotelPropertyId || result.id || h.id || h._id;
     const hotelName = result.name || h.name || h.title || h.hotelName || 'Selected Hotel';
@@ -469,7 +548,7 @@ export default function AdminDashboardScreen({
     setCurrentActiveHotel(activated);
     if (onSetActiveHotel) onSetActiveHotel(activated);
 
-    showToast(`Selected "${hotelObj.name}" (${hotelObj.city || 'Active Hotel'}) from database.`, 'success');
+    showToast(`Selected "${hotelObj.name}" (${hotelObj.city || 'Active Hotel'}) from MongoDB database.`, 'success');
   };
 
   const handleConfirmHotelFromSearch = async () => {
@@ -775,7 +854,8 @@ export default function AdminDashboardScreen({
         setPlaceModalVisible(false);
         showToast(`✅ Saved & Created "${placeData.title}" in ${targetCat}!`, 'success');
       }
-      await loadAllAdminData();
+      await apiService.fetchDatabaseStatus().then((s) => { if (s && s.database) setConnectedDbName(s.database); }).catch(() => {});
+    loadAllAdminData();
     } catch (err) {
       showToast('Error saving place: ' + err.message, 'error');
     } finally {
@@ -4176,19 +4256,19 @@ export default function AdminDashboardScreen({
           <View>
             <Text style={styles.adminHeaderTitle}>SEPARATE ADMIN CONSOLE</Text>
             <Text style={styles.adminHeaderSubtitle}>
-              Multi-Hotel & Services Management • Live MongoDB (hotel_portal)
+              Multi-Hotel & Services Management • Live MongoDB (hotelApiDb)
             </Text>
           </View>
         </View>
 
         <View style={styles.adminHeaderRight}>
-          {onOpenSuperAdmin ? (
+          {onOpenSuperAdmin && authService.isSuperAdmin() ? (
             <TouchableOpacity
               style={styles.superAdminBtn}
               onPress={onOpenSuperAdmin}
               activeOpacity={0.8}
             >
-              <Text style={styles.superAdminBtnText}>🛡️ Super Admin Console</Text>
+              <Text style={styles.superAdminBtnText}>👑 Super Admin Console</Text>
             </TouchableOpacity>
           ) : null}
 

@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 const connectDb = require("./config/db");
 const errorHandler = require("./middleware/errorHandler.middleware");
 
@@ -24,7 +25,17 @@ app.use("/api/hotel-properties", hotelPropertyRoutes);
 app.use("/api/hotel-pictures", hotelPictureRoutes);
 app.use("/api/sub-component-headers", subComponentHeaderRoutes);
 
-app.get("/health", (req, res) => res.json({ status: "ok" })); // for ALB/EC2 health checks
+app.get("/health", (req, res) => {
+  const dbName = mongoose.connection?.name || "hotelApiDb";
+  const isConnected = mongoose.connection?.readyState === 1;
+  res.json({
+    status: "ok",
+    database: dbName,
+    connected: isConnected,
+    server: "hotel-api",
+    port: PORT,
+  });
+});
 
 app.use(errorHandler); // must stay last
 

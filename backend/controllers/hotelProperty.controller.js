@@ -377,11 +377,223 @@ const reject = async (req, res) => {
   }
 };
 
+
+// GET /api/hotel-properties/discover?q=...&limit=8
+// Discovers real hotels worldwide via Google Places API (New)
+const discover = async (req, res) => {
+  try {
+    const { q, query, limit = 8 } = req.query;
+    const searchParam = (q || query || "").trim();
+
+    if (searchParam.length < 2) {
+      return sendSuccess(res, { configured: true, results: [] });
+    }
+
+    const apiKey = (process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || "").trim();
+    if (!apiKey || apiKey.startsWith("dummy") || apiKey.startsWith("your_")) {
+      return sendSuccess(res, {
+        configured: false,
+        message: "Google Places API key is not configured in backend/.env (GOOGLE_PLACES_API_KEY). To discover external hotels (e.g. Taj, Marriott, Hyatt), please add your valid Google Places API key to backend/.env.",
+        results: [],
+      });
+    }
+
+    const maxLimit = Math.min(Math.max(parseInt(limit, 10) || 8, 1), 20);
+    const googleEndpoint = "https://places.googleapis.com/v1/places:searchText";
+    const fieldMask = [
+      "places.id",
+      "places.displayName",
+      "places.formattedAddress",
+      "places.location",
+      "places.rating",
+      "places.userRatingCount",
+      "places.photos",
+      "places.types",
+      "places.internationalPhoneNumber",
+      "places.websiteUri",
+    ].join(",");
+
+    const response = await fetch(googleEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": fieldMask,
+      },
+      body: JSON.stringify({
+        textQuery: `${searchParam} hotel`,
+        maxResultCount: maxLimit,
+      }),
+    });
+
+    if (!response.ok) {
+      const errJson = await response.json().catch(() => ({}));
+      const errMsg = errJson.error?.message || `Google Places API returned status ${response.status}`;
+      return sendSuccess(res, {
+        configured: true,
+        error: errMsg,
+        message: `Google Places API Error: ${errMsg}`,
+        results: [],
+      });
+    }
+
+    const data = await response.json();
+    const rawPlaces = data.places || [];
+
+    // Query registered hotels to prevent duplicate registrations
+    const registeredHotels = await HotelProperty.find({}).lean();
+    const registeredNameSet = new Set(
+      registeredHotels.map((h) => String(h.hotelName || "").toLowerCase().trim())
+    );
+    const registeredIdSet = new Set(
+      registeredHotels.map((h) => String(h.hotelPropertyId || "").trim())
+    );
+
+    const formatted = rawPlaces.map((p) => {
+      const name = p.displayName?.text || "Unknown Hotel";
+      const address = p.formattedAddress || "";
+      const addressParts = address.split(",");
+      const city = addressParts.length >= 3 ? addressParts[addressParts.length - 3].trim() : (addressParts[0] || "");
+      const photoRef = p.photos && p.photos.length > 0 ? p.photos[0].name : null;
+      const photoProxyUrl = photoRef ? `/api/hotel-properties/place-photo?ref=${encodeURIComponent(photoRef)}` : null;
+
+      const normName = name.toLowerCase().trim();
+      const isAlreadyRegistered = registeredNameSet.has(normName) || registeredIdSet.has(p.id);
+
+      return {
+        placeId: p.id,
+        name: name,
+        address: address,
+        city: city,
+        latitude: p.location?.latitude || null,
+        longitude: p.location?.longitude || null,
+        rating: p.rating || null,
+        userRatingCount: p.userRatingCount || null,
+        photoUrl: photoProxyUrl,
+        photos: (p.photos || []).slice(0, 8).map((ph) => `/api/hotel-properties/place-photo?ref=${encodeURIComponent(ph.name)}`),
+        websiteUrl: p.websiteUri || null,
+        phone: p.internationalPhoneNumber || null,
+        source: "google_places",
+        isRegistered: isAlreadyRegistered,
+      };
+    });
+
+    sendSuccess(res, {
+      configured: true,
+      message: `Discovered ${formatted.length} hotels via Google Places API`,
+      results: formatted,
+    });
+  } catch (err) {
+    sendError(res, err.message);
+  }
+};
+
+// GET /api/hotel-properties/place-details/:placeId
+const getPlaceDetails = async (req, res) => {
+  try {
+    const { placeId } = req.params;
+    if (!placeId) return sendError(res, "Place ID is required", 400);
+
+    const apiKey = (process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || "").trim();
+    if (!apiKey || apiKey.startsWith("dummy") || apiKey.startsWith("your_")) {
+      return sendError(res, "Google Places API key is not configured in backend/.env", 400);
+    }
+
+    const fieldMask = [
+      "id",
+      "displayName",
+      "formattedAddress",
+      "location",
+      "rating",
+      "userRatingCount",
+      "websiteUri",
+      "internationalPhoneNumber",
+      "regularOpeningHours",
+      "photos",
+    ].join(",");
+
+    const response = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": fieldMask,
+      },
+    });
+
+    if (!response.ok) {
+      const errJson = await response.json().catch(() => ({}));
+      return sendError(res, errJson.error?.message || "Failed to fetch place details from Google Places", 400);
+    }
+
+    const p = await response.json();
+    const name = p.displayName?.text || "Unknown Hotel";
+    const address = p.formattedAddress || "";
+    const addressParts = address.split(",");
+    const city = addressParts.length >= 3 ? addressParts[addressParts.length - 3].trim() : (addressParts[0] || "");
+    const photos = (p.photos || []).slice(0, 8).map((ph, idx) => ({
+      id: String(Date.now() + idx),
+      url: `/api/hotel-properties/place-photo?ref=${encodeURIComponent(ph.name)}`,
+      caption: `Hotel Photo ${idx + 1}`,
+    }));
+
+    sendSuccess(res, {
+      placeId: p.id,
+      name: name,
+      title: name,
+      address: address,
+      city: city,
+      latitude: p.location?.latitude || null,
+      longitude: p.location?.longitude || null,
+      rating: p.rating || null,
+      phone: p.internationalPhoneNumber || null,
+      websiteUrl: p.websiteUri || null,
+      photos: photos,
+      images: photos.map((ph) => ph.url),
+      imageLink: photos[0]?.url || "",
+      source: "google_places",
+    });
+  } catch (err) {
+    sendError(res, err.message);
+  }
+};
+
+// GET /api/hotel-properties/place-photo?ref=...
+// Streams the photo while keeping the private API key on the backend
+const getPlacePhoto = async (req, res) => {
+  try {
+    const { ref } = req.query;
+    if (!ref) return sendError(res, "Photo ref required", 400);
+
+    const apiKey = (process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || "").trim();
+    if (!apiKey) return sendError(res, "Google Places API key is not configured", 400);
+
+    const googlePhotoUrl = `https://places.googleapis.com/v1/${ref}/media?maxWidthPx=1200&key=${apiKey}`;
+    const imgRes = await fetch(googlePhotoUrl);
+
+    if (!imgRes.ok) {
+      return res.status(imgRes.status).send("Failed to fetch photo from Google Places");
+    }
+
+    const contentType = imgRes.headers.get("content-type") || "image/jpeg";
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "public, max-age=86400"); // 24-hour client cache
+
+    const arrayBuffer = await imgRes.arrayBuffer();
+    res.send(Buffer.from(arrayBuffer));
+  } catch (err) {
+    sendError(res, err.message);
+  }
+};
+
 module.exports = {
   getPublic,
   getPending,
   getAll,
   search,
+  discover,
+  getPlaceDetails,
+  getPlacePhoto,
   getById,
   create,
   update,

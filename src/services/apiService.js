@@ -645,6 +645,106 @@ class ApiService {
     }
   }
 
+  // Discovers real hotels worldwide via Google Places API (New) proxied through the backend
+  async discoverHotels(query = '', options = {}) {
+    try {
+      const q = (query || '').trim();
+      if (q.length < 2) {
+        return { success: true, configured: true, data: [] };
+      }
+
+      const params = [];
+      params.push('q=' + encodeURIComponent(q));
+      params.push('limit=' + encodeURIComponent(options.limit || 8));
+
+      const queryStr = '?' + params.join('&');
+      const url = BASE_URL + '/api/hotel-properties/discover' + queryStr;
+      console.log('[REST API] GET ' + url);
+      const res = await fetch(url, {
+        headers: this.getHeaders(),
+        signal: options.signal,
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error('[HTTP ' + res.status + '] GET ' + url + ' failed: ' + (json.error || res.statusText));
+      }
+
+      const payload = json.data || {};
+      const results = Array.isArray(payload.results) ? payload.results : (Array.isArray(json.data) ? json.data : []);
+      const mapped = results.map((item) => ({
+        id: item.placeId,
+        placeId: item.placeId,
+        name: item.name,
+        title: item.name,
+        address: item.address,
+        city: item.city,
+        latitude: item.latitude,
+        longitude: item.longitude,
+        rating: item.rating || 4.8,
+        imageLink: item.photoUrl || (item.photos && item.photos[0]) || '',
+        images: item.photos || (item.photoUrl ? [item.photoUrl] : []),
+        websiteUrl: item.websiteUrl || null,
+        phone: item.phone || null,
+        source: 'google_places',
+        isRegistered: !!item.isRegistered,
+        isDatabaseMatch: false,
+      }));
+
+      return {
+        success: true,
+        configured: payload.configured !== false,
+        message: payload.message || '',
+        data: mapped,
+      };
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        return { success: false, aborted: true, configured: true, data: [] };
+      }
+      console.error('[REST API Error] discoverHotels failed:', err.message);
+      return { success: false, error: err.message, configured: true, data: [] };
+    }
+  }
+
+  // Fetches full details for a discovered Google Places hotel
+  async fetchPlaceDetails(placeId) {
+    try {
+      const url = `${BASE_URL}/api/hotel-properties/place-details/${encodeURIComponent(placeId)}`;
+      console.log(`[REST API] GET ${url}`);
+      const res = await fetch(url, { headers: this.getHeaders() });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(`[HTTP ${res.status}] GET ${url} failed: ${json.error || res.statusText}`);
+      }
+      return { success: true, data: json.data };
+    } catch (err) {
+      console.error('[REST API Error] fetchPlaceDetails failed:', err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  // Fetches real database name and connection status
+  async fetchDatabaseStatus() {
+    try {
+      const url = `${BASE_URL}/health`;
+      const res = await fetch(url, { headers: { Accept: 'application/json' } });
+      const json = await res.json();
+      return {
+        success: true,
+        database: json.database || 'hotelApiDb',
+        connected: json.connected !== false,
+        server: json.server || 'hotel-api',
+        port: json.port || 3000,
+      };
+    } catch (err) {
+      return {
+        success: false,
+        database: 'hotelApiDb',
+        connected: false,
+        error: err.message,
+      };
+    }
+  }
+
   async fetchHotels(options = {}) {
     try {
       const params = [];
