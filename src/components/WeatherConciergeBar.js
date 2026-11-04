@@ -12,6 +12,7 @@ import {
   Text,
   TouchableOpacity,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { LANGUAGES, TRANSLATIONS } from '../data/translations';
 
@@ -19,6 +20,10 @@ export default function WeatherConciergeBar({
   currentLanguage = 'en',
   onLanguageChange,
 }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 768;
+  const isVeryCompact = width < 480;
+
   const t = TRANSLATIONS[currentLanguage] || TRANSLATIONS.en;
 
   // Determine recommendation period based on local clock hour
@@ -51,6 +56,16 @@ export default function WeatherConciergeBar({
     }
   };
 
+  const handleCycleLanguage = () => {
+    const list = Array.isArray(LANGUAGES) ? LANGUAGES : [{ code: 'en' }];
+    const codes = list.map((l) => l.code);
+    const currentIndex = codes.indexOf(currentLanguage);
+    const nextIndex = (currentIndex + 1) % codes.length;
+    if (onLanguageChange) onLanguageChange(codes[nextIndex]);
+  };
+
+  const currentLangObj = LANGUAGES.find((l) => l.code === currentLanguage) || LANGUAGES[0];
+
   return (
     <View style={styles.barContainer}>
       {/* Left: Atmospheric Weather & Sunset Indicators */}
@@ -61,19 +76,25 @@ export default function WeatherConciergeBar({
           <Text style={styles.weatherCondition}>{t.weatherSunny}</Text>
         </View>
 
-        <View style={styles.divider} />
+        {!isVeryCompact && (
+          <>
+            <View style={styles.divider} />
+            <View style={styles.breezeItem}>
+              <Text style={styles.breezeGlyph}>≋</Text>
+              <Text style={styles.breezeText}>{t.weatherBreeze}</Text>
+            </View>
+          </>
+        )}
 
-        <View style={styles.breezeItem}>
-          <Text style={styles.breezeGlyph}>≋</Text>
-          <Text style={styles.breezeText}>{t.weatherBreeze}</Text>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.sunsetItem}>
-          <Text style={styles.sunsetGlyph}>◓</Text>
-          <Text style={styles.sunsetText}>{t.sunsetAt}</Text>
-        </View>
+        {!isCompact && (
+          <>
+            <View style={styles.divider} />
+            <View style={styles.sunsetItem}>
+              <Text style={styles.sunsetGlyph}>◓</Text>
+              <Text style={styles.sunsetText}>{t.sunsetAt}</Text>
+            </View>
+          </>
+        )}
       </View>
 
       {/* Center: Smart Time-of-Day Concierge Tip Pill */}
@@ -86,22 +107,36 @@ export default function WeatherConciergeBar({
 
       {/* Right: Multi-Language Selector Pills */}
       <View style={styles.langSelectorRow}>
-        {LANGUAGES.map((lang) => {
-          const isSelected = currentLanguage === lang.code;
-          return (
-            <TouchableOpacity
-              key={lang.code}
-              activeOpacity={0.75}
-              onPress={() => onLanguageChange && onLanguageChange(lang.code)}
-              style={[styles.langBtn, isSelected && styles.langBtnActive]}
-            >
-              <Text style={styles.langFlag}>{lang.flag}</Text>
-              <Text style={[styles.langText, isSelected && styles.langTextActive]}>
-                {lang.code.toUpperCase()}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+        {isVeryCompact ? (
+          /* Compact Language Toggle for narrow screens */
+          <TouchableOpacity
+            activeOpacity={0.75}
+            onPress={handleCycleLanguage}
+            style={[styles.langBtn, styles.langBtnActive]}
+          >
+            <Text style={styles.langFlag}>{currentLangObj.flag}</Text>
+            <Text style={[styles.langText, styles.langTextActive]}>
+              {currentLangObj.code.toUpperCase()} ▾
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          LANGUAGES.map((lang) => {
+            const isSelected = currentLanguage === lang.code;
+            return (
+              <TouchableOpacity
+                key={lang.code}
+                activeOpacity={0.75}
+                onPress={() => onLanguageChange && onLanguageChange(lang.code)}
+                style={[styles.langBtn, isSelected && styles.langBtnActive]}
+              >
+                <Text style={styles.langFlag}>{lang.flag}</Text>
+                <Text style={[styles.langText, isSelected && styles.langTextActive]}>
+                  {lang.code.toUpperCase()}
+                </Text>
+              </TouchableOpacity>
+            );
+          })
+        )}
       </View>
     </View>
   );

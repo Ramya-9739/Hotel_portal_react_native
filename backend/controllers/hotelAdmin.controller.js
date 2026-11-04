@@ -4,10 +4,56 @@ const HotelAdmin = require("../models/hotelAdmin.model");
 const { sendSuccess, sendError } = require("../utils/responseHelper");
 
 // POST /hotel-admins/register
+// Public Registration: Strictly restricted to "clientadmin" role.
+// Arbitrary roles provided by unauthenticated callers are rejected/overridden.
 const register = async (req, res) => {
   try {
-    const admin = await HotelAdmin.create(req.body); // password hashed via pre-save hook
-    const { password, ...safeAdmin } = admin.toObject();
+    const { username, password, adminContactNumber, adminAddress, adminEmail } = req.body;
+    if (!username || !password) {
+      return sendError(res, "Username and password are required", 400);
+    }
+    const hotelAdminId = req.body.hotelAdminId || `admin_${Date.now()}`;
+    const payload = {
+      hotelAdminId,
+      username: String(username).trim().toLowerCase(),
+      password,
+      adminContactNumber: adminContactNumber || "",
+      adminAddress: adminAddress || "",
+      adminEmail: adminEmail || "",
+      role: "clientadmin", // Public registration strictly defaults to clientadmin
+    };
+    const admin = await HotelAdmin.create(payload);
+    const { password: _, ...safeAdmin } = admin.toObject();
+    sendSuccess(res, safeAdmin, 201);
+  } catch (err) {
+    sendError(res, err.message, 400);
+  }
+};
+
+// POST /hotel-admins/superadmin-create
+// Dedicated endpoint for Super Admins to create new admins or superadmins.
+const createBySuperAdmin = async (req, res) => {
+  try {
+    const { username, password, role, adminContactNumber, adminAddress, adminEmail, hotelAdminId } = req.body;
+    if (!username || !password) {
+      return sendError(res, "Username and password are required", 400);
+    }
+    const caller = req.hotelAdmin || {};
+    if (String(caller.role || "").toLowerCase() !== "superadmin") {
+      return sendError(res, "Forbidden: Only an authenticated Super Admin can create privileged accounts", 403);
+    }
+    const targetRole = role === "superadmin" ? "superadmin" : "clientadmin";
+    const payload = {
+      hotelAdminId: hotelAdminId || `admin_${Date.now()}`,
+      username: String(username).trim().toLowerCase(),
+      password,
+      adminContactNumber: adminContactNumber || "",
+      adminAddress: adminAddress || "",
+      adminEmail: adminEmail || "",
+      role: targetRole,
+    };
+    const admin = await HotelAdmin.create(payload);
+    const { password: _, ...safeAdmin } = admin.toObject();
     sendSuccess(res, safeAdmin, 201);
   } catch (err) {
     sendError(res, err.message, 400);
@@ -125,4 +171,4 @@ const remove = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getAll, getById, update, remove };
+module.exports = { register, createBySuperAdmin, login, getAll, getById, update, remove };

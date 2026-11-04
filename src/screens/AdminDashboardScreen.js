@@ -4262,16 +4262,6 @@ export default function AdminDashboardScreen({
         </View>
 
         <View style={styles.adminHeaderRight}>
-          {onOpenSuperAdmin && authService.isSuperAdmin() ? (
-            <TouchableOpacity
-              style={styles.superAdminBtn}
-              onPress={onOpenSuperAdmin}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.superAdminBtnText}>👑 Super Admin Console</Text>
-            </TouchableOpacity>
-          ) : null}
-
           <TouchableOpacity
             style={styles.addComponentHeaderBtn}
             onPress={() => handleOpenCreateModal('restaurants')}

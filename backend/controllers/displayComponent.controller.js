@@ -46,13 +46,8 @@ const getAll = async (req, res) => {
       }
 
       const specificFilter = { ...filter, hotelPropertyId: { $in: targetIds } };
-      let items = await DisplayComponent.find(specificFilter).sort({ createdAt: -1 });
-
-      // If this hotel doesn't have its own custom components yet, return all components matching category/type
-      if (items.length === 0) {
-        items = await DisplayComponent.find(filter).sort({ createdAt: -1 });
-      }
-
+      const items = await DisplayComponent.find(specificFilter).sort({ createdAt: -1 });
+      // Multi-tenant data isolation: return only this hotel's components (or empty array if none registered)
       return sendSuccess(res, items);
     }
 
@@ -82,8 +77,12 @@ const getById = async (req, res) => {
 };
 
 // POST /display-components
+// Protected: Requires valid authentication and hotel property authorization
 const create = async (req, res) => {
   try {
+    const caller = req.hotelAdmin || {};
+    const isSuperAdmin = String(caller.role || "").toLowerCase() === "superadmin";
+
     const body = { ...req.body };
     if (!body.componentTypeId) {
       const cat = String(body.category || '').toLowerCase();
@@ -99,6 +98,20 @@ const create = async (req, res) => {
     if (!body.subTitle && body.subtitle) {
       body.subTitle = body.subtitle;
     }
+
+    // Authorization check: Verify caller owns target hotel (unless superadmin)
+    if (!isSuperAdmin && caller.hotelAdminId) {
+      const targetHotel = await HotelProperty.findOne({
+        $or: [
+          { hotelPropertyId: String(body.hotelPropertyId) },
+          ...(mongoose.isValidObjectId(body.hotelPropertyId) ? [{ _id: body.hotelPropertyId }] : [])
+        ]
+      });
+      if (targetHotel && targetHotel.hotelAdminId && targetHotel.hotelAdminId !== caller.hotelAdminId) {
+        return sendError(res, "Forbidden: You are not authorized to add components to this hotel property", 403);
+      }
+    }
+
     const item = await DisplayComponent.create(body);
     sendSuccess(res, item, 201);
   } catch (err) {
@@ -107,17 +120,39 @@ const create = async (req, res) => {
 };
 
 // PUT /display-components/:id
+// Protected: Requires valid authentication and component ownership
 const update = async (req, res) => {
   try {
     const { id } = req.params;
-    let item = null;
+    const caller = req.hotelAdmin || {};
+    const isSuperAdmin = String(caller.role || "").toLowerCase() === "superadmin";
+
+    let existing = null;
     if (mongoose.isValidObjectId(id)) {
-      item = await DisplayComponent.findByIdAndUpdate(id, req.body, {
-        new: true,
-        runValidators: true,
-      });
+      existing = await DisplayComponent.findById(id);
     }
-    if (!item) return sendError(res, "Not found", 404);
+    if (!existing) {
+      existing = await DisplayComponent.findOne({ _id: id });
+    }
+    if (!existing) return sendError(res, "Not found", 404);
+
+    // Authorization check: Verify caller owns the parent hotel
+    if (!isSuperAdmin && caller.hotelAdminId) {
+      const targetHotel = await HotelProperty.findOne({
+        $or: [
+          { hotelPropertyId: String(existing.hotelPropertyId) },
+          ...(mongoose.isValidObjectId(existing.hotelPropertyId) ? [{ _id: existing.hotelPropertyId }] : [])
+        ]
+      });
+      if (targetHotel && targetHotel.hotelAdminId && targetHotel.hotelAdminId !== caller.hotelAdminId) {
+        return sendError(res, "Forbidden: You are not authorized to modify this component", 403);
+      }
+    }
+
+    const item = await DisplayComponent.findByIdAndUpdate(existing._id, req.body, {
+      new: true,
+      runValidators: true,
+    });
     sendSuccess(res, item);
   } catch (err) {
     sendError(res, err.message, 400);
@@ -125,14 +160,36 @@ const update = async (req, res) => {
 };
 
 // DELETE /display-components/:id
+// Protected: Requires valid authentication and component ownership
 const remove = async (req, res) => {
   try {
     const { id } = req.params;
-    let item = null;
+    const caller = req.hotelAdmin || {};
+    const isSuperAdmin = String(caller.role || "").toLowerCase() === "superadmin";
+
+    let existing = null;
     if (mongoose.isValidObjectId(id)) {
-      item = await DisplayComponent.findByIdAndDelete(id);
+      existing = await DisplayComponent.findById(id);
     }
-    if (!item) return sendError(res, "Not found", 404);
+    if (!existing) {
+      existing = await DisplayComponent.findOne({ _id: id });
+    }
+    if (!existing) return sendError(res, "Not found", 404);
+
+    // Authorization check: Verify caller owns the parent hotel
+    if (!isSuperAdmin && caller.hotelAdminId) {
+      const targetHotel = await HotelProperty.findOne({
+        $or: [
+          { hotelPropertyId: String(existing.hotelPropertyId) },
+          ...(mongoose.isValidObjectId(existing.hotelPropertyId) ? [{ _id: existing.hotelPropertyId }] : [])
+        ]
+      });
+      if (targetHotel && targetHotel.hotelAdminId && targetHotel.hotelAdminId !== caller.hotelAdminId) {
+        return sendError(res, "Forbidden: You are not authorized to delete this component", 403);
+      }
+    }
+
+    await DisplayComponent.findByIdAndDelete(existing._id);
     sendSuccess(res, { deleted: true });
   } catch (err) {
     sendError(res, err.message);

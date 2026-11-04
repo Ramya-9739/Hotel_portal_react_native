@@ -114,7 +114,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(5, 7, 12, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 16,
     ...Platform.select({
       web: {
         backdropFilter: 'blur(8px)',
@@ -122,13 +123,13 @@ const styles = StyleSheet.create({
     }),
   },
   modalCard: {
-    width: '100%',
-    maxWidth: 480,
+    width: '94%',
+    maxWidth: 460,
     backgroundColor: '#0F131E',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.3)',
-    padding: 24,
+    padding: 18,
     ...Platform.select({
       web: {
         boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(239, 68, 68, 0.15)',
@@ -227,7 +228,8 @@ const styles = StyleSheet.create({
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 12,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   cancelButton: {
     paddingHorizontal: 18,

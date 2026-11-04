@@ -649,7 +649,14 @@ export default function HomeScreen({
       {/* =================================================================== */}
       <View style={styles.appHeader}>
         {/* Left: Spacer to keep center balanced */}
-        <View style={{ width: 68 }} />
+        <TouchableOpacity
+          style={styles.adminNavBtn}
+          onPress={() => onOpenAdminUI && onOpenAdminUI()}
+          activeOpacity={0.8}
+          accessibilityLabel="Open Hotel Management Console"
+        >
+          <Text style={styles.adminNavBtnText}>⚙ Admin</Text>
+        </TouchableOpacity>
 
         {/* Center: Atmospheric status indicator */}
         <View style={styles.headerAtmosphereWrapper}>
@@ -748,6 +755,29 @@ export default function HomeScreen({
                   Bistros, fine restaurants, wellness gyms, pools, hospitals, pharmacies, spa, ATMs & delivery
                 </Text>
               </View>
+
+              {bottomCategory === 'hospitals' && onNavigateToHospitals && (
+                <TouchableOpacity
+                  style={styles.dedicatedDirectoryBtn}
+                  onPress={onNavigateToHospitals}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.dedicatedDirectoryBtnText}>
+                    ↗ Dedicated 24/7 Hospital Directory
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {bottomCategory === 'pharmacies' && onNavigateToPharmacies && (
+                <TouchableOpacity
+                  style={styles.dedicatedDirectoryBtn}
+                  onPress={onNavigateToPharmacies}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.dedicatedDirectoryBtnText}>
+                    ↗ Dedicated 24/7 Pharmacy Directory
+                  </Text>
+                </TouchableOpacity>
+              )}
 
               {/* Filter Tabs Row */}
               <ScrollView
@@ -889,6 +919,29 @@ export default function HomeScreen({
                   Bistros, fine restaurants, wellness gyms, pools, hospitals, pharmacies, spa, ATMs & delivery
                 </Text>
               </View>
+
+              {bottomCategory === 'hospitals' && onNavigateToHospitals && (
+                <TouchableOpacity
+                  style={styles.dedicatedDirectoryBtn}
+                  onPress={onNavigateToHospitals}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.dedicatedDirectoryBtnText}>
+                    ↗ Dedicated 24/7 Hospital Directory
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {bottomCategory === 'pharmacies' && onNavigateToPharmacies && (
+                <TouchableOpacity
+                  style={styles.dedicatedDirectoryBtn}
+                  onPress={onNavigateToPharmacies}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.dedicatedDirectoryBtnText}>
+                    ↗ Dedicated 24/7 Pharmacy Directory
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* Filter Tabs Row */}
@@ -1395,6 +1448,23 @@ const styles = StyleSheet.create({
   bottomHeaderLeft: {
     flex: 1,
     minWidth: 240,
+  },
+  dedicatedDirectoryBtn: {
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(226, 192, 130, 0.15)',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E2C082',
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  dedicatedDirectoryBtnText: {
+    color: '#E2C082',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   bottomSectionTitle: {
     color: '#E2C082',
