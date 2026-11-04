@@ -35,18 +35,18 @@ import { searchHotelByName, fetchHotelDetailsByPlaceId, getApiConfigStatus } fro
 import HotelAutocompleteSearch from '../components/HotelAutocompleteSearch';
 
 const ADMIN_TABS = [
-  { id: 'hotel_config', label: 'Hotel & Location Config', icon: '🏨' },
-  { id: 'places_manager', label: 'Nearby Places & Categories', icon: '📍' },
-  { id: 'overview', label: 'Dashboard Overview', icon: '📊' },
-  { id: 'hotels', label: 'Hotels Directory', icon: '🏢' },
-  { id: 'restaurants', label: 'Restaurants & Dining', icon: '🍽️' },
-  { id: 'gyms', label: 'Gyms & Wellness', icon: '🏋️' },
-  { id: 'pools', label: 'Swimming Pools', icon: '🏊' },
-  { id: 'takeaway', label: 'Takeaway Partners', icon: '🥡' },
-  { id: 'delivery', label: 'Home Delivery', icon: '🛵' },
-  { id: 'facilities', label: 'Hotel Facilities & Services', icon: '🛎️' },
-  { id: 'payments', label: 'Hotel Payment Config', icon: '💳' },
-  { id: 'availability', label: 'Availability Matrix', icon: '⚡' },
+  { id: 'overview', label: 'Dashboard Overview', icon: '📊', section: 'DASHBOARD' },
+  { id: 'hotel_config', label: 'Hotel & Location Config', icon: '🏨', section: 'PROPERTY & DISCOVERY' },
+  { id: 'hotels', label: 'Hotels Directory', icon: '🏢', section: 'PROPERTY & DISCOVERY' },
+  { id: 'places_manager', label: 'Nearby Places & Categories', icon: '📍', section: 'PROPERTY & DISCOVERY' },
+  { id: 'restaurants', label: 'Restaurants & Dining', icon: '🍽️', section: 'GUEST AMENITIES' },
+  { id: 'gyms', label: 'Gyms & Wellness', icon: '🏋️', section: 'GUEST AMENITIES' },
+  { id: 'pools', label: 'Swimming Pools', icon: '🏊', section: 'GUEST AMENITIES' },
+  { id: 'facilities', label: 'Hotel Facilities & Services', icon: '🛎️', section: 'GUEST AMENITIES' },
+  { id: 'takeaway', label: 'Takeaway Partners', icon: '🥡', section: 'GUEST AMENITIES' },
+  { id: 'delivery', label: 'Home Delivery', icon: '🛵', section: 'GUEST AMENITIES' },
+  { id: 'payments', label: 'Hotel Payment Config', icon: '💳', section: 'OPERATIONS' },
+  { id: 'availability', label: 'Availability Matrix', icon: '⚡', section: 'OPERATIONS' },
 ];
 
 const STANDARD_PAYMENT_OPTIONS = [
@@ -911,6 +911,10 @@ export default function AdminDashboardScreen({
   // Data Collections — start empty, loaded from API
   const [hotels, setHotels] = useState([]);
   const [hotelsDirectorySearch, setHotelsDirectorySearch] = useState('');
+  const [hotelStatusFilter, setHotelStatusFilter] = useState('all'); // 'all' | 'approved' | 'pending' | 'rejected'
+  const [componentSearchQuery, setComponentSearchQuery] = useState('');
+  const [componentAvailabilityFilter, setComponentAvailabilityFilter] = useState('all'); // 'all' | 'available' | 'unavailable'
+  const [recentActivity, setRecentActivity] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
   const [gyms, setGyms] = useState([]);
   const [pools, setPools] = useState([]);
@@ -919,6 +923,14 @@ export default function AdminDashboardScreen({
   const [facilities, setFacilities] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [summary, setSummary] = useState(null);
+
+  const logActivity = (description, type = 'info') => {
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setRecentActivity((prev) => [
+      { id: Date.now() + Math.random(), time: timeStr, description, type },
+      ...prev.slice(0, 19),
+    ]);
+  };
 
   // Hotel Payment Methods Editor State
   const [selectedHotelForPayments, setSelectedHotelForPayments] = useState(null);
@@ -993,9 +1005,11 @@ export default function AdminDashboardScreen({
     };
   }, []);
 
-  const loadAllAdminData = async () => {
+  const loadAllAdminData = async (targetHotelId = null) => {
     setIsLoading(true);
     try {
+      const activeId = targetHotelId || currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id;
+
       // 1. Summary
       const sumRes = await apiService.fetchSummary();
       if (sumRes && sumRes.data) {
@@ -1004,46 +1018,48 @@ export default function AdminDashboardScreen({
 
       // 2. Hotels
       const hRes = await apiService.fetchHotels();
-      if (hRes && hRes.data && hRes.data.length > 0) {
+      if (hRes && Array.isArray(hRes.data)) {
         setHotels(hRes.data);
         const cur = hRes.data.find((h) => h.id === selectedHotelForPayments?.id) || hRes.data[0];
-        setSelectedHotelForPayments(cur);
-        setHotelPaymentMethods(cur.paymentMethods || []);
+        if (cur) {
+          setSelectedHotelForPayments(cur);
+          setHotelPaymentMethods(cur.paymentMethods || []);
+        }
       }
 
       // 3. Restaurants
-      const rRes = await apiService.fetchRestaurants();
-      if (rRes && rRes.data && rRes.data.length > 0) {
+      const rRes = await apiService.fetchRestaurants(activeId);
+      if (rRes && Array.isArray(rRes.data)) {
         setRestaurants(rRes.data);
       }
 
       // 4. Gyms
-      const gRes = await apiService.fetchGyms();
-      if (gRes && gRes.data && gRes.data.length > 0) {
+      const gRes = await apiService.fetchGyms(activeId);
+      if (gRes && Array.isArray(gRes.data)) {
         setGyms(gRes.data);
       }
 
       // 4b. Swimming Pools
-      const pRes = await apiService.fetchSwimmingPools();
-      if (pRes && pRes.data && pRes.data.length > 0) {
+      const pRes = await apiService.fetchSwimmingPools(activeId);
+      if (pRes && Array.isArray(pRes.data)) {
         setPools(pRes.data);
       }
 
       // 5. Takeaway
-      const tRes = await apiService.fetchTakeaway();
-      if (tRes && tRes.data && tRes.data.length > 0) {
+      const tRes = await apiService.fetchTakeaway(activeId);
+      if (tRes && Array.isArray(tRes.data)) {
         setTakeaway(tRes.data);
       }
 
       // 6. Home Delivery
-      const dRes = await apiService.fetchHomeDelivery();
-      if (dRes && dRes.data && dRes.data.length > 0) {
+      const dRes = await apiService.fetchHomeDelivery(activeId);
+      if (dRes && Array.isArray(dRes.data)) {
         setHomeDelivery(dRes.data);
       }
 
       // 6b. Hotel Facilities & Services
-      const fRes = await apiService.fetchFacilities();
-      if (fRes && fRes.data && fRes.data.length > 0) {
+      const fRes = await apiService.fetchFacilities(activeId);
+      if (fRes && Array.isArray(fRes.data)) {
         setFacilities(fRes.data);
       }
 
@@ -2093,169 +2109,413 @@ export default function AdminDashboardScreen({
   );
 
   // ===========================================================================
-  // RENDER TAB: OVERVIEW
   // ===========================================================================
-  const renderOverviewTab = () => (
-    <View style={styles.tabContentContainer}>
-      <View style={styles.overviewHero}>
-        <View>
-          <Text style={styles.overviewGreeting}>HOTEL OPERATIONS & SERVICES CONSOLE</Text>
-          <Text style={styles.overviewSub}>
-            Live Backend REST API on Port 3000 • MongoDB Database: hotelApiDb
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={styles.resetButton}
-          onPress={handleResetAllData}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.resetButtonText}>🔄 Reset All Collections to Seed Data</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Metric Cards Grid */}
-      <View style={styles.metricsGrid}>
-        <TouchableOpacity
-          style={styles.metricCard}
-          onPress={() => setActiveTab('hotels')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.metricIcon}>🏨</Text>
-          <Text style={styles.metricValue}>{hotels.length}</Text>
-          <Text style={styles.metricLabel}>Active Hotels</Text>
-          <Text style={styles.metricSub}>Click to manage & edit</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.metricCard}
-          onPress={() => setActiveTab('restaurants')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.metricIcon}>🍽️</Text>
-          <Text style={styles.metricValue}>{restaurants.length}</Text>
-          <Text style={styles.metricLabel}>Restaurants</Text>
-          <Text style={styles.metricSub}>Fine dining & local cuisine</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.metricCard}
-          onPress={() => setActiveTab('gyms')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.metricIcon}>🏋️</Text>
-          <Text style={styles.metricValue}>{gyms.length}</Text>
-          <Text style={styles.metricLabel}>Gyms & Wellness</Text>
-          <Text style={styles.metricSub}>Fitness centers & day passes</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.metricCard}
-          onPress={() => setActiveTab('takeaway')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.metricIcon}>🥡</Text>
-          <Text style={styles.metricValue}>{takeaway.length + homeDelivery.length}</Text>
-          <Text style={styles.metricLabel}>Food Partners</Text>
-          <Text style={styles.metricSub}>Takeaway & Home Delivery</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.metricCard}
-          onPress={() => setActiveTab('payments')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.metricIcon}>💳</Text>
-          <Text style={styles.metricValue}>
-            {hotels.filter((h) => (h.paymentStatus || 'Paid').toLowerCase() === 'paid').length} / {hotels.length}
-          </Text>
-          <Text style={styles.metricLabel}>Hotels Settled</Text>
-          <Text style={styles.metricSub}>Live payment status</Text>
-        </TouchableOpacity>
-
-        <View style={styles.metricCard}>
-          <Text style={styles.metricIcon}>🟢</Text>
-          <Text style={styles.metricValue}>ONLINE</Text>
-          <Text style={styles.metricLabel}>MongoDB Server</Text>
-          <Text style={styles.metricSub}>Port 3000 API Healthy</Text>
-        </View>
-      </View>
-
-      {/* Quick Navigation Cards */}
-      <Text style={styles.subSectionTitle}>Quick Management Shortcuts</Text>
-      <View style={styles.shortcutsRow}>
-        <TouchableOpacity
-          style={styles.shortcutCard}
-          onPress={() => handleOpenCreateModal('hotels')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.shortcutIcon}>➕</Text>
-          <Text style={styles.shortcutTitle}>Add New Hotel</Text>
-          <Text style={styles.shortcutDesc}>
-            Add a new hotel property with custom photos, rates, and accepted payments
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.shortcutCard}
-          onPress={() => handleOpenCreateModal('restaurants')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.shortcutIcon}>🍽️</Text>
-          <Text style={styles.shortcutTitle}>Add New Restaurant</Text>
-          <Text style={styles.shortcutDesc}>
-            Add dining partners with cuisine, takeaway & room delivery flags
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.shortcutCard}
-          onPress={() => setActiveTab('payments')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.shortcutIcon}>💳</Text>
-          <Text style={styles.shortcutTitle}>Hotel Payment Methods</Text>
-          <Text style={styles.shortcutDesc}>
-            Configure UPI, Cards, Net Banking, and Cash individually per hotel
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.shortcutCard}
-          onPress={() => setActiveTab('availability')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.shortcutIcon}>⚡</Text>
-          <Text style={styles.shortcutTitle}>1-Click Availability Matrix</Text>
-          <Text style={styles.shortcutDesc}>
-            Instantly toggle operational status for hotels, dining, and gyms
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
+  // RENDER TAB: OVERVIEW (EXECUTIVE ADMIN DASHBOARD)
   // ===========================================================================
-  // RENDER TAB: HOTELS (CRUD - VERTICAL LIST WITH PAYMENT STATUS)
-  // ===========================================================================
-  const renderHotelsTab = () => {
-    const query = hotelsDirectorySearch.trim().toLowerCase();
-    const filteredHotels = query
-      ? hotels.filter((h) =>
-          (h.title || h.name || '').toLowerCase().includes(query) ||
-          (h.location || h.city || h.address || '').toLowerCase().includes(query) ||
-          (h.hotelPropertyId || '').toLowerCase().includes(query)
-        )
-      : hotels;
+  const renderOverviewTab = () => {
+    const nearbyCount = Object.values(currentActiveHotel?.nearby || {}).reduce(
+      (acc, list) => acc + (Array.isArray(list) ? list.length : 0),
+      0
+    );
+    const totalComponents =
+      restaurants.length +
+      gyms.length +
+      pools.length +
+      facilities.length +
+      takeaway.length +
+      homeDelivery.length +
+      nearbyCount;
+
+    const approvedHotelsCount = hotels.filter((h) => (h.status || 'pending').toLowerCase() === 'approved').length;
+    const pendingHotelsCount = hotels.filter((h) => (h.status || 'pending').toLowerCase() === 'pending').length;
+    const paidHotelsCount = hotels.filter((h) => (h.paymentStatus || 'Paid').toLowerCase() === 'paid').length;
 
     return (
       <View style={styles.tabContentContainer}>
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitle}>HOTELS DIRECTORY ({hotels.length})</Text>
-            <Text style={styles.sectionSub}>
-              Vertical Hotel View • Live Payment Status (Paid / Not Made) & Integrated Booking Config
+        {/* Executive Header Banner */}
+        <View style={styles.overviewHero}>
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
+              <Text style={styles.overviewGreeting}>HOTEL OPERATIONS & EXECUTIVE DASHBOARD</Text>
+              <View style={styles.liveDbPill}>
+                <View style={styles.liveDbDot} />
+                <Text style={styles.liveDbText}>Live MongoDB ({connectedDbName})</Text>
+              </View>
+            </View>
+            <Text style={styles.overviewSub}>
+              Multi-Property Administration • Real-Time Component Isolation • Synchronized with Guest Experience
             </Text>
           </View>
+          <View style={styles.overviewHeaderActions}>
+            <TouchableOpacity
+              style={styles.headerPrimaryActionBtn}
+              onPress={() => handleOpenCreateModal('restaurants')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.headerPrimaryActionBtnText}>✨ + Add Component</Text>
+            </TouchableOpacity>
+            {currentActiveHotel && (
+              <TouchableOpacity
+                style={styles.headerGuestLaunchBtn}
+                onPress={() => {
+                  if (onLaunchGuestWebsite) {
+                    onLaunchGuestWebsite(currentActiveHotel);
+                  } else if (onBackToGuestPortal) {
+                    onBackToGuestPortal();
+                  }
+                }}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.headerGuestLaunchBtnText}>
+                  🚀 Open Guest Portal ({currentActiveHotel.city || 'Portal'}) →
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Prominent Active Hotel Profile Card */}
+        <View style={styles.activeHotelProfileCard}>
+          <View style={styles.activeHotelProfileHeader}>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                <Text style={styles.activeHotelBadgeText}>⭐ CURRENT ACTIVE HOTEL</Text>
+                <View style={[
+                  styles.statusBadgePill,
+                  currentActiveHotel?.status === 'approved'
+                    ? styles.statusBadgeApproved
+                    : currentActiveHotel?.status === 'rejected'
+                    ? styles.statusBadgeRejected
+                    : styles.statusBadgePending,
+                ]}>
+                  <Text style={styles.statusBadgePillText}>
+                    {(currentActiveHotel?.status || 'PENDING').toUpperCase()}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.activeHotelNameText}>
+                {currentActiveHotel?.name || 'No Hotel Currently Selected'}
+              </Text>
+              <Text style={styles.activeHotelLocationText}>
+                📍 {currentActiveHotel?.address || currentActiveHotel?.city || 'Address unconfigured'}
+              </Text>
+              <View style={styles.activeHotelMetaRow}>
+                <Text style={styles.activeHotelMetaItem}>
+                  Coordinates: [{currentActiveHotel?.latitude != null ? Number(currentActiveHotel.latitude).toFixed(4) : 'N/A'}, {currentActiveHotel?.longitude != null ? Number(currentActiveHotel.longitude).toFixed(4) : 'N/A'}]
+                </Text>
+                <Text style={styles.activeHotelMetaDivider}>•</Text>
+                <Text style={styles.activeHotelMetaItem}>★ {currentActiveHotel?.rating || '4.9'}</Text>
+                <Text style={styles.activeHotelMetaDivider}>•</Text>
+                <Text style={styles.activeHotelMetaItem}>{currentActiveHotel?.pricePerNight || '₹18,500 / night'}</Text>
+                <Text style={styles.activeHotelMetaDivider}>•</Text>
+                <Text style={styles.activeHotelMetaItem}>ID: {currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id || 'N/A'}</Text>
+              </View>
+            </View>
+            <View style={styles.activeHotelProfileActions}>
+              <TouchableOpacity
+                style={styles.profileActionBtn}
+                onPress={() => setActiveTab('hotel_config')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.profileActionBtnText}>✏️ Configure Hotel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.profileActionBtn}
+                onPress={() => setActiveTab('hotels')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.profileActionBtnText}>🏢 Switch Hotel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* Total Components Highlight & Category Metrics Grid */}
+        <View style={styles.metricsSummaryContainer}>
+          <View style={styles.totalComponentsHeroCard}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.totalComponentsLabel}>TOTAL ACTIVE COMPONENTS</Text>
+              <Text style={styles.totalComponentsNumber}>{totalComponents}</Text>
+              <Text style={styles.totalComponentsSub}>
+                Amenities, dining options, wellness facilities & curated places active for this property
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.addComponentDirectBtn}
+              onPress={() => handleOpenCreateModal('restaurants')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.addComponentDirectBtnText}>+ Add New</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.metricsGrid}>
+            <TouchableOpacity
+              style={styles.metricCard}
+              onPress={() => setActiveTab('restaurants')}
+              activeOpacity={0.8}
+            >
+              <View style={styles.metricCardHeader}>
+                <Text style={styles.metricIcon}>🍽️</Text>
+                <Text style={styles.metricValue}>{restaurants.length}</Text>
+              </View>
+              <Text style={styles.metricLabel}>Restaurants & Dining</Text>
+              <Text style={styles.metricSub}>Fine dining & multi-cuisine</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.metricCard}
+              onPress={() => setActiveTab('gyms')}
+              activeOpacity={0.8}
+            >
+              <View style={styles.metricCardHeader}>
+                <Text style={styles.metricIcon}>🏋️</Text>
+                <Text style={styles.metricValue}>{gyms.length}</Text>
+              </View>
+              <Text style={styles.metricLabel}>Gyms & Wellness</Text>
+              <Text style={styles.metricSub}>Fitness centers & day passes</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.metricCard}
+              onPress={() => setActiveTab('pools')}
+              activeOpacity={0.8}
+            >
+              <View style={styles.metricCardHeader}>
+                <Text style={styles.metricIcon}>🏊</Text>
+                <Text style={styles.metricValue}>{pools.length}</Text>
+              </View>
+              <Text style={styles.metricLabel}>Swimming Pools</Text>
+              <Text style={styles.metricSub}>Infinity & heated pools</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.metricCard}
+              onPress={() => setActiveTab('facilities')}
+              activeOpacity={0.8}
+            >
+              <View style={styles.metricCardHeader}>
+                <Text style={styles.metricIcon}>🛎️</Text>
+                <Text style={styles.metricValue}>{facilities.length}</Text>
+              </View>
+              <Text style={styles.metricLabel}>Hotel Facilities</Text>
+              <Text style={styles.metricSub}>Spa, concierge & services</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.metricCard}
+              onPress={() => setActiveTab('takeaway')}
+              activeOpacity={0.8}
+            >
+              <View style={styles.metricCardHeader}>
+                <Text style={styles.metricIcon}>🥡</Text>
+                <Text style={styles.metricValue}>{takeaway.length + homeDelivery.length}</Text>
+              </View>
+              <Text style={styles.metricLabel}>Takeaway & Delivery</Text>
+              <Text style={styles.metricSub}>Express partners & delivery</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.metricCard}
+              onPress={() => setActiveTab('places_manager')}
+              activeOpacity={0.8}
+            >
+              <View style={styles.metricCardHeader}>
+                <Text style={styles.metricIcon}>📍</Text>
+                <Text style={styles.metricValue}>{nearbyCount}</Text>
+              </View>
+              <Text style={styles.metricLabel}>Curated Nearby Places</Text>
+              <Text style={styles.metricSub}>Attractions, transit & shopping</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.metricCard}
+              onPress={() => setActiveTab('hotels')}
+              activeOpacity={0.8}
+            >
+              <View style={styles.metricCardHeader}>
+                <Text style={styles.metricIcon}>🏢</Text>
+                <Text style={styles.metricValue}>{hotels.length}</Text>
+              </View>
+              <Text style={styles.metricLabel}>Registered Hotels</Text>
+              <Text style={styles.metricSub}>{approvedHotelsCount} Approved • {pendingHotelsCount} Pending</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.metricCard}
+              onPress={() => setActiveTab('payments')}
+              activeOpacity={0.8}
+            >
+              <View style={styles.metricCardHeader}>
+                <Text style={styles.metricIcon}>💳</Text>
+                <Text style={styles.metricValue}>{paidHotelsCount} / {hotels.length}</Text>
+              </View>
+              <Text style={styles.metricLabel}>Hotels Settled</Text>
+              <Text style={styles.metricSub}>Active billing & payment config</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Real-Time Session Activity Feed (Only actual data!) */}
+        <View style={styles.activitySection}>
+          <View style={styles.activitySectionHeader}>
+            <View>
+              <Text style={styles.subSectionTitle}>SESSION ACTIVITY LOG</Text>
+              <Text style={styles.activitySectionSub}>
+                Real-time tracking of hotel and component modifications in this session
+              </Text>
+            </View>
+            <View style={styles.liveActivityPill}>
+              <View style={styles.livePulseDot} />
+              <Text style={styles.liveActivityText}>Live Monitoring</Text>
+            </View>
+          </View>
+
+          {recentActivity.length === 0 ? (
+            <View style={styles.activityEmptyState}>
+              <Text style={styles.activityEmptyIcon}>⏱️</Text>
+              <Text style={styles.activityEmptyTitle}>No Modifications in Current Session</Text>
+              <Text style={styles.activityEmptySub}>
+                All updates made to hotels, dining, wellness, or amenities will appear here in real time as they occur.
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.activityList}>
+              {recentActivity.map((act) => (
+                <View key={act.id} style={styles.activityItem}>
+                  <View style={styles.activityTimeCol}>
+                    <Text style={styles.activityTimeText}>{act.time}</Text>
+                  </View>
+                  <View style={styles.activityTypeBadge}>
+                    <Text style={styles.activityTypeText}>{(act.type || 'INFO').toUpperCase()}</Text>
+                  </View>
+                  <Text style={styles.activityDescText} numberOfLines={2}>
+                    {act.description}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Quick Management Shortcuts */}
+        <View style={{ marginTop: 8 }}>
+          <Text style={styles.subSectionTitle}>Quick Management Shortcuts</Text>
+          <View style={styles.shortcutsRow}>
+            <TouchableOpacity
+              style={styles.shortcutCard}
+              onPress={() => handleOpenCreateModal('restaurants')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.shortcutIcon}>🍽️</Text>
+              <Text style={styles.shortcutTitle}>Add New Restaurant / Amenity</Text>
+              <Text style={styles.shortcutDesc}>
+                Create dining options, fitness centers, or hotel amenities for this property
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.shortcutCard}
+              onPress={() => setActiveTab('hotels')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.shortcutIcon}>🏢</Text>
+              <Text style={styles.shortcutTitle}>Hotels Directory</Text>
+              <Text style={styles.shortcutDesc}>
+                Browse, search, edit, and switch between registered hotel properties
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.shortcutCard}
+              onPress={() => setActiveTab('places_manager')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.shortcutIcon}>📍</Text>
+              <Text style={styles.shortcutTitle}>Nearby Places & Categories</Text>
+              <Text style={styles.shortcutDesc}>
+                Curate attractions, shopping, transit, and medical gateways with GPS directions
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.shortcutCard}
+              onPress={() => setActiveTab('payments')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.shortcutIcon}>💳</Text>
+              <Text style={styles.shortcutTitle}>Hotel Payment Methods</Text>
+              <Text style={styles.shortcutDesc}>
+                Configure UPI, Cards, Net Banking, and Cash individually per hotel
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.shortcutCard}
+              onPress={() => setActiveTab('availability')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.shortcutIcon}>⚡</Text>
+              <Text style={styles.shortcutTitle}>1-Click Availability Matrix</Text>
+              <Text style={styles.shortcutDesc}>
+                Instantly toggle operational status for hotels, dining, and gyms
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  // ===========================================================================
+  // RENDER TAB: HOTELS (CRUD - VERTICAL LIST WITH PAYMENT STATUS & SEARCH)
+  // ===========================================================================
+  const renderHotelsTab = () => {
+    const query = hotelsDirectorySearch.trim().toLowerCase();
+    const approvedCount = hotels.filter((h) => (h.status || 'pending').toLowerCase() === 'approved').length;
+    const pendingCount = hotels.filter((h) => (h.status || 'pending').toLowerCase() === 'pending').length;
+    const rejectedCount = hotels.filter((h) => (h.status || 'pending').toLowerCase() === 'rejected').length;
+
+    const filteredHotels = hotels.filter((h) => {
+      if (hotelStatusFilter !== 'all') {
+        const st = (h.status || 'pending').toLowerCase();
+        if (st !== hotelStatusFilter.toLowerCase()) return false;
+      }
+      if (query) {
+        const titleMatch = (h.title || h.name || '').toLowerCase().includes(query);
+        const locMatch = (h.location || h.city || h.address || '').toLowerCase().includes(query);
+        const idMatch = (h.hotelPropertyId || h.id || '').toLowerCase().includes(query);
+        return titleMatch || locMatch || idMatch;
+      }
+      return true;
+    });
+
+    return (
+      <View style={styles.tabContentContainer}>
+        {/* Section Header */}
+        <View style={styles.sectionHeaderRow}>
+          <View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <Text style={styles.sectionTitle}>HOTELS DIRECTORY ({hotels.length})</Text>
+              <View style={styles.directoryCountPills}>
+                <View style={styles.countPillApproved}>
+                  <Text style={styles.countPillApprovedText}>{approvedCount} Approved</Text>
+                </View>
+                <View style={styles.countPillPending}>
+                  <Text style={styles.countPillPendingText}>{pendingCount} Pending</Text>
+                </View>
+                {rejectedCount > 0 && (
+                  <View style={styles.countPillRejected}>
+                    <Text style={styles.countPillRejectedText}>{rejectedCount} Rejected</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+            <Text style={styles.sectionSub}>
+              Multi-Hotel Directory • Live Approvals, GPS Coordinates, Rates & Integrated Payment Management
+            </Text>
+          </View>
+
           <View style={styles.headerButtonsRow}>
             {authService.isSuperAdmin() && (
               <TouchableOpacity
@@ -2268,617 +2528,613 @@ export default function AdminDashboardScreen({
             )}
             <TouchableOpacity
               style={styles.addBtn}
-              onPress={() => setActiveTab('payments')}
+              onPress={() => loadAllAdminData()}
               activeOpacity={0.8}
             >
-              <Text style={styles.addBtnText}>Payment Config</Text>
+              <Text style={styles.addBtnText}>🔄 Refresh</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Directory Live Search Input */}
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: '#12151F',
-          borderRadius: 8,
-          borderWidth: 1,
-          borderColor: '#2A2E45',
-          paddingHorizontal: 12,
-          paddingVertical: 2,
-          marginBottom: 14,
-          gap: 8,
-        }}>
-          <Text style={{ color: '#E2C082', fontSize: 13, fontWeight: '700' }}>⌕</Text>
-          <TextInput
-            style={[styles.formInput, { flex: 1, borderWidth: 0, backgroundColor: 'transparent', height: 38 }]}
-            value={hotelsDirectorySearch}
-            onChangeText={setHotelsDirectorySearch}
-            placeholder="Filter hotels by name, location, or city..."
-            placeholderTextColor="#64748B"
-            autoCapitalize="none"
-          />
-          {hotelsDirectorySearch.length > 0 && (
-            <TouchableOpacity
-              onPress={() => setHotelsDirectorySearch('')}
-              style={{ padding: 4 }}
-              activeOpacity={0.7}
-            >
-              <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '700' }}>✕</Text>
-            </TouchableOpacity>
-          )}
+        {/* Directory Search & Status Filter Bar */}
+        <View style={styles.directoryControlsBar}>
+          <View style={styles.directorySearchInputWrap}>
+            <Text style={styles.searchIconText}>⌕</Text>
+            <TextInput
+              style={styles.directorySearchInput}
+              value={hotelsDirectorySearch}
+              onChangeText={setHotelsDirectorySearch}
+              placeholder="Search hotels by name, city, location, or hotel ID..."
+              placeholderTextColor="#64748B"
+              autoCapitalize="none"
+            />
+            {hotelsDirectorySearch.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setHotelsDirectorySearch('')}
+                style={styles.clearSearchBtn}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.clearSearchBtnText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Status Filter Tabs */}
+          <View style={styles.statusFilterTabs}>
+            {[
+              { key: 'all', label: `All (${hotels.length})` },
+              { key: 'approved', label: `Approved (${approvedCount})` },
+              { key: 'pending', label: `Pending (${pendingCount})` },
+              { key: 'rejected', label: `Rejected (${rejectedCount})` },
+            ].map((st) => (
+              <TouchableOpacity
+                key={st.key}
+                style={[
+                  styles.statusFilterTab,
+                  hotelStatusFilter === st.key && styles.statusFilterTabActive,
+                ]}
+                onPress={() => setHotelStatusFilter(st.key)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.statusFilterTabText,
+                    hotelStatusFilter === st.key && styles.statusFilterTabTextActive,
+                  ]}
+                >
+                  {st.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* Vertical Hotels List */}
         <View style={styles.verticalHotelsContainer}>
           {filteredHotels.length === 0 ? (
-            <View style={{ padding: 24, alignItems: 'center', backgroundColor: '#151824', borderRadius: 8 }}>
-              <Text style={{ color: '#E2C082', fontSize: 13, fontWeight: '600' }}>
-                {hotels.length === 0 ? 'No hotels loaded from backend database.' : `No hotels match "${hotelsDirectorySearch}".`}
+            <View style={styles.directoryEmptyStateCard}>
+              <Text style={styles.directoryEmptyIcon}>🏢</Text>
+              <Text style={styles.directoryEmptyTitle}>
+                {hotels.length === 0
+                  ? 'No Hotels Registered in Database'
+                  : `No hotels match "${hotelsDirectorySearch || hotelStatusFilter}"`}
               </Text>
+              <Text style={styles.directoryEmptySub}>
+                {hotels.length === 0
+                  ? 'Use "+ Add New Hotel" or hotel discovery to register the first property.'
+                  : 'Try searching by city or partial hotel name, or reset your filters.'}
+              </Text>
+              {(hotelsDirectorySearch || hotelStatusFilter !== 'all') && (
+                <TouchableOpacity
+                  style={styles.resetFiltersBtn}
+                  onPress={() => {
+                    setHotelsDirectorySearch('');
+                    setHotelStatusFilter('all');
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.resetFiltersBtnText}>Reset Search & Filters</Text>
+                </TouchableOpacity>
+              )}
             </View>
           ) : (
             filteredHotels.map((h) => {
               const isAvail = h.availability === 'Available' || !h.availability;
               const isPaid = (h.paymentStatus || 'Paid') === 'Paid';
+              const isActiveHotel =
+                (currentActiveHotel?.hotelPropertyId && currentActiveHotel?.hotelPropertyId === (h.hotelPropertyId || h.id)) ||
+                (currentActiveHotel?.id && currentActiveHotel?.id === h.id);
+              const hotelStatus = (h.status || 'pending').toLowerCase();
 
-          return (
-            <View key={h.id} style={styles.verticalHotelCard}>
-              {/* Hotel Banner / Header */}
-              <View style={styles.verticalHotelHeaderRow}>
-                <Image source={{ uri: h.imageLink }} style={styles.verticalHotelThumb} />
-                <View style={styles.verticalHotelMainInfo}>
-                  <View style={styles.verticalHotelTitleLine}>
-                    <Text style={styles.verticalHotelTitle}>{h.title || h.name}</Text>
-                    <Text style={styles.verticalHotelPrice}>{h.pricePerNight || '₹24,500'}<Text style={{ fontSize: 11, color: '#94A3B8' }}> / night</Text></Text>
-                  </View>
-                  <Text style={styles.verticalHotelLocation}>
-                    📍 {h.location} ({h.distance || '0.2 km'}) • ★ {h.rating || 4.9}
-                  </Text>
-                  {h.description ? (
-                    <Text style={styles.verticalHotelDesc} numberOfLines={2}>
-                      {h.description}
-                    </Text>
-                  ) : null}
-                </View>
-              </View>
-
-              {/* Payment Status Bar (Paid vs Not Made / Pending) */}
-              <View style={[styles.paymentStatusBar, isPaid ? styles.paymentBarPaid : styles.paymentBarUnpaid]}>
-                <View style={styles.paymentStatusInfo}>
-                  <Text style={styles.paymentStatusIcon}>{isPaid ? '✅' : '⚠️'}</Text>
-                  <View>
-                    <Text style={[styles.paymentStatusTitle, isPaid ? styles.paymentTextPaid : styles.paymentTextUnpaid]}>
-                      {isPaid ? 'PAYMENT STATUS: COMPLETED (PAID)' : 'PAYMENT STATUS: NOT MADE / PENDING'}
-                    </Text>
-                    <Text style={styles.paymentStatusSub}>
-                      {isPaid
-                        ? `Payment verified for billing cycle • Default Method: ${(h.paymentMethods && h.paymentMethods[0]) || 'UPI / Card'}`
-                        : 'Action required: Hotel subscription / vendor payment is currently pending'}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* 1-Click Payment Status Toggle */}
-                <TouchableOpacity
-                  style={[styles.paymentToggleBtn, isPaid ? styles.paymentToggleBtnMarkUnpaid : styles.paymentToggleBtnMarkPaid]}
-                  onPress={() => handleToggleHotelPayment(h)}
-                  activeOpacity={0.8}
+              return (
+                <View
+                  key={h.id || h.hotelPropertyId}
+                  style={[
+                    styles.verticalHotelCard,
+                    isActiveHotel && styles.verticalHotelCardActive,
+                  ]}
                 >
-                  <Text style={styles.paymentToggleBtnText}>
-                    {isPaid ? 'Mark as Not Made ↺' : 'Mark as Paid ✓'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+                  {/* Top Header Row with Thumbnail, Title & Badges */}
+                  <View style={styles.verticalHotelHeaderRow}>
+                    <View style={styles.hotelThumbWrap}>
+                      <Image
+                        source={{
+                          uri:
+                            h.imageLink ||
+                            (h.images && h.images[0]) ||
+                            'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80',
+                        }}
+                        style={styles.verticalHotelThumb}
+                      />
+                    </View>
 
-              {/* Accepted Payment Methods Row */}
-              <View style={styles.verticalHotelFooterRow}>
-                <View style={styles.hotelPmRow}>
-                  <Text style={styles.hotelPmLabel}>💳 Accepted Methods:</Text>
-                  <View style={styles.hotelPmChips}>
-                    {(h.paymentMethods || ['UPI', 'Credit Card', 'Cash']).map((pm, idx) => (
-                      <View key={`hpm-${idx}`} style={styles.hotelPmChip}>
-                        <Text style={styles.hotelPmChipText}>{pm}</Text>
+                    <View style={styles.verticalHotelMainInfo}>
+                      <View style={styles.verticalHotelTitleLine}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1 }}>
+                          <Text style={styles.verticalHotelTitle}>{h.title || h.name}</Text>
+                          {isActiveHotel && (
+                            <View style={styles.activeHotelPillBadge}>
+                              <Text style={styles.activeHotelPillBadgeText}>★ CURRENT ACTIVE</Text>
+                            </View>
+                          )}
+                          <View
+                            style={[
+                              styles.hotelStatusBadge,
+                              hotelStatus === 'approved'
+                                ? styles.hotelStatusApproved
+                                : hotelStatus === 'rejected'
+                                ? styles.hotelStatusRejected
+                                : styles.hotelStatusPending,
+                            ]}
+                          >
+                            <Text style={styles.hotelStatusBadgeText}>
+                              {hotelStatus === 'approved' ? '✓ APPROVED' : hotelStatus === 'rejected' ? '✗ REJECTED' : '⏳ PENDING'}
+                            </Text>
+                          </View>
+                        </View>
+                        <Text style={styles.verticalHotelPrice}>
+                          {h.pricePerNight || '₹24,500'}
+                          <Text style={{ fontSize: 11, color: '#94A3B8' }}> / night</Text>
+                        </Text>
                       </View>
-                    ))}
+
+                      <Text style={styles.verticalHotelLocation}>
+                        📍 {h.location || h.city || h.address} • ★ {h.rating || 4.9} • ID: {h.hotelPropertyId || h.id}
+                      </Text>
+                      {h.description ? (
+                        <Text style={styles.verticalHotelDesc} numberOfLines={2}>
+                          {h.description}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+
+                  {/* Payment Status Bar */}
+                  <View
+                    style={[
+                      styles.paymentStatusBar,
+                      isPaid ? styles.paymentBarPaid : styles.paymentBarUnpaid,
+                    ]}
+                  >
+                    <View style={styles.paymentStatusInfo}>
+                      <Text style={styles.paymentStatusIcon}>{isPaid ? '✅' : '⚠️'}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={[
+                            styles.paymentStatusTitle,
+                            isPaid ? styles.paymentTextPaid : styles.paymentTextUnpaid,
+                          ]}
+                        >
+                          {isPaid ? 'PAYMENT STATUS: COMPLETED (PAID)' : 'PAYMENT STATUS: NOT MADE / PENDING'}
+                        </Text>
+                        <Text style={styles.paymentStatusSub}>
+                          {isPaid
+                            ? `Payment verified for billing cycle • Default Method: ${(h.paymentMethods && h.paymentMethods[0]) || 'UPI / Card'}`
+                            : 'Action required: Hotel subscription / vendor payment is currently pending'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.paymentToggleBtn,
+                        isPaid ? styles.paymentToggleBtnMarkUnpaid : styles.paymentToggleBtnMarkPaid,
+                      ]}
+                      onPress={() => handleToggleHotelPayment(h)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.paymentToggleBtnText}>
+                        {isPaid ? 'Mark as Not Made ↺' : 'Mark as Paid ✓'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Accepted Payment Methods Row */}
+                  <View style={styles.verticalHotelFooterRow}>
+                    <View style={styles.hotelPmRow}>
+                      <Text style={styles.hotelPmLabel}>💳 Accepted Methods:</Text>
+                      <View style={styles.hotelPmChips}>
+                        {(h.paymentMethods || ['UPI', 'Credit Card', 'Cash']).map((pm, idx) => (
+                          <View key={`hpm-${idx}`} style={styles.hotelPmChip}>
+                            <Text style={styles.hotelPmChipText}>{pm}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+
+                    {/* Hotel Action Controls */}
+                    <View style={styles.tableActionsCol}>
+                      <TouchableOpacity
+                        style={[
+                          styles.availToggleBtn,
+                          isAvail ? styles.availGreenBtn : styles.availRedBtn,
+                        ]}
+                        onPress={() => handleToggleAvailability('hotels', h)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.availToggleText}>
+                          {isAvail ? '🟢 Available' : '🔴 Not Available'}
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.editItemBtn}
+                        onPress={() => handleOpenEditModal('hotels', h)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.editItemBtnText}>✏️ Edit</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.deleteItemBtn}
+                        onPress={() => handleDeleteItem('hotels', h)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.deleteItemBtnText}>🗑️ Delete</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[
+                          styles.activateHotelDirectBtn,
+                          isActiveHotel && styles.activateHotelDirectBtnCurrent,
+                        ]}
+                        onPress={() => {
+                          const saved = activeHotelService.saveAndActivateHotel(h);
+                          setCurrentActiveHotel(saved);
+                          if (onSetActiveHotel) onSetActiveHotel(saved);
+                          loadAllAdminData(h.hotelPropertyId || h.id);
+                          logActivity(`Switched active hotel to: "${h.title || h.name}"`, 'hotel');
+                          showToast(`⭐ "${h.title || h.name}" is now the Active Hotel!`, 'success');
+                          if (onLaunchGuestWebsite) {
+                            onLaunchGuestWebsite(saved);
+                          } else if (onBackToGuestPortal) {
+                            onBackToGuestPortal();
+                          }
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.activateHotelDirectBtnText}>
+                          {isActiveHotel ? '⭐ Active Hotel (Open Site →)' : '⭐ Set Active & Open Site →'}
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.configPmBtn}
+                        onPress={() => {
+                          handleSelectHotelForPayments(h);
+                          setActiveTab('payments');
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.configPmBtnText}>Payment Config ⚙️</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
+              );
+            })
+          )}
+        </View>
+      </View>
+    );
+  };
 
-                {/* Hotel Action Controls */}
-                <View style={styles.tableActionsCol}>
-                  <TouchableOpacity
-                    style={[styles.availToggleBtn, isAvail ? styles.availGreenBtn : styles.availRedBtn]}
-                    onPress={() => handleToggleAvailability('hotels', h)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.availToggleText}>
-                      {isAvail ? '🟢 Available' : '🔴 Not Available'}
-                    </Text>
-                  </TouchableOpacity>
+  // ===========================================================================
+  // REUSABLE COMPONENT SECTION RENDERER
+  // ===========================================================================
+  const renderComponentSection = ({
+    categoryKey,
+    title,
+    icon,
+    subtitle,
+    items,
+    addLabel,
+    formatSubtitle,
+    formatPriceOrRate,
+    renderBadges,
+  }) => {
+    const query = componentSearchQuery.trim().toLowerCase();
+    const availCount = items.filter((i) => i.availability === 'Available' || !i.availability).length;
+    const unavailCount = items.length - availCount;
 
-                  <TouchableOpacity
-                    style={styles.editItemBtn}
-                    onPress={() => handleOpenEditModal('hotels', h)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.editItemBtnText}>✏️ Edit</Text>
-                  </TouchableOpacity>
+    const filteredItems = items.filter((item) => {
+      // 1. Availability filter
+      const isAvail = item.availability === 'Available' || !item.availability;
+      if (componentAvailabilityFilter === 'available' && !isAvail) return false;
+      if (componentAvailabilityFilter === 'unavailable' && isAvail) return false;
 
-                  <TouchableOpacity
-                    style={styles.deleteItemBtn}
-                    onPress={() => handleDeleteItem('hotels', h)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.deleteItemBtnText}>🗑️ Delete</Text>
-                  </TouchableOpacity>
+      // 2. Search query filter
+      if (query) {
+        const textToSearch = [
+          item.title,
+          item.name,
+          item.cuisine,
+          item.location,
+          item.address,
+          item.subtitle,
+          item.timings,
+          item.description,
+          Array.isArray(item.facilities) ? item.facilities.join(' ') : '',
+        ].filter(Boolean).join(' ').toLowerCase();
 
-                  <TouchableOpacity
-                    style={styles.activateHotelDirectBtn}
-                    onPress={() => {
-                      const saved = activeHotelService.saveAndActivateHotel(h);
-                      setCurrentActiveHotel(saved);
-                      if (onSetActiveHotel) onSetActiveHotel(saved);
-                      showToast(`⭐ "${h.title || h.name}" is now the Active Hotel!`, 'success');
-                      if (onLaunchGuestWebsite) {
-                        onLaunchGuestWebsite(saved);
-                      } else if (onBackToGuestPortal) {
-                        onBackToGuestPortal();
-                      }
+        return textToSearch.includes(query);
+      }
+      return true;
+    });
+
+    return (
+      <View style={styles.tabContentContainer}>
+        {/* Section Header Row */}
+        <View style={styles.sectionHeaderRow}>
+          <View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <Text style={styles.sectionTitle}>{icon} {title.toUpperCase()} ({items.length})</Text>
+              <View style={styles.componentCountBadge}>
+                <Text style={styles.componentCountBadgeText}>
+                  {availCount} Available • {unavailCount} Unavailable
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.sectionSub}>{subtitle}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.createItemBtn}
+            onPress={() => handleOpenCreateModal(categoryKey)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.createItemBtnText}>➕ {addLabel}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Live Search & Filter Controls Bar */}
+        <View style={styles.componentControlsBar}>
+          <View style={styles.componentSearchInputWrap}>
+            <Text style={styles.searchIconText}>⌕</Text>
+            <TextInput
+              style={styles.componentSearchInput}
+              value={componentSearchQuery}
+              onChangeText={setComponentSearchQuery}
+              placeholder={`Search ${title.toLowerCase()} by name, details, or location...`}
+              placeholderTextColor="#64748B"
+              autoCapitalize="none"
+            />
+            {componentSearchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setComponentSearchQuery('')}
+                style={styles.clearSearchBtn}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.clearSearchBtnText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <View style={styles.componentAvailTabs}>
+            {[
+              { key: 'all', label: `All (${items.length})` },
+              { key: 'available', label: `🟢 Available (${availCount})` },
+              { key: 'unavailable', label: `🔴 Unavailable (${unavailCount})` },
+            ].map((tab) => (
+              <TouchableOpacity
+                key={tab.key}
+                style={[
+                  styles.componentAvailTab,
+                  componentAvailabilityFilter === tab.key && styles.componentAvailTabActive,
+                ]}
+                onPress={() => setComponentAvailabilityFilter(tab.key)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.componentAvailTabText,
+                    componentAvailabilityFilter === tab.key && styles.componentAvailTabTextActive,
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Component Items List */}
+        <View style={styles.itemsTable}>
+          {filteredItems.length === 0 ? (
+            <View style={styles.directoryEmptyStateCard}>
+              <Text style={styles.directoryEmptyIcon}>{icon}</Text>
+              <Text style={styles.directoryEmptyTitle}>
+                {items.length === 0
+                  ? `No ${title} Configured Yet`
+                  : `No ${title.toLowerCase()} match "${componentSearchQuery || componentAvailabilityFilter}"`}
+              </Text>
+              <Text style={styles.directoryEmptySub}>
+                {items.length === 0
+                  ? `No ${title.toLowerCase()} configured for ${currentActiveHotel?.name || 'this hotel'} yet. Click "➕ ${addLabel}" above to create one.`
+                  : 'Try searching for different keywords or clear your search filters.'}
+              </Text>
+              {items.length === 0 ? (
+                <TouchableOpacity
+                  style={[styles.createItemBtn, { marginTop: 12 }]}
+                  onPress={() => handleOpenCreateModal(categoryKey)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.createItemBtnText}>➕ {addLabel}</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={styles.resetFiltersBtn}
+                  onPress={() => {
+                    setComponentSearchQuery('');
+                    setComponentAvailabilityFilter('all');
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.resetFiltersBtnText}>Reset Filter</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            filteredItems.map((item) => {
+              const isAvail = item.availability === 'Available' || !item.availability;
+              return (
+                <View key={item.id} style={styles.tableCard}>
+                  <Image
+                    source={{
+                      uri:
+                        item.imageLink ||
+                        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&q=80',
                     }}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.activateHotelDirectBtnText}>⭐ Set Active & Open Site →</Text>
-                  </TouchableOpacity>
+                    style={styles.itemThumb}
+                  />
+                  <View style={styles.tableInfoCol}>
+                    <View style={styles.tableTitleRow}>
+                      <Text style={styles.tableItemTitle}>{item.title || item.name}</Text>
+                      {formatPriceOrRate ? (
+                        <Text style={styles.tablePrice}>{formatPriceOrRate(item)}</Text>
+                      ) : null}
+                    </View>
+                    {formatSubtitle ? (
+                      <Text style={styles.tableItemSub}>{formatSubtitle(item)}</Text>
+                    ) : null}
+                    {renderBadges ? renderBadges(item) : null}
+                  </View>
 
-                  <TouchableOpacity
-                    style={styles.configPmBtn}
-                    onPress={() => {
-                      handleSelectHotelForPayments(h);
-                      setActiveTab('payments');
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.configPmBtnText}>Payment Config ⚙️</Text>
-                  </TouchableOpacity>
+                  <View style={styles.tableActionsCol}>
+                    <TouchableOpacity
+                      style={[
+                        styles.availToggleBtn,
+                        isAvail ? styles.availGreenBtn : styles.availRedBtn,
+                      ]}
+                      onPress={() => handleToggleAvailability(categoryKey, item)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.availToggleText}>
+                        {isAvail ? '🟢 Available' : '🔴 Not Available'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.editItemBtn}
+                      onPress={() => handleOpenEditModal(categoryKey, item)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.editItemBtnText}>✏️ Edit</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.deleteItemBtn}
+                      onPress={() => handleDeleteItem(categoryKey, item)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.deleteItemBtnText}>🗑️ Delete</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-            </View>
-          );
-        })
-      )}
-      </View>
-    </View>
-  );
-};
-
-  // ===========================================================================
-  // RENDER TAB: RESTAURANTS (CRUD)
-  // ===========================================================================
-  const renderRestaurantsTab = () => (
-    <View style={styles.tabContentContainer}>
-      <View style={styles.sectionHeaderRow}>
-        <View>
-          <Text style={styles.sectionTitle}>🍽️ RESTAURANTS & FINE DINING ({restaurants.length})</Text>
-          <Text style={styles.sectionSub}>Manage menus, takeaway, delivery flags, and availability</Text>
+              );
+            })
+          )}
         </View>
-        <TouchableOpacity
-          style={styles.createItemBtn}
-          onPress={() => handleOpenCreateModal('restaurants')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.createItemBtnText}>➕ Add New Restaurant</Text>
-        </TouchableOpacity>
       </View>
-
-      <View style={styles.itemsTable}>
-        {restaurants.map((r) => {
-          const isAvail = r.availability === 'Available' || !r.availability;
-          return (
-            <View key={r.id} style={styles.tableCard}>
-              <Image source={{ uri: r.imageLink }} style={styles.itemThumb} />
-              <View style={styles.tableInfoCol}>
-                <View style={styles.tableTitleRow}>
-                  <Text style={styles.tableItemTitle}>{r.title || r.name}</Text>
-                  <Text style={styles.tablePrice}>{r.priceRange || '₹₹₹₹'}</Text>
-                </View>
-                <Text style={styles.tableItemSub}>
-                  🍴 {r.cuisine} • 📍 {r.location} • ★ {r.rating || 4.8}
-                </Text>
-                <View style={styles.badgeRow}>
-                  <Text style={styles.tagBadge}>Takeaway: {r.takeaway ? '✓ YES' : '✗ NO'}</Text>
-                  <Text style={styles.tagBadge}>Delivery: {r.homeDelivery ? '✓ YES' : '✗ NO'}</Text>
-                </View>
-              </View>
-
-              <View style={styles.tableActionsCol}>
-                <TouchableOpacity
-                  style={[styles.availToggleBtn, isAvail ? styles.availGreenBtn : styles.availRedBtn]}
-                  onPress={() => handleToggleAvailability('restaurants', r)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.availToggleText}>
-                    {isAvail ? '🟢 Available' : '🔴 Not Available'}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.editItemBtn}
-                  onPress={() => handleOpenEditModal('restaurants', r)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.editItemBtnText}>✏️ Edit</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.deleteItemBtn}
-                  onPress={() => handleDeleteItem('restaurants', r)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.deleteItemBtnText}>🗑️ Delete</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          );
-        })}
-      </View>
-    </View>
-  );
+    );
+  };
 
   // ===========================================================================
-  // RENDER TAB: GYMS & WELLNESS (CRUD)
+  // RENDER TABS: AMENITIES & SERVICES (CRUD)
   // ===========================================================================
-  const renderGymsTab = () => (
-    <View style={styles.tabContentContainer}>
-      <View style={styles.sectionHeaderRow}>
-        <View>
-          <Text style={styles.sectionTitle}>🏋️ GYMS & WELLNESS ({gyms.length})</Text>
-          <Text style={styles.sectionSub}>Fitness centers, personal training, and day pass rates</Text>
+  const renderRestaurantsTab = () =>
+    renderComponentSection({
+      categoryKey: 'restaurants',
+      title: 'Restaurants & Fine Dining',
+      icon: '🍽️',
+      subtitle: 'Manage dining partners, menus, takeaway, delivery flags, and operational availability',
+      items: restaurants,
+      addLabel: 'Add New Restaurant',
+      formatSubtitle: (r) => `🍴 ${r.cuisine || 'Continental'} • 📍 ${r.location || 'Hotel Ground Floor'} • ★ ${r.rating || 4.8}`,
+      formatPriceOrRate: (r) => r.priceRange || r.price || '₹₹₹₹',
+      renderBadges: (r) => (
+        <View style={styles.badgeRow}>
+          <Text style={styles.tagBadge}>Takeaway: {r.takeaway ? '✓ YES' : '✗ NO'}</Text>
+          <Text style={styles.tagBadge}>Delivery: {r.homeDelivery ? '✓ YES' : '✗ NO'}</Text>
+          {r.timings ? <Text style={styles.tagBadge}>⏱️ {r.timings}</Text> : null}
         </View>
-        <TouchableOpacity
-          style={styles.createItemBtn}
-          onPress={() => handleOpenCreateModal('gyms')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.createItemBtnText}>➕ Add New Gym</Text>
-        </TouchableOpacity>
-      </View>
+      ),
+    });
 
-      <View style={styles.itemsTable}>
-        {gyms.map((g) => {
-          const isAvail = g.availability === 'Available' || !g.availability;
-          return (
-            <View key={g.id} style={styles.tableCard}>
-              <Image source={{ uri: g.imageLink }} style={styles.itemThumb} />
-              <View style={styles.tableInfoCol}>
-                <View style={styles.tableTitleRow}>
-                  <Text style={styles.tableItemTitle}>{g.title || g.name}</Text>
-                  <Text style={styles.tablePrice}>{g.passPrice || '₹1,500'}/day</Text>
-                </View>
-                <Text style={styles.tableItemSub}>
-                  ⏱️ {g.timings || '6:00 AM - 10:00 PM'} • 📍 {g.location}
-                </Text>
-                <Text style={styles.facilitiesText}>
-                  Facilities: {(g.facilities || []).join(' • ') || 'Full Gym, Sauna, Pool'}
-                </Text>
-              </View>
+  const renderGymsTab = () =>
+    renderComponentSection({
+      categoryKey: 'gyms',
+      title: 'Gyms & Wellness Centers',
+      icon: '🏋️',
+      subtitle: 'Fitness centers, personal training, spa services, and day pass rates',
+      items: gyms,
+      addLabel: 'Add New Gym',
+      formatSubtitle: (g) => `⏱️ ${g.timings || '6:00 AM - 10:00 PM'} • 📍 ${g.location || 'Wellness Wing'}`,
+      formatPriceOrRate: (g) => `${g.passPrice || '₹1,500'}/day`,
+      renderBadges: (g) => (
+        <Text style={styles.facilitiesText}>
+          Facilities: {(Array.isArray(g.facilities) ? g.facilities.join(' • ') : g.facilities) || 'Full Gym, Sauna, Steam Room'}
+        </Text>
+      ),
+    });
 
-              <View style={styles.tableActionsCol}>
-                <TouchableOpacity
-                  style={[styles.availToggleBtn, isAvail ? styles.availGreenBtn : styles.availRedBtn]}
-                  onPress={() => handleToggleAvailability('gyms', g)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.availToggleText}>
-                    {isAvail ? '🟢 Available' : '🔴 Not Available'}
-                  </Text>
-                </TouchableOpacity>
+  const renderPoolsTab = () =>
+    renderComponentSection({
+      categoryKey: 'pools',
+      title: 'Swimming Pools',
+      icon: '🏊',
+      subtitle: 'Infinity pools, heated wellness water, and poolside cabanas',
+      items: pools,
+      addLabel: 'Add Swimming Pool',
+      formatSubtitle: (p) => `⏱️ ${p.timings || p.timing || '6:00 AM - 9:00 PM'} • 📍 ${p.location || 'Hotel Courtyard'} • ★ ${p.rating || 4.9}`,
+      formatPriceOrRate: (p) => p.price || 'Resident Access',
+      renderBadges: (p) => (
+        <Text style={styles.facilitiesText}>
+          {p.subtitle || p.shortDescription || 'Heated infinity pool with poolside loungers'}
+        </Text>
+      ),
+    });
 
-                <TouchableOpacity
-                  style={styles.editItemBtn}
-                  onPress={() => handleOpenEditModal('gyms', g)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.editItemBtnText}>✏️ Edit</Text>
-                </TouchableOpacity>
+  const renderTakeawayTab = () =>
+    renderComponentSection({
+      categoryKey: 'takeaway',
+      title: 'Takeaway Partners',
+      icon: '🥡',
+      subtitle: 'Express pickup times, minimum order values, and partner availability',
+      items: takeaway,
+      addLabel: 'Add Takeaway Partner',
+      formatSubtitle: (t) => `⏱️ Ready in ${t.takeawayTime || '15 mins'} • 📍 ${t.location || 'Hotel Lobby'}`,
+      formatPriceOrRate: (t) => t.minOrder || 'Min ₹400',
+    });
 
-                <TouchableOpacity
-                  style={styles.deleteItemBtn}
-                  onPress={() => handleDeleteItem('gyms', g)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.deleteItemBtnText}>🗑️ Delete</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          );
-        })}
-      </View>
-    </View>
-  );
+  const renderDeliveryTab = () =>
+    renderComponentSection({
+      categoryKey: 'delivery',
+      title: 'Home Delivery Services',
+      icon: '🛵',
+      subtitle: 'Room delivery radius, delivery fees, minimum orders, and status',
+      items: homeDelivery,
+      addLabel: 'Add Delivery Service',
+      formatSubtitle: (d) => `🛵 Radius: ${d.deliveryRadius || '5 km'} • Fee: ${d.deliveryFee || 'Free'}`,
+      formatPriceOrRate: (d) => d.minOrder || 'Min ₹500',
+    });
 
-  // ===========================================================================
-  // RENDER TAB: SWIMMING POOLS (CRUD)
-  // ===========================================================================
-  const renderPoolsTab = () => (
-    <View style={styles.tabContentContainer}>
-      <View style={styles.sectionHeaderRow}>
-        <View>
-          <Text style={styles.sectionTitle}>🏊 SWIMMING POOLS ({pools.length})</Text>
-          <Text style={styles.sectionSub}>Infinity pools, heated wellness water, and poolside cabanas</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.createItemBtn}
-          onPress={() => handleOpenCreateModal('pools')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.createItemBtnText}>➕ Add Swimming Pool</Text>
-        </TouchableOpacity>
-      </View>
+  const renderFacilitiesTab = () =>
+    renderComponentSection({
+      categoryKey: 'facilities',
+      title: 'Hotel Facilities & Services',
+      icon: '🛎️',
+      subtitle: 'Concierge, executive lounges, spa treatments, valet & premium guest amenities',
+      items: facilities,
+      addLabel: 'Add Hotel Facility',
+      formatSubtitle: (f) => `⏱️ ${f.timings || '24/7 Available'} • 📍 ${f.location || 'Main Lobby'}`,
+      formatPriceOrRate: (f) => f.category || 'Guest Service',
+      renderBadges: (f) => (
+        <Text style={styles.facilitiesText}>
+          {f.description || f.subtitle || 'Complimentary premium guest amenity'}
+        </Text>
+      ),
+    });
 
-      <View style={styles.itemsTable}>
-        {pools.map((p) => {
-          const isAvail = p.availability === 'Available' || !p.availability;
-          return (
-            <View key={p.id} style={styles.tableCard}>
-              <Image source={{ uri: p.imageLink || 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=800&q=80' }} style={styles.itemThumb} />
-              <View style={styles.tableInfoCol}>
-                <View style={styles.tableTitleRow}>
-                  <Text style={styles.tableItemTitle}>{p.title || p.name}</Text>
-                  <Text style={styles.tablePrice}>{p.price || 'Resident Access'}</Text>
-                </View>
-                <Text style={styles.tableItemSub}>
-                  ⏱️ {p.timings || p.timing || '6:00 AM - 9:00 PM'} • 📍 {p.location || 'Hotel Courtyard'} • ★ {p.rating || 4.9}
-                </Text>
-                <Text style={styles.facilitiesText}>
-                  {p.subtitle || p.shortDescription || 'Heated infinity pool with poolside loungers'}
-                </Text>
-              </View>
-
-              <View style={styles.tableActionsCol}>
-                <TouchableOpacity
-                  style={[styles.availToggleBtn, isAvail ? styles.availGreenBtn : styles.availRedBtn]}
-                  onPress={() => handleToggleAvailability('pools', p)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.availToggleText}>
-                    {isAvail ? '🟢 Available' : '🔴 Not Available'}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.editItemBtn}
-                  onPress={() => handleOpenEditModal('pools', p)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.editItemBtnText}>✏️ Edit</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.deleteItemBtn}
-                  onPress={() => handleDeleteItem('pools', p)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.deleteItemBtnText}>🗑️ Delete</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          );
-        })}
-      </View>
-    </View>
-  );
-
-  // ===========================================================================
-  // RENDER TAB: TAKEAWAY (CRUD)
-  // ===========================================================================
-  const renderTakeawayTab = () => (
-    <View style={styles.tabContentContainer}>
-      <View style={styles.sectionHeaderRow}>
-        <View>
-          <Text style={styles.sectionTitle}>🥡 TAKEAWAY PARTNERS ({takeaway.length})</Text>
-          <Text style={styles.sectionSub}>Express pickup times, minimum order values & availability</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.createItemBtn}
-          onPress={() => handleOpenCreateModal('takeaway')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.createItemBtnText}>➕ Add Takeaway Partner</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.itemsTable}>
-        {takeaway.map((t) => {
-          const isAvail = t.availability === 'Available' || !t.availability;
-          return (
-            <View key={t.id} style={styles.tableCard}>
-              <Image source={{ uri: t.imageLink }} style={styles.itemThumb} />
-              <View style={styles.tableInfoCol}>
-                <View style={styles.tableTitleRow}>
-                  <Text style={styles.tableItemTitle}>{t.title || t.name}</Text>
-                  <Text style={styles.tablePrice}>{t.minOrder || 'Min ₹400'}</Text>
-                </View>
-                <Text style={styles.tableItemSub}>
-                  ⏱️ Ready in {t.takeawayTime || '15 mins'} • 📍 {t.location}
-                </Text>
-              </View>
-
-              <View style={styles.tableActionsCol}>
-                <TouchableOpacity
-                  style={[styles.availToggleBtn, isAvail ? styles.availGreenBtn : styles.availRedBtn]}
-                  onPress={() => handleToggleAvailability('takeaway', t)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.availToggleText}>
-                    {isAvail ? '🟢 Available' : '🔴 Not Available'}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.editItemBtn}
-                  onPress={() => handleOpenEditModal('takeaway', t)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.editItemBtnText}>✏️ Edit</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.deleteItemBtn}
-                  onPress={() => handleDeleteItem('takeaway', t)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.deleteItemBtnText}>🗑️ Delete</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          );
-        })}
-      </View>
-    </View>
-  );
-
-  // ===========================================================================
-  // RENDER TAB: HOME DELIVERY (CRUD)
-  // ===========================================================================
-  const renderDeliveryTab = () => (
-    <View style={styles.tabContentContainer}>
-      <View style={styles.sectionHeaderRow}>
-        <View>
-          <Text style={styles.sectionTitle}>🛵 HOME DELIVERY SERVICES ({homeDelivery.length})</Text>
-          <Text style={styles.sectionSub}>Room delivery radius, fees, and partner status</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.createItemBtn}
-          onPress={() => handleOpenCreateModal('delivery')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.createItemBtnText}>➕ Add Delivery Partner</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.itemsTable}>
-        {homeDelivery.map((d) => {
-          const isAvail = d.availability === 'Available' || !d.availability;
-          return (
-            <View key={d.id} style={styles.tableCard}>
-              <Image source={{ uri: d.imageLink }} style={styles.itemThumb} />
-              <View style={styles.tableInfoCol}>
-                <View style={styles.tableTitleRow}>
-                  <Text style={styles.tableItemTitle}>{d.title || d.name}</Text>
-                  <Text style={styles.tablePrice}>{d.deliveryFee || 'Free Delivery'}</Text>
-                </View>
-                <Text style={styles.tableItemSub}>
-                  ⏱️ {d.deliveryTime || '30 mins'} • 📍 Radius: {d.radius || '5 km'}
-                </Text>
-              </View>
-
-              <View style={styles.tableActionsCol}>
-                <TouchableOpacity
-                  style={[styles.availToggleBtn, isAvail ? styles.availGreenBtn : styles.availRedBtn]}
-                  onPress={() => handleToggleAvailability('home_delivery', d)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.availToggleText}>
-                    {isAvail ? '🟢 Available' : '🔴 Not Available'}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.editItemBtn}
-                  onPress={() => handleOpenEditModal('delivery', d)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.editItemBtnText}>✏️ Edit</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.deleteItemBtn}
-                  onPress={() => handleDeleteItem('delivery', d)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.deleteItemBtnText}>🗑️ Delete</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          );
-        })}
-      </View>
-    </View>
-  );
-
-  // ===========================================================================
-  // RENDER TAB: HOTEL FACILITIES & SERVICES (CRUD)
-  // ===========================================================================
-  const renderFacilitiesTab = () => (
-    <View style={styles.tabContentContainer}>
-      <View style={styles.sectionHeaderRow}>
-        <View>
-          <Text style={styles.sectionTitle}>🛎️ HOTEL FACILITIES & SERVICES ({facilities.length})</Text>
-          <Text style={styles.sectionSub}>Spa, concierge, chauffeur, salons, business suites & amenities</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.createItemBtn}
-          onPress={() => handleOpenCreateModal('facilities')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.createItemBtnText}>➕ Add Hotel Facility</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.itemsTable}>
-        {facilities.map((f) => {
-          const isAvail = f.availability === 'Available' || !f.availability;
-          return (
-            <View key={f.id} style={styles.tableCard}>
-              <Image source={{ uri: f.imageLink || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80' }} style={styles.itemThumb} />
-              <View style={styles.tableInfoCol}>
-                <View style={styles.tableTitleRow}>
-                  <Text style={styles.tableItemTitle}>{f.title || f.name}</Text>
-                  <Text style={styles.tablePrice}>{f.price || 'Complimentary'}</Text>
-                </View>
-                <Text style={styles.tableItemSub}>
-                  ⏱️ {f.timings || '24/7 Available'} • 📍 {f.location || 'On Property'} • ★ {f.rating || 4.9}
-                </Text>
-                <Text style={styles.facilitiesText}>
-                  {f.subtitle || f.shortDescription || 'Exclusive hotel facility & guest experience'}
-                </Text>
-              </View>
-
-              <View style={styles.tableActionsCol}>
-                <TouchableOpacity
-                  style={[styles.availToggleBtn, isAvail ? styles.availGreenBtn : styles.availRedBtn]}
-                  onPress={() => handleToggleAvailability('facilities', f)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.availToggleText}>
-                    {isAvail ? '🟢 Available' : '🔴 Not Available'}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.editItemBtn}
-                  onPress={() => handleOpenEditModal('facilities', f)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.editItemBtnText}>✏️ Edit</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.deleteItemBtn}
-                  onPress={() => handleDeleteItem('facilities', f)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.deleteItemBtnText}>🗑️ Delete</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          );
-        })}
-      </View>
-    </View>
-  );
-
-  // ===========================================================================
   // RENDER TAB: HOTEL PAYMENT METHODS (VERTICAL LAYOUT)
   // ===========================================================================
   const renderPaymentsTab = () => (
@@ -4254,11 +4510,19 @@ export default function AdminDashboardScreen({
         <View style={styles.adminHeaderLeft}>
           <Text style={styles.adminHeaderLogo}>🛠️</Text>
           <View>
-            <Text style={styles.adminHeaderTitle}>SEPARATE ADMIN CONSOLE</Text>
+            <Text style={styles.adminHeaderTitle}>HOTEL ADMIN CONSOLE</Text>
             <Text style={styles.adminHeaderSubtitle}>
-              Multi-Hotel & Services Management • Live MongoDB (hotelApiDb)
+              Property & Amenities Management • Live MongoDB ({connectedDbName})
             </Text>
           </View>
+          {currentActiveHotel && (
+            <View style={styles.headerActiveHotelPill}>
+              <View style={styles.headerActiveDot} />
+              <Text style={styles.headerActiveHotelText} numberOfLines={1}>
+                🏨 {currentActiveHotel.name} ({currentActiveHotel.city || 'Active'})
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.adminHeaderRight}>
@@ -4317,20 +4581,32 @@ export default function AdminDashboardScreen({
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.tabsScrollContent}
           >
-            {ADMIN_TABS.map((tab) => {
+            {ADMIN_TABS.map((tab, idx) => {
               const isActive = activeTab === tab.id;
+              const prevTab = idx > 0 ? ADMIN_TABS[idx - 1] : null;
+              const showSectionHeader = isDesktop && (!prevTab || prevTab.section !== tab.section);
+
               return (
-                <TouchableOpacity
-                  key={tab.id}
-                  style={[styles.tabButton, isActive && styles.tabButtonActive]}
-                  onPress={() => setActiveTab(tab.id)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.tabIcon}>{tab.icon}</Text>
-                  <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
-                    {tab.label}
-                  </Text>
-                </TouchableOpacity>
+                <React.Fragment key={tab.id}>
+                  {showSectionHeader && (
+                    <View style={styles.tabSectionHeader}>
+                      <Text style={styles.tabSectionHeaderText}>{tab.section}</Text>
+                    </View>
+                  )}
+                  <TouchableOpacity
+                    style={[styles.tabButton, isActive && styles.tabButtonActive]}
+                    onPress={() => {
+                      setActiveTab(tab.id);
+                      setComponentSearchQuery('');
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.tabIcon}>{tab.icon}</Text>
+                    <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                      {tab.label}
+                    </Text>
+                  </TouchableOpacity>
+                </React.Fragment>
               );
             })}
           </ScrollView>
@@ -6752,6 +7028,666 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     letterSpacing: 0.5,
+  },
+
+  // --- STAGE 3: DARK LUXURY ADMIN STYLES (#070A12, #0F1014, #E2C082) ---
+  headerActiveHotelPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(226, 192, 130, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(226, 192, 130, 0.25)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginLeft: 12,
+    gap: 6,
+  },
+  headerActiveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#22C55E',
+  },
+  headerActiveHotelText: {
+    color: '#E2C082',
+    fontSize: 11.5,
+    fontWeight: '700',
+    maxWidth: 240,
+  },
+
+  tabSectionHeader: {
+    paddingHorizontal: 14,
+    paddingTop: 16,
+    paddingBottom: 6,
+  },
+  tabSectionHeaderText: {
+    color: '#64748B',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+
+  liveDbPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.3)',
+    borderRadius: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    gap: 6,
+  },
+  liveDbDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#22C55E',
+  },
+  liveDbText: {
+    color: '#86EFAC',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  overviewHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flexWrap: 'wrap',
+  },
+  headerPrimaryActionBtn: {
+    backgroundColor: '#E2C082',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      web: { cursor: 'pointer', transition: 'all 0.15s ease' },
+    }),
+  },
+  headerPrimaryActionBtnText: {
+    color: '#070A12',
+    fontSize: 12.5,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  headerGuestLaunchBtn: {
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.4)',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      web: { cursor: 'pointer', transition: 'all 0.15s ease' },
+    }),
+  },
+  headerGuestLaunchBtnText: {
+    color: '#93C5FD',
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+
+  activeHotelProfileCard: {
+    backgroundColor: '#0F1014',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 192, 130, 0.25)',
+    borderLeftWidth: 4,
+    borderLeftColor: '#E2C082',
+    padding: 18,
+    marginBottom: 16,
+  },
+  activeHotelProfileHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 16,
+    flexWrap: 'wrap',
+  },
+  activeHotelBadgeText: {
+    color: '#E2C082',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
+  statusBadgePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  statusBadgeApproved: {
+    backgroundColor: '#15803D',
+  },
+  statusBadgePending: {
+    backgroundColor: '#B45309',
+  },
+  statusBadgeRejected: {
+    backgroundColor: '#B91C1C',
+  },
+  statusBadgePillText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  activeHotelNameText: {
+    color: '#F8FAFC',
+    fontSize: 20,
+    fontWeight: '800',
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  activeHotelLocationText: {
+    color: '#94A3B8',
+    fontSize: 13,
+    marginBottom: 8,
+  },
+  activeHotelMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  activeHotelMetaItem: {
+    color: '#CBD5E1',
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  activeHotelMetaDivider: {
+    color: '#475569',
+    fontSize: 11,
+  },
+  activeHotelProfileActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  profileActionBtn: {
+    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  profileActionBtnText: {
+    color: '#E2E8F0',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  metricsSummaryContainer: {
+    gap: 14,
+    marginBottom: 16,
+  },
+  totalComponentsHeroCard: {
+    backgroundColor: 'rgba(22, 26, 41, 0.9)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 192, 130, 0.25)',
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+    flexWrap: 'wrap',
+  },
+  totalComponentsLabel: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  totalComponentsNumber: {
+    color: '#E2C082',
+    fontSize: 38,
+    fontWeight: '900',
+    marginVertical: 2,
+  },
+  totalComponentsSub: {
+    color: '#CBD5E1',
+    fontSize: 12.5,
+  },
+  addComponentDirectBtn: {
+    backgroundColor: '#E2C082',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  addComponentDirectBtnText: {
+    color: '#070A12',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+
+  metricCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+
+  activitySection: {
+    backgroundColor: '#0F1014',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    padding: 18,
+    marginBottom: 16,
+  },
+  activitySectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  activitySectionSub: {
+    color: '#64748B',
+    fontSize: 11.5,
+    marginTop: 2,
+  },
+  liveActivityPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(34, 197, 94, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.25)',
+    borderRadius: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    gap: 6,
+  },
+  livePulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#22C55E',
+  },
+  liveActivityText: {
+    color: '#86EFAC',
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+  activityEmptyState: {
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
+    gap: 6,
+  },
+  activityEmptyIcon: {
+    fontSize: 24,
+    marginBottom: 2,
+  },
+  activityEmptyTitle: {
+    color: '#E2C082',
+    fontSize: 13.5,
+    fontWeight: '700',
+  },
+  activityEmptySub: {
+    color: '#64748B',
+    fontSize: 11.5,
+    textAlign: 'center',
+    maxWidth: 440,
+  },
+  activityList: {
+    gap: 8,
+  },
+  activityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  activityTimeCol: {
+    minWidth: 60,
+  },
+  activityTimeText: {
+    color: '#64748B',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  activityTypeBadge: {
+    backgroundColor: 'rgba(226, 192, 130, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(226, 192, 130, 0.25)',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  activityTypeText: {
+    color: '#E2C082',
+    fontSize: 9.5,
+    fontWeight: '800',
+  },
+  activityDescText: {
+    color: '#F1F5F9',
+    fontSize: 12,
+    flex: 1,
+  },
+
+  directoryCountPills: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  countPillApproved: {
+    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.3)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  countPillApprovedText: {
+    color: '#86EFAC',
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+  countPillPending: {
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  countPillPendingText: {
+    color: '#FCD34D',
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+  countPillRejected: {
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  countPillRejectedText: {
+    color: '#FCA5A5',
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+
+  directoryControlsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0F1014',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    padding: 10,
+    marginBottom: 16,
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  directorySearchInputWrap: {
+    flex: 1,
+    minWidth: 260,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  searchIconText: {
+    color: '#E2C082',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  directorySearchInput: {
+    flex: 1,
+    height: 38,
+    color: '#F8FAFC',
+    fontSize: 12.5,
+    outlineStyle: 'none',
+  },
+  clearSearchBtn: {
+    padding: 4,
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  clearSearchBtnText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  statusFilterTabs: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  statusFilterTab: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  statusFilterTabActive: {
+    backgroundColor: 'rgba(226, 192, 130, 0.15)',
+    borderColor: '#E2C082',
+  },
+  statusFilterTabText: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  statusFilterTabTextActive: {
+    color: '#E2C082',
+  },
+
+  directoryEmptyStateCard: {
+    backgroundColor: '#0F1014',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  directoryEmptyIcon: {
+    fontSize: 32,
+    marginBottom: 4,
+  },
+  directoryEmptyTitle: {
+    color: '#E2C082',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  directoryEmptySub: {
+    color: '#64748B',
+    fontSize: 12.5,
+    textAlign: 'center',
+    maxWidth: 460,
+  },
+  resetFiltersBtn: {
+    marginTop: 10,
+    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  resetFiltersBtnText: {
+    color: '#F1F5F9',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  hotelThumbWrap: {
+    width: 100,
+    height: 75,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#1E293B',
+  },
+  verticalHotelThumb: {
+    width: '100%',
+    height: '100%',
+  },
+  verticalHotelCardActive: {
+    borderColor: 'rgba(226, 192, 130, 0.5)',
+    backgroundColor: 'rgba(22, 26, 41, 0.85)',
+  },
+  activeHotelPillBadge: {
+    backgroundColor: 'rgba(226, 192, 130, 0.18)',
+    borderWidth: 1,
+    borderColor: '#E2C082',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  activeHotelPillBadgeText: {
+    color: '#E2C082',
+    fontSize: 9.5,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  hotelStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  hotelStatusApproved: {
+    backgroundColor: '#15803D',
+  },
+  hotelStatusPending: {
+    backgroundColor: '#B45309',
+  },
+  hotelStatusRejected: {
+    backgroundColor: '#B91C1C',
+  },
+  hotelStatusBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9.5,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  activateHotelDirectBtnCurrent: {
+    backgroundColor: '#E2C082',
+    borderColor: '#E2C082',
+  },
+
+  componentControlsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0F1014',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    padding: 10,
+    marginBottom: 14,
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  componentSearchInputWrap: {
+    flex: 1,
+    minWidth: 240,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  componentSearchInput: {
+    flex: 1,
+    height: 38,
+    color: '#F8FAFC',
+    fontSize: 12.5,
+    outlineStyle: 'none',
+  },
+  componentAvailTabs: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  componentAvailTab: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  componentAvailTabActive: {
+    backgroundColor: 'rgba(226, 192, 130, 0.15)',
+    borderColor: '#E2C082',
+  },
+  componentAvailTabText: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  componentAvailTabTextActive: {
+    color: '#E2C082',
+  },
+  componentCountBadge: {
+    backgroundColor: 'rgba(226, 192, 130, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(226, 192, 130, 0.25)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  componentCountBadgeText: {
+    color: '#E2C082',
+    fontSize: 10.5,
+    fontWeight: '700',
   },
 });
 
