@@ -1,5 +1,5 @@
 const HotelPicture = require("../models/hotelPicture.model");
-const { uploadToS3, generatePresignedUrl } = require("../utils/s3Helper"); // import deleteFromS3 too once remove() uses it
+const { uploadToS3, generatePresignedUrl, deleteFromS3 } = require("../utils/s3Helper");
 const { sendSuccess, sendError } = require("../utils/responseHelper");
 
 // GET /hotel-pictures?hotelPropertyId=xxx  (parentKeyId filter)
@@ -49,7 +49,9 @@ const remove = async (req, res) => {
   try {
     const item = await HotelPicture.findByIdAndDelete(req.params.id);
     if (!item) return sendError(res, "Not found", 404);
-    // ---- DUMMY: derive S3 key from item.hotelPicture URL and call deleteFromS3(key) ----
+    if (item.hotelPicture) {
+      await deleteFromS3(item.hotelPicture);
+    }
     sendSuccess(res, { deleted: true });
   } catch (err) {
     sendError(res, err.message);

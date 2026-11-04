@@ -4405,22 +4405,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  superAdminBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(99, 102, 241, 0.18)',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#818CF8',
-    ...Platform.select({
-      web: { cursor: 'pointer' },
-    }),
-  },
-  superAdminBtnText: {
-    color: '#A5B4FC',
-    fontSize: 11,
-    fontWeight: '800',
-  },
   addComponentHeaderBtn: {
     paddingVertical: 6,
     paddingHorizontal: 12,
