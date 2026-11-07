@@ -33,20 +33,22 @@ import { authService } from '../services/authService';
 import { activeHotelService } from '../services/activeHotelService';
 import { searchHotelByName, fetchHotelDetailsByPlaceId, getApiConfigStatus } from '../services/placeSearchService';
 import HotelAutocompleteSearch from '../components/HotelAutocompleteSearch';
+import LucideIcon from '../components/LucideIcon';
+import { LUXURY_THEME } from '../theme/luxuryTheme';
 
 const ADMIN_TABS = [
-  { id: 'overview', label: 'Dashboard Overview', icon: '📊', section: 'DASHBOARD' },
-  { id: 'hotel_config', label: 'Hotel & Location Config', icon: '🏨', section: 'PROPERTY & DISCOVERY' },
-  { id: 'hotels', label: 'Hotels Directory', icon: '🏢', section: 'PROPERTY & DISCOVERY' },
-  { id: 'places_manager', label: 'Nearby Places & Categories', icon: '📍', section: 'PROPERTY & DISCOVERY' },
-  { id: 'restaurants', label: 'Restaurants & Dining', icon: '🍽️', section: 'GUEST AMENITIES' },
-  { id: 'gyms', label: 'Gyms & Wellness', icon: '🏋️', section: 'GUEST AMENITIES' },
-  { id: 'pools', label: 'Swimming Pools', icon: '🏊', section: 'GUEST AMENITIES' },
-  { id: 'facilities', label: 'Hotel Facilities & Services', icon: '🛎️', section: 'GUEST AMENITIES' },
-  { id: 'takeaway', label: 'Takeaway Partners', icon: '🥡', section: 'GUEST AMENITIES' },
-  { id: 'delivery', label: 'Home Delivery', icon: '🛵', section: 'GUEST AMENITIES' },
-  { id: 'payments', label: 'Hotel Payment Config', icon: '💳', section: 'OPERATIONS' },
-  { id: 'availability', label: 'Availability Matrix', icon: '⚡', section: 'OPERATIONS' },
+  { id: 'overview', label: 'Dashboard Overview', icon: 'layout-dashboard', section: 'DASHBOARD' },
+  { id: 'hotel_config', label: 'Hotel & Location Config', icon: 'settings', section: 'PROPERTY & DISCOVERY' },
+  { id: 'hotels', label: 'Hotels Directory', icon: 'building-2', section: 'PROPERTY & DISCOVERY' },
+  { id: 'places_manager', label: 'Nearby Places & Categories', icon: 'compass', section: 'PROPERTY & DISCOVERY' },
+  { id: 'restaurants', label: 'Restaurants & Dining', icon: 'utensils', section: 'GUEST AMENITIES' },
+  { id: 'gyms', label: 'Gyms & Wellness', icon: 'dumbbell', section: 'GUEST AMENITIES' },
+  { id: 'pools', label: 'Swimming Pools', icon: 'waves', section: 'GUEST AMENITIES' },
+  { id: 'facilities', label: 'Hotel Facilities & Services', icon: 'sparkles', section: 'GUEST AMENITIES' },
+  { id: 'takeaway', label: 'Takeaway Partners', icon: 'shopping-bag', section: 'GUEST AMENITIES' },
+  { id: 'delivery', label: 'Home Delivery', icon: 'truck', section: 'GUEST AMENITIES' },
+  { id: 'payments', label: 'Hotel Payment Config', icon: 'credit-card', section: 'OPERATIONS' },
+  { id: 'availability', label: 'Availability Matrix', icon: 'calendar', section: 'OPERATIONS' },
 ];
 
 const STANDARD_PAYMENT_OPTIONS = [
@@ -64,7 +66,7 @@ const ENRICHED_PAYMENT_OPTIONS = [
     id: 'upi',
     name: 'UPI (GPay / PhonePe / Paytm)',
     shortName: 'UPI',
-    icon: '📱',
+    icon: 'phone',
     desc: 'Instant mobile QR & VPA payments via BHIM, Google Pay, PhonePe, and Paytm',
     tag: 'Instant QR & Mobile',
   },
@@ -72,7 +74,7 @@ const ENRICHED_PAYMENT_OPTIONS = [
     id: 'credit_card',
     name: 'Credit Card (Visa / Mastercard / Amex)',
     shortName: 'Credit Card',
-    icon: '💳',
+    icon: 'credit-card',
     desc: 'International and domestic credit cards with 3D Secure 2.0 fraud protection',
     tag: 'Global 3D Secure',
   },
@@ -80,7 +82,7 @@ const ENRICHED_PAYMENT_OPTIONS = [
     id: 'debit_card',
     name: 'Debit Card (RuPay / Maestro)',
     shortName: 'Debit Card',
-    icon: '💳',
+    icon: 'credit-card',
     desc: 'Direct account debit cards issued by Indian & international banking networks',
     tag: 'Instant Settlement',
   },
@@ -88,7 +90,7 @@ const ENRICHED_PAYMENT_OPTIONS = [
     id: 'net_banking',
     name: 'Net Banking (All Major Banks)',
     shortName: 'Net Banking',
-    icon: '🏦',
+    icon: 'building-2',
     desc: 'Direct net banking gateway integrated across 50+ major public & private banks',
     tag: '50+ Banks Supported',
   },
@@ -96,7 +98,7 @@ const ENRICHED_PAYMENT_OPTIONS = [
     id: 'cash',
     name: 'Cash at Front Desk',
     shortName: 'Cash',
-    icon: '💵',
+    icon: 'dollar-sign',
     desc: 'Physical currency payment accepted at the front desk concierge counter upon arrival',
     tag: 'On-Property Settle',
   },
@@ -104,7 +106,7 @@ const ENRICHED_PAYMENT_OPTIONS = [
     id: 'apple_pay',
     name: 'Apple Pay',
     shortName: 'Apple Pay',
-    icon: '🍏',
+    icon: 'credit-card',
     desc: 'One-touch biometric NFC payments for iOS, iPhone, and Apple Watch users',
     tag: 'Biometric NFC',
   },
@@ -112,7 +114,7 @@ const ENRICHED_PAYMENT_OPTIONS = [
     id: 'wire_transfer',
     name: 'International Wire Transfer',
     shortName: 'Wire Transfer',
-    icon: '🌐',
+    icon: 'external-link',
     desc: 'Direct SWIFT / IBAN wire transfer for VIP suites, delegations, and long-term stays',
     tag: 'SWIFT / IBAN',
   },
@@ -120,7 +122,7 @@ const ENRICHED_PAYMENT_OPTIONS = [
     id: 'corporate',
     name: 'Corporate Direct Account',
     shortName: 'Corporate Account',
-    icon: '🏢',
+    icon: 'building-2',
     desc: 'Direct corporate monthly invoicing and consolidated GST voucher billing',
     tag: 'Monthly Invoicing',
   },
@@ -207,7 +209,7 @@ export default function AdminDashboardScreen({
   const [customCatModalVisible, setCustomCatModalVisible] = useState(false);
   const [customCatKey, setCustomCatKey] = useState('');
   const [customCatName, setCustomCatName] = useState('');
-  const [customCatIcon, setCustomCatIcon] = useState('🌟');
+  const [customCatIcon, setCustomCatIcon] = useState('sparkles');
 
   const [newPlaceForm, setNewPlaceForm] = useState({
     title: '',
@@ -293,7 +295,7 @@ export default function AdminDashboardScreen({
 
               return updatedList;
             });
-            showToast(`✅ Uploaded "${file.name}"!`, 'success');
+            showToast(`Uploaded "${file.name}"!`, 'success');
           };
 
           try {
@@ -373,7 +375,7 @@ export default function AdminDashboardScreen({
     });
     setNewImageUrlInput('');
     setNewImageCaptionInput('');
-    showToast(`✅ Added Picture • Assigned 10-Digit ID: ${unique10DigitId}!`, 'success');
+    showToast(`Added Picture • Assigned 10-Digit ID: ${unique10DigitId}!`, 'success');
   };
 
   // 3. Remove Picture Slot
@@ -404,7 +406,7 @@ export default function AdminDashboardScreen({
       copy.splice(toIndex, 0, item);
       return copy;
     });
-    showToast(`Reordered picture slot ${fromIndex + 1} ➔ ${toIndex + 1}`, 'info');
+ showToast(`Reordered picture slot ${fromIndex + 1} -> ${toIndex + 1}`, 'info');
   };
 
   const handleSelectSearchResult = async (result) => {
@@ -583,7 +585,7 @@ export default function AdminDashboardScreen({
         if (enriched) {
           setCurrentActiveHotel(enriched);
           if (onSetActiveHotel) onSetActiveHotel(enriched);
-          showToast(`✅ "${saved.name}" ready with real nearby places!`, 'success');
+          showToast(`"${saved.name}" ready with real nearby places!`, 'success');
         }
       } catch (e) {
         console.warn('Nearby scan error:', e);
@@ -715,7 +717,7 @@ export default function AdminDashboardScreen({
       if (updated) {
         setCurrentActiveHotel(updated);
         if (onSetActiveHotel) onSetActiveHotel(updated);
-        showToast(`⚡ Populated verified places for ${updated.name || 'hotel'}!`, 'success');
+        showToast(`Populated verified places for ${updated.name || 'hotel'}!`, 'success');
       } else {
         showToast('Unable to populate places. Please configure hotel first.', 'error');
       }
@@ -745,7 +747,7 @@ export default function AdminDashboardScreen({
       imageLink: '',
       websiteUrl: '',
       timings: '9:00 AM - 6:00 PM',
-      data1: '★ 4.8 Rating',
+ data1: '★ 4.8 Rating',
       data2: '1.2 km from Hotel',
       data3: 'Concierge Partner',
       data4: 'Open Today',
@@ -771,7 +773,7 @@ export default function AdminDashboardScreen({
       imageLink: place.imageLink || place.image || place.img || '',
       websiteUrl: place.websiteUrl || place.link || '',
       timings: place.timings || place.hours || place.timing || '',
-      data1: place.data1 || (place.rating ? `★ ${place.rating} Rating` : 'Top Rated'),
+ data1: place.data1 || (place.rating ? `★ ${place.rating} Rating` : 'Top Rated'),
       data2: place.data2 || place.distance || '1.0 km from Hotel',
       data3: place.data3 || place.specialty || place.amenity || 'Concierge Partner',
       data4: place.data4 || place.hours || place.timings || 'Open Today',
@@ -829,7 +831,7 @@ export default function AdminDashboardScreen({
         setSelectedPlaceCategory(targetCat);
         setPlaceModalVisible(false);
         setEditingPlaceId(null);
-        showToast(`✅ Updated "${placeData.title}" in ${targetCat}!`, 'success');
+        showToast(`Updated "${placeData.title}" in ${targetCat}!`, 'success');
       } else {
         let savedDoc = null;
         try {
@@ -852,7 +854,7 @@ export default function AdminDashboardScreen({
         }
         setSelectedPlaceCategory(targetCat);
         setPlaceModalVisible(false);
-        showToast(`✅ Saved & Created "${placeData.title}" in ${targetCat}!`, 'success');
+        showToast(`Saved & Created "${placeData.title}" in ${targetCat}!`, 'success');
       }
       await apiService.fetchDatabaseStatus().then((s) => { if (s && s.database) setConnectedDbName(s.database); }).catch(() => {});
     loadAllAdminData();
@@ -873,7 +875,7 @@ export default function AdminDashboardScreen({
     if (updated) {
       setCurrentActiveHotel(updated);
       if (onSetActiveHotel) onSetActiveHotel(updated);
-      showToast(`🗑️ Removed "${placeTitle || 'Place'}" from ${categoryKey}.`, 'info');
+      showToast(`Removed "${placeTitle || 'Place'}" from ${categoryKey}.`, 'info');
     }
     loadAllAdminData();
   };
@@ -884,7 +886,7 @@ export default function AdminDashboardScreen({
       return;
     }
     const cleanKey = customCatKey.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
-    const updated = activeHotelService.addCustomCategory(cleanKey, customCatName.trim(), customCatIcon || '🌟');
+    const updated = activeHotelService.addCustomCategory(cleanKey, customCatName.trim(), customCatIcon || 'sparkles');
     if (updated) {
       setCurrentActiveHotel(updated);
       if (onSetActiveHotel) onSetActiveHotel(updated);
@@ -892,7 +894,7 @@ export default function AdminDashboardScreen({
       setCustomCatModalVisible(false);
       setCustomCatKey('');
       setCustomCatName('');
-      showToast(`✨ Created custom category "${customCatName.trim()}"!`, 'success');
+      showToast(`Created custom category "${customCatName.trim()}"!`, 'success');
     }
   };
 
@@ -904,7 +906,7 @@ export default function AdminDashboardScreen({
       if (selectedPlaceCategory === catKey) {
         setSelectedPlaceCategory('touristPlaces');
       }
-      showToast(`🗑️ Removed category "${catName || catKey}".`, 'info');
+      showToast(`Removed category "${catName || catKey}".`, 'info');
     }
   };
 
@@ -950,7 +952,7 @@ export default function AdminDashboardScreen({
         id: `custom-${idx}`,
         name: cm,
         shortName: cm,
-        icon: '✦',
+ icon: '✦',
         desc: 'Custom hotel-specific payment arrangement configured for this property',
         tag: 'Custom Method',
         isCustom: true,
@@ -1656,7 +1658,10 @@ export default function AdminDashboardScreen({
       {/* Header Banner */}
       <View style={styles.overviewHero}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.overviewGreeting}>🏨 HOTEL & DYNAMIC LOCATION CONFIGURATOR</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <LucideIcon name="hotel" size={20} color="#C5A46D" />
+            <Text style={styles.overviewGreeting}>HOTEL & LOCATION CONFIGURATOR</Text>
+          </View>
           <Text style={styles.overviewSub}>
             Configure hotel property details & exact GPS coordinates. This active hotel serves as the single source of truth and origin for all guest portal views & turn-by-turn driving directions.
           </Text>
@@ -1673,9 +1678,12 @@ export default function AdminDashboardScreen({
             }}
             activeOpacity={0.85}
           >
-            <Text style={styles.activeGuestLaunchText}>
-              🚀 Launch Guest Website ({currentActiveHotel.name}) →
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <LucideIcon name="external-link" size={14} color="#101114" />
+              <Text style={styles.activeGuestLaunchText}>
+                Launch Guest Website ({currentActiveHotel.name})
+              </Text>
+            </View>
           </TouchableOpacity>
         )}
       </View>
@@ -1683,9 +1691,7 @@ export default function AdminDashboardScreen({
       {/* Active Hotel Status Box */}
       <View style={[styles.activeStatusCard, currentActiveHotel ? styles.activeStatusCardActive : styles.activeStatusCardEmpty]}>
         <View style={styles.activeStatusHeader}>
-          <Text style={styles.activeStatusIcon}>
-            {currentActiveHotel ? '🟢' : '⚠️'}
-          </Text>
+          <LucideIcon name={currentActiveHotel ? "check-circle" : "alert-triangle"} size={20} color={currentActiveHotel ? "#4E9F76" : "#D49A3D"} />
           <View style={{ flex: 1 }}>
             <Text style={styles.activeStatusTitle}>
               {currentActiveHotel
@@ -1715,21 +1721,21 @@ export default function AdminDashboardScreen({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: 'rgba(34, 197, 94, 0.08)',
+        backgroundColor: 'rgba(78, 159, 118, 0.08)',
         borderWidth: 1,
-        borderColor: 'rgba(34, 197, 94, 0.25)',
+        borderColor: 'rgba(78, 159, 118, 0.25)',
         borderRadius: 8,
         paddingHorizontal: 12,
         paddingVertical: 8,
         marginBottom: 12,
       }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22C55E' }} />
-          <Text style={{ color: '#F1F5F9', fontSize: 12, fontWeight: '700' }}>
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#4E9F76' }} />
+          <Text style={{ color: '#F2EFE8', fontSize: 12, fontWeight: '700' }}>
             HOTEL DATABASE: CONNECTED (MongoDB hotelApiDb)
           </Text>
         </View>
-        <Text style={{ color: '#86EFAC', fontSize: 11, fontWeight: '600' }}>
+        <Text style={{ color: '#4E9F76', fontSize: 11, fontWeight: '600' }}>
           Live Google-Style Search Active
         </Text>
       </View>
@@ -1739,8 +1745,8 @@ export default function AdminDashboardScreen({
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
           <Text style={styles.presetSectionTitle}>HOTEL SEARCH DIRECTORY</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22C55E' }} />
-            <Text style={{ color: '#E2C082', fontSize: 11, fontWeight: '600' }}>Google-Style Autocomplete</Text>
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#4E9F76' }} />
+            <Text style={{ color: '#C5A46D', fontSize: 11, fontWeight: '600' }}>Google-Style Autocomplete</Text>
           </View>
         </View>
         <Text style={styles.presetSectionSub}>
@@ -1756,16 +1762,16 @@ export default function AdminDashboardScreen({
 
         {/* Confirmed Hotel Preview */}
         {confirmedHotelData && (
-          <View style={{ backgroundColor: '#0D3B1F', borderRadius: 10, borderWidth: 1, borderColor: '#22C55E', padding: 14, marginTop: 12, marginBottom: 8 }}>
+          <View style={{ backgroundColor: '#0D3B1F', borderRadius: 10, borderWidth: 1, borderColor: '#4E9F76', padding: 14, marginTop: 12, marginBottom: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Text style={{ color: '#22C55E', fontSize: 12, fontWeight: '700' }}>ACTIVE HOTEL SELECTED:</Text>
-              <View style={{ backgroundColor: 'rgba(34, 197, 94, 0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 }}>
-                <Text style={{ color: '#86EFAC', fontSize: 10, fontWeight: '700' }}>READY IN CONFIGURATOR</Text>
+              <Text style={{ color: '#4E9F76', fontSize: 12, fontWeight: '700' }}>ACTIVE HOTEL SELECTED:</Text>
+              <View style={{ backgroundColor: 'rgba(78, 159, 118, 0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 }}>
+                <Text style={{ color: '#4E9F76', fontSize: 10, fontWeight: '700' }}>READY IN CONFIGURATOR</Text>
               </View>
             </View>
-            <Text style={{ color: '#F1F5F9', fontSize: 15, fontWeight: '700' }}>{confirmedHotelData.name}</Text>
-            <Text style={{ color: '#94A3B8', fontSize: 12, marginTop: 4 }}>{confirmedHotelData.address || confirmedHotelData.city}</Text>
-            <Text style={{ color: '#94A3B8', fontSize: 12, marginTop: 2 }}>
+            <Text style={{ color: '#F2EFE8', fontSize: 15, fontWeight: '700' }}>{confirmedHotelData.name}</Text>
+            <Text style={{ color: '#A5A39D', fontSize: 12, marginTop: 4 }}>{confirmedHotelData.address || confirmedHotelData.city}</Text>
+            <Text style={{ color: '#A5A39D', fontSize: 12, marginTop: 2 }}>
               Coordinates: [{confirmedHotelData.latitude != null ? Number(confirmedHotelData.latitude).toFixed(4) : 'N/A'}, {confirmedHotelData.longitude != null ? Number(confirmedHotelData.longitude).toFixed(4) : 'N/A'}]
             </Text>
             <TouchableOpacity
@@ -1784,22 +1790,22 @@ export default function AdminDashboardScreen({
         {/* Hotel Approval Status Notice */}
         <View style={{
           backgroundColor: currentActiveHotel?.status === 'approved'
-            ? 'rgba(34, 197, 94, 0.12)'
+            ? 'rgba(78, 159, 118, 0.12)'
             : currentActiveHotel?.status === 'rejected'
-            ? 'rgba(239, 68, 68, 0.12)'
+            ? 'rgba(217, 83, 79, 0.12)'
             : 'rgba(245, 158, 11, 0.12)',
           borderWidth: 1,
           borderColor: currentActiveHotel?.status === 'approved'
-            ? 'rgba(34, 197, 94, 0.35)'
+            ? 'rgba(78, 159, 118, 0.35)'
             : currentActiveHotel?.status === 'rejected'
-            ? 'rgba(239, 68, 68, 0.35)'
+            ? 'rgba(217, 83, 79, 0.35)'
             : 'rgba(245, 158, 11, 0.35)',
           borderRadius: 12,
           padding: 16,
           marginBottom: 20,
         }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1.2, color: '#94A3B8', textTransform: 'uppercase' }}>
+            <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1.2, color: '#A5A39D', textTransform: 'uppercase' }}>
               APPROVAL STATUS
             </Text>
             <View style={{
@@ -1807,10 +1813,10 @@ export default function AdminDashboardScreen({
               paddingVertical: 4,
               borderRadius: 20,
               backgroundColor: currentActiveHotel?.status === 'approved'
-                ? '#15803D'
+                ? '#2E5A44'
                 : currentActiveHotel?.status === 'rejected'
-                ? '#B91C1C'
-                : '#B45309',
+                ? '#8C2424'
+                : '#8C6F3E',
             }}>
               <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>
                 {currentActiveHotel?.status === 'approved'
@@ -1822,13 +1828,13 @@ export default function AdminDashboardScreen({
             </View>
           </View>
           {currentActiveHotel?.status === 'approved' ? (
-            <Text style={{ color: '#86EFAC', fontSize: 13, lineHeight: 18 }}>
-              ✅ Your hotel has been approved by Super Admin and is publicly active on the guest portal.
+            <Text style={{ color: '#4E9F76', fontSize: 13, lineHeight: 18 }}>
+              Your hotel has been approved by Super Admin and is publicly active on the guest portal.
             </Text>
           ) : currentActiveHotel?.status === 'rejected' ? (
             <View>
-              <Text style={{ color: '#FCA5A5', fontSize: 13, lineHeight: 18 }}>
-                ❌ Your hotel submission was rejected by Super Admin.
+              <Text style={{ color: '#D9534F', fontSize: 13, lineHeight: 18 }}>
+                Your hotel submission was rejected by Super Admin.
               </Text>
               {currentActiveHotel?.rejectionReason ? (
                 <Text style={{ color: '#FECACA', fontSize: 12, marginTop: 4, fontStyle: 'italic' }}>
@@ -1837,13 +1843,16 @@ export default function AdminDashboardScreen({
               ) : null}
             </View>
           ) : (
-            <Text style={{ color: '#FCD34D', fontSize: 13, lineHeight: 18 }}>
+            <Text style={{ color: '#D49A3D', fontSize: 13, lineHeight: 18 }}>
               ⏳ Your hotel has been submitted for approval. Please wait for Super Admin approval.
             </Text>
           )}
         </View>
 
-        <Text style={styles.configFormTitle}>📝 HOTEL SPECIFICATIONS & GPS ORIGIN</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <LucideIcon name="file-text" size={18} color="#C5A46D" />
+            <Text style={styles.configFormTitle}>HOTEL SPECIFICATIONS & GPS ORIGIN</Text>
+          </View>
 
         <View style={styles.formRow}>
           <View style={styles.formCol}>
@@ -1853,7 +1862,7 @@ export default function AdminDashboardScreen({
               value={hotelConfigForm.name}
               onChangeText={(text) => setHotelConfigForm((prev) => ({ ...prev, name: text }))}
               placeholder="e.g. Enter Hotel Name"
-              placeholderTextColor="#64748B"
+              placeholderTextColor="#807E78"
             />
           </View>
           <View style={styles.formCol}>
@@ -1863,7 +1872,7 @@ export default function AdminDashboardScreen({
               value={hotelConfigForm.city}
               onChangeText={(text) => setHotelConfigForm((prev) => ({ ...prev, city: text }))}
               placeholder="e.g. Enter Hotel City"
-              placeholderTextColor="#64748B"
+              placeholderTextColor="#807E78"
             />
           </View>
         </View>
@@ -1876,7 +1885,7 @@ export default function AdminDashboardScreen({
               value={hotelConfigForm.address}
               onChangeText={(text) => setHotelConfigForm((prev) => ({ ...prev, address: text }))}
               placeholder="e.g. 23, HAL Old Airport Rd, HAL 2nd Stage, Kodihalli"
-              placeholderTextColor="#64748B"
+              placeholderTextColor="#807E78"
             />
           </View>
         </View>
@@ -1889,7 +1898,7 @@ export default function AdminDashboardScreen({
               value={hotelConfigForm.latitude}
               onChangeText={(text) => setHotelConfigForm((prev) => ({ ...prev, latitude: text }))}
               placeholder="e.g. 12.9606"
-              placeholderTextColor="#64748B"
+              placeholderTextColor="#807E78"
               keyboardType="numeric"
             />
             <Text style={styles.fieldHint}>Used as exact origin for driving directions</Text>
@@ -1901,7 +1910,7 @@ export default function AdminDashboardScreen({
               value={hotelConfigForm.longitude}
               onChangeText={(text) => setHotelConfigForm((prev) => ({ ...prev, longitude: text }))}
               placeholder="e.g. 77.6484"
-              placeholderTextColor="#64748B"
+              placeholderTextColor="#807E78"
               keyboardType="numeric"
             />
             <Text style={styles.fieldHint}>Used as exact origin for driving directions</Text>
@@ -1916,7 +1925,7 @@ export default function AdminDashboardScreen({
               value={hotelConfigForm.subtitle}
               onChangeText={(text) => setHotelConfigForm((prev) => ({ ...prev, subtitle: text }))}
               placeholder="e.g. Modern Palace of the Golden Age"
-              placeholderTextColor="#64748B"
+              placeholderTextColor="#807E78"
             />
           </View>
         </View>
@@ -1928,7 +1937,7 @@ export default function AdminDashboardScreen({
           <View style={styles.gallerySectionHeader}>
             <View style={{ flex: 1, minWidth: 280 }}>
               <Text style={styles.gallerySectionTitle}>
-                📸 HOTEL PICTURES & GALLERY ({hotelImages.length} / 8 PICTURES)
+                HOTEL PICTURES & GALLERY ({hotelImages.length} / 8 PICTURES)
               </Text>
               <Text style={styles.gallerySectionSub}>
                 Upload up to 8 high-resolution pictures from your device or paste image URLs. Each picture is automatically assigned a verified unique 10-digit tracking ID and cycles in the guest portal gallery.
@@ -1945,7 +1954,7 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <Text style={styles.uploadDeviceBtnText}>
-                📁 Upload Pictures (From Device)
+                Upload Pictures (From Device)
               </Text>
             </TouchableOpacity>
           </View>
@@ -1966,7 +1975,7 @@ export default function AdminDashboardScreen({
                     onPress={() => handleRemoveImage(index)}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.slotRemoveBtnText}>✕</Text>
+ <LucideIcon name="x" size={13} color="#D9534F" />
                   </TouchableOpacity>
                 </View>
 
@@ -2016,7 +2025,7 @@ export default function AdminDashboardScreen({
                   onPress={handleTriggerFileUpload}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.emptySlotIcon}>➕</Text>
+                  <LucideIcon name="plus" size={24} color="#807E78" />
                   <Text style={styles.emptySlotTitle}>Slot {slotNumber} of 8 Available</Text>
                   <Text style={styles.emptySlotHint}>Click to upload image file</Text>
                 </TouchableOpacity>
@@ -2027,28 +2036,31 @@ export default function AdminDashboardScreen({
           {/* Option: Add Image via Direct URL */}
           {hotelImages.length < 8 && (
             <View style={styles.addUrlBox}>
-              <Text style={styles.addUrlBoxTitle}>🔗 OR ADD PICTURE VIA DIRECT IMAGE URL</Text>
+              <Text style={styles.addUrlBoxTitle}>OR ADD PICTURE VIA DIRECT IMAGE URL</Text>
               <View style={styles.addUrlRow}>
                 <TextInput
                   style={[styles.formInput, { flex: 2, minWidth: 200 }]}
                   value={newImageUrlInput}
                   onChangeText={setNewImageUrlInput}
                   placeholder="Paste picture link: https://images.unsplash.com/..."
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor="#807E78"
                 />
                 <TextInput
                   style={[styles.formInput, { flex: 1.2, minWidth: 150 }]}
                   value={newImageCaptionInput}
                   onChangeText={setNewImageCaptionInput}
                   placeholder="Caption (e.g. Suite Bedroom)"
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor="#807E78"
                 />
                 <TouchableOpacity
                   style={styles.addUrlActionBtn}
                   onPress={handleAddImageUrl}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.addUrlActionBtnText}>➕ Add with 10-Digit ID</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <LucideIcon name="plus" size={13} color="#101114" />
+                  <Text style={styles.addUrlActionBtnText}>Add with 10-Digit ID</Text>
+                </View>
                 </TouchableOpacity>
               </View>
             </View>
@@ -2063,7 +2075,7 @@ export default function AdminDashboardScreen({
               value={hotelConfigForm.pricePerNight}
               onChangeText={(text) => setHotelConfigForm((prev) => ({ ...prev, pricePerNight: text }))}
               placeholder="e.g. ₹28,000 / night"
-              placeholderTextColor="#64748B"
+              placeholderTextColor="#807E78"
             />
           </View>
           <View style={styles.formCol}>
@@ -2073,7 +2085,7 @@ export default function AdminDashboardScreen({
               value={hotelConfigForm.rating}
               onChangeText={(text) => setHotelConfigForm((prev) => ({ ...prev, rating: text }))}
               placeholder="e.g. 4.9"
-              placeholderTextColor="#64748B"
+              placeholderTextColor="#807E78"
               keyboardType="numeric"
             />
           </View>
@@ -2086,20 +2098,23 @@ export default function AdminDashboardScreen({
             onPress={() => handleSaveHotelConfig(false)}
             activeOpacity={0.8}
           >
-            <Text style={styles.saveOnlyBtnText}>💾 Submit for Approval</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                <LucideIcon name="check" size={13} color="#101114" />
+                <Text style={styles.saveOnlyBtnText}>Submit for Approval</Text>
+              </View>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[
               styles.saveAndLaunchBtn,
-              currentActiveHotel?.status !== 'approved' && { opacity: 0.7, borderColor: '#64748B' }
+              currentActiveHotel?.status !== 'approved' && { opacity: 0.7, borderColor: '#807E78' }
             ]}
             onPress={() => handleSaveHotelConfig(true)}
             activeOpacity={0.85}
           >
             <Text style={styles.saveAndLaunchBtnText}>
               {currentActiveHotel?.status === 'approved'
-                ? '🚀 LAUNCH GUEST WEBSITE →'
+ ? ' LAUNCH GUEST WEBSITE →'
                 : '⏳ SUBMIT HOTEL FOR APPROVAL'}
             </Text>
           </TouchableOpacity>
@@ -2152,7 +2167,10 @@ export default function AdminDashboardScreen({
               onPress={() => handleOpenCreateModal('restaurants')}
               activeOpacity={0.85}
             >
-              <Text style={styles.headerPrimaryActionBtnText}>✨ + Add Component</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <LucideIcon name="plus" size={14} color="#101114" />
+                <Text style={styles.headerPrimaryActionBtnText}>Add Component</Text>
+              </View>
             </TouchableOpacity>
             {currentActiveHotel && (
               <TouchableOpacity
@@ -2166,9 +2184,12 @@ export default function AdminDashboardScreen({
                 }}
                 activeOpacity={0.85}
               >
-                <Text style={styles.headerGuestLaunchBtnText}>
-                  🚀 Open Guest Portal ({currentActiveHotel.city || 'Portal'}) →
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <LucideIcon name="external-link" size={14} color="#F2EFE8" />
+                  <Text style={styles.headerGuestLaunchBtnText}>
+                    Open Guest Portal ({currentActiveHotel.city || 'Portal'})
+                  </Text>
+                </View>
               </TouchableOpacity>
             )}
           </View>
@@ -2179,7 +2200,10 @@ export default function AdminDashboardScreen({
           <View style={styles.activeHotelProfileHeader}>
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                <Text style={styles.activeHotelBadgeText}>⭐ CURRENT ACTIVE HOTEL</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <LucideIcon name="award" size={13} color="#C5A46D" />
+                  <Text style={styles.activeHotelBadgeText}>CURRENT ACTIVE HOTEL</Text>
+                </View>
                 <View style={[
                   styles.statusBadgePill,
                   currentActiveHotel?.status === 'approved'
@@ -2196,15 +2220,21 @@ export default function AdminDashboardScreen({
               <Text style={styles.activeHotelNameText}>
                 {currentActiveHotel?.name || 'No Hotel Currently Selected'}
               </Text>
-              <Text style={styles.activeHotelLocationText}>
-                📍 {currentActiveHotel?.address || currentActiveHotel?.city || 'Address unconfigured'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 }}>
+                <LucideIcon name="map-pin" size={13} color="#A5A39D" />
+                <Text style={styles.activeHotelLocationText}>
+                  {currentActiveHotel?.address || currentActiveHotel?.city || 'Address unconfigured'}
+                </Text>
+              </View>
               <View style={styles.activeHotelMetaRow}>
                 <Text style={styles.activeHotelMetaItem}>
                   Coordinates: [{currentActiveHotel?.latitude != null ? Number(currentActiveHotel.latitude).toFixed(4) : 'N/A'}, {currentActiveHotel?.longitude != null ? Number(currentActiveHotel.longitude).toFixed(4) : 'N/A'}]
                 </Text>
                 <Text style={styles.activeHotelMetaDivider}>•</Text>
-                <Text style={styles.activeHotelMetaItem}>★ {currentActiveHotel?.rating || '4.9'}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <LucideIcon name="star" size={12} color="#C5A46D" />
+                  <Text style={styles.activeHotelMetaItem}>{currentActiveHotel?.rating || '4.9'}</Text>
+                </View>
                 <Text style={styles.activeHotelMetaDivider}>•</Text>
                 <Text style={styles.activeHotelMetaItem}>{currentActiveHotel?.pricePerNight || '₹18,500 / night'}</Text>
                 <Text style={styles.activeHotelMetaDivider}>•</Text>
@@ -2217,14 +2247,20 @@ export default function AdminDashboardScreen({
                 onPress={() => setActiveTab('hotel_config')}
                 activeOpacity={0.8}
               >
-                <Text style={styles.profileActionBtnText}>✏️ Configure Hotel</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <LucideIcon name="settings" size={13} color="#F2EFE8" />
+                  <Text style={styles.profileActionBtnText}>Configure</Text>
+                </View>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.profileActionBtn}
                 onPress={() => setActiveTab('hotels')}
                 activeOpacity={0.8}
               >
-                <Text style={styles.profileActionBtnText}>🏢 Switch Hotel</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <LucideIcon name="building-2" size={13} color="#F2EFE8" />
+                  <Text style={styles.profileActionBtnText}>Switch Hotel</Text>
+                </View>
               </TouchableOpacity>
             </View>
           </View>
@@ -2256,7 +2292,7 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <View style={styles.metricCardHeader}>
-                <Text style={styles.metricIcon}>🍽️</Text>
+                <LucideIcon name="utensils" size={18} color="#C5A46D" />
                 <Text style={styles.metricValue}>{restaurants.length}</Text>
               </View>
               <Text style={styles.metricLabel}>Restaurants & Dining</Text>
@@ -2269,7 +2305,7 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <View style={styles.metricCardHeader}>
-                <Text style={styles.metricIcon}>🏋️</Text>
+                <LucideIcon name="dumbbell" size={18} color="#C5A46D" />
                 <Text style={styles.metricValue}>{gyms.length}</Text>
               </View>
               <Text style={styles.metricLabel}>Gyms & Wellness</Text>
@@ -2282,7 +2318,7 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <View style={styles.metricCardHeader}>
-                <Text style={styles.metricIcon}>🏊</Text>
+                <LucideIcon name="waves" size={18} color="#C5A46D" />
                 <Text style={styles.metricValue}>{pools.length}</Text>
               </View>
               <Text style={styles.metricLabel}>Swimming Pools</Text>
@@ -2295,7 +2331,7 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <View style={styles.metricCardHeader}>
-                <Text style={styles.metricIcon}>🛎️</Text>
+                <LucideIcon name="sparkles" size={18} color="#C5A46D" />
                 <Text style={styles.metricValue}>{facilities.length}</Text>
               </View>
               <Text style={styles.metricLabel}>Hotel Facilities</Text>
@@ -2308,7 +2344,7 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <View style={styles.metricCardHeader}>
-                <Text style={styles.metricIcon}>🥡</Text>
+                <LucideIcon name="shopping-bag" size={18} color="#C5A46D" />
                 <Text style={styles.metricValue}>{takeaway.length + homeDelivery.length}</Text>
               </View>
               <Text style={styles.metricLabel}>Takeaway & Delivery</Text>
@@ -2321,7 +2357,7 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <View style={styles.metricCardHeader}>
-                <Text style={styles.metricIcon}>📍</Text>
+                <LucideIcon name="compass" size={18} color="#C5A46D" />
                 <Text style={styles.metricValue}>{nearbyCount}</Text>
               </View>
               <Text style={styles.metricLabel}>Curated Nearby Places</Text>
@@ -2334,7 +2370,7 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <View style={styles.metricCardHeader}>
-                <Text style={styles.metricIcon}>🏢</Text>
+                <LucideIcon name="building-2" size={18} color="#C5A46D" />
                 <Text style={styles.metricValue}>{hotels.length}</Text>
               </View>
               <Text style={styles.metricLabel}>Registered Hotels</Text>
@@ -2347,7 +2383,7 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <View style={styles.metricCardHeader}>
-                <Text style={styles.metricIcon}>💳</Text>
+                <LucideIcon name="credit-card" size={18} color="#C5A46D" />
                 <Text style={styles.metricValue}>{paidHotelsCount} / {hotels.length}</Text>
               </View>
               <Text style={styles.metricLabel}>Hotels Settled</Text>
@@ -2373,7 +2409,7 @@ export default function AdminDashboardScreen({
 
           {recentActivity.length === 0 ? (
             <View style={styles.activityEmptyState}>
-              <Text style={styles.activityEmptyIcon}>⏱️</Text>
+              <LucideIcon name="clock" size={28} color="#A5A39D" style={{ marginBottom: 8 }} />
               <Text style={styles.activityEmptyTitle}>No Modifications in Current Session</Text>
               <Text style={styles.activityEmptySub}>
                 All updates made to hotels, dining, wellness, or amenities will appear here in real time as they occur.
@@ -2407,7 +2443,7 @@ export default function AdminDashboardScreen({
               onPress={() => handleOpenCreateModal('restaurants')}
               activeOpacity={0.8}
             >
-              <Text style={styles.shortcutIcon}>🍽️</Text>
+              <LucideIcon name="utensils" size={20} color="#C5A46D" style={{ marginBottom: 6 }} />
               <Text style={styles.shortcutTitle}>Add New Restaurant / Amenity</Text>
               <Text style={styles.shortcutDesc}>
                 Create dining options, fitness centers, or hotel amenities for this property
@@ -2419,7 +2455,7 @@ export default function AdminDashboardScreen({
               onPress={() => setActiveTab('hotels')}
               activeOpacity={0.8}
             >
-              <Text style={styles.shortcutIcon}>🏢</Text>
+              <LucideIcon name="building-2" size={20} color="#C5A46D" style={{ marginBottom: 6 }} />
               <Text style={styles.shortcutTitle}>Hotels Directory</Text>
               <Text style={styles.shortcutDesc}>
                 Browse, search, edit, and switch between registered hotel properties
@@ -2431,7 +2467,7 @@ export default function AdminDashboardScreen({
               onPress={() => setActiveTab('places_manager')}
               activeOpacity={0.8}
             >
-              <Text style={styles.shortcutIcon}>📍</Text>
+              <LucideIcon name="compass" size={20} color="#C5A46D" style={{ marginBottom: 6 }} />
               <Text style={styles.shortcutTitle}>Nearby Places & Categories</Text>
               <Text style={styles.shortcutDesc}>
                 Curate attractions, shopping, transit, and medical gateways with GPS directions
@@ -2443,7 +2479,7 @@ export default function AdminDashboardScreen({
               onPress={() => setActiveTab('payments')}
               activeOpacity={0.8}
             >
-              <Text style={styles.shortcutIcon}>💳</Text>
+              <LucideIcon name="credit-card" size={20} color="#C5A46D" style={{ marginBottom: 6 }} />
               <Text style={styles.shortcutTitle}>Hotel Payment Methods</Text>
               <Text style={styles.shortcutDesc}>
                 Configure UPI, Cards, Net Banking, and Cash individually per hotel
@@ -2455,7 +2491,7 @@ export default function AdminDashboardScreen({
               onPress={() => setActiveTab('availability')}
               activeOpacity={0.8}
             >
-              <Text style={styles.shortcutIcon}>⚡</Text>
+              <LucideIcon name="calendar" size={20} color="#C5A46D" style={{ marginBottom: 6 }} />
               <Text style={styles.shortcutTitle}>1-Click Availability Matrix</Text>
               <Text style={styles.shortcutDesc}>
                 Instantly toggle operational status for hotels, dining, and gyms
@@ -2531,7 +2567,10 @@ export default function AdminDashboardScreen({
               onPress={() => loadAllAdminData()}
               activeOpacity={0.8}
             >
-              <Text style={styles.addBtnText}>🔄 Refresh</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                <LucideIcon name="refresh-cw" size={13} color="#F2EFE8" />
+                <Text style={styles.addBtnText}>Refresh</Text>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -2545,7 +2584,7 @@ export default function AdminDashboardScreen({
               value={hotelsDirectorySearch}
               onChangeText={setHotelsDirectorySearch}
               placeholder="Search hotels by name, city, location, or hotel ID..."
-              placeholderTextColor="#64748B"
+              placeholderTextColor="#807E78"
               autoCapitalize="none"
             />
             {hotelsDirectorySearch.length > 0 && (
@@ -2554,7 +2593,7 @@ export default function AdminDashboardScreen({
                 style={styles.clearSearchBtn}
                 activeOpacity={0.7}
               >
-                <Text style={styles.clearSearchBtnText}>✕</Text>
+ <LucideIcon name="x" size={13} color="#A5A39D" />
               </TouchableOpacity>
             )}
           </View>
@@ -2593,7 +2632,7 @@ export default function AdminDashboardScreen({
         <View style={styles.verticalHotelsContainer}>
           {filteredHotels.length === 0 ? (
             <View style={styles.directoryEmptyStateCard}>
-              <Text style={styles.directoryEmptyIcon}>🏢</Text>
+              <LucideIcon name="building-2" size={32} color="#A5A39D" style={{ marginBottom: 8 }} />
               <Text style={styles.directoryEmptyTitle}>
                 {hotels.length === 0
                   ? 'No Hotels Registered in Database'
@@ -2654,7 +2693,10 @@ export default function AdminDashboardScreen({
                           <Text style={styles.verticalHotelTitle}>{h.title || h.name}</Text>
                           {isActiveHotel && (
                             <View style={styles.activeHotelPillBadge}>
-                              <Text style={styles.activeHotelPillBadgeText}>★ CURRENT ACTIVE</Text>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                              <LucideIcon name="award" size={11} color="#C5A46D" />
+                              <Text style={styles.activeHotelPillBadgeText}>ACTIVE</Text>
+                            </View>
                             </View>
                           )}
                           <View
@@ -2668,19 +2710,25 @@ export default function AdminDashboardScreen({
                             ]}
                           >
                             <Text style={styles.hotelStatusBadgeText}>
-                              {hotelStatus === 'approved' ? '✓ APPROVED' : hotelStatus === 'rejected' ? '✗ REJECTED' : '⏳ PENDING'}
+                              hotelStatus.toUpperCase()
                             </Text>
                           </View>
                         </View>
                         <Text style={styles.verticalHotelPrice}>
                           {h.pricePerNight || '₹24,500'}
-                          <Text style={{ fontSize: 11, color: '#94A3B8' }}> / night</Text>
+                          <Text style={{ fontSize: 11, color: '#A5A39D' }}> / night</Text>
                         </Text>
                       </View>
 
-                      <Text style={styles.verticalHotelLocation}>
-                        📍 {h.location || h.city || h.address} • ★ {h.rating || 4.9} • ID: {h.hotelPropertyId || h.id}
-                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4, flexWrap: 'wrap' }}>
+                        <LucideIcon name="map-pin" size={12} color="#A5A39D" />
+                        <Text style={styles.verticalHotelLocation}>{h.location || h.city || h.address}</Text>
+                        <Text style={{ color: '#2A2B31' }}>•</Text>
+                        <LucideIcon name="star" size={12} color="#C5A46D" />
+                        <Text style={styles.verticalHotelLocation}>{h.rating || 4.9}</Text>
+                        <Text style={{ color: '#2A2B31' }}>•</Text>
+                        <Text style={styles.verticalHotelLocation}>ID: {h.hotelPropertyId || h.id}</Text>
+                      </View>
                       {h.description ? (
                         <Text style={styles.verticalHotelDesc} numberOfLines={2}>
                           {h.description}
@@ -2697,7 +2745,7 @@ export default function AdminDashboardScreen({
                     ]}
                   >
                     <View style={styles.paymentStatusInfo}>
-                      <Text style={styles.paymentStatusIcon}>{isPaid ? '✅' : '⚠️'}</Text>
+                      <LucideIcon name={isPaid ? "check-circle" : "alert-triangle"} size={16} color={isPaid ? "#4E9F76" : "#D49A3D"} />
                       <View style={{ flex: 1 }}>
                         <Text
                           style={[
@@ -2723,16 +2771,17 @@ export default function AdminDashboardScreen({
                       onPress={() => handleToggleHotelPayment(h)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.paymentToggleBtnText}>
-                        {isPaid ? 'Mark as Not Made ↺' : 'Mark as Paid ✓'}
-                      </Text>
+                      <Text style={styles.paymentToggleBtnText}>{isPaid ? 'Mark Pending' : 'Mark Paid'}</Text>
                     </TouchableOpacity>
                   </View>
 
                   {/* Accepted Payment Methods Row */}
                   <View style={styles.verticalHotelFooterRow}>
                     <View style={styles.hotelPmRow}>
-                      <Text style={styles.hotelPmLabel}>💳 Accepted Methods:</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <LucideIcon name="credit-card" size={12} color="#A5A39D" />
+                        <Text style={styles.hotelPmLabel}>Accepted Methods:</Text>
+                      </View>
                       <View style={styles.hotelPmChips}>
                         {(h.paymentMethods || ['UPI', 'Credit Card', 'Cash']).map((pm, idx) => (
                           <View key={`hpm-${idx}`} style={styles.hotelPmChip}>
@@ -2752,9 +2801,10 @@ export default function AdminDashboardScreen({
                         onPress={() => handleToggleAvailability('hotels', h)}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.availToggleText}>
-                          {isAvail ? '🟢 Available' : '🔴 Not Available'}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <LucideIcon name={isAvail ? "check-circle" : "x-circle"} size={12} color={isAvail ? "#4E9F76" : "#D9534F"} />
+                          <Text style={styles.availToggleText}>{isAvail ? 'Available' : 'Unavailable'}</Text>
+                        </View>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -2762,7 +2812,10 @@ export default function AdminDashboardScreen({
                         onPress={() => handleOpenEditModal('hotels', h)}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.editItemBtnText}>✏️ Edit</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <LucideIcon name="edit" size={12} color="#F2EFE8" />
+                          <Text style={styles.editItemBtnText}>Edit</Text>
+                        </View>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -2770,7 +2823,10 @@ export default function AdminDashboardScreen({
                         onPress={() => handleDeleteItem('hotels', h)}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.deleteItemBtnText}>🗑️ Delete</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <LucideIcon name="trash-2" size={12} color="#D9534F" />
+                          <Text style={styles.deleteItemBtnText}>Delete</Text>
+                        </View>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -2784,7 +2840,7 @@ export default function AdminDashboardScreen({
                           if (onSetActiveHotel) onSetActiveHotel(saved);
                           loadAllAdminData(h.hotelPropertyId || h.id);
                           logActivity(`Switched active hotel to: "${h.title || h.name}"`, 'hotel');
-                          showToast(`⭐ "${h.title || h.name}" is now the Active Hotel!`, 'success');
+                          showToast(`"${h.title || h.name}" is now the Active Hotel!`, 'success');
                           if (onLaunchGuestWebsite) {
                             onLaunchGuestWebsite(saved);
                           } else if (onBackToGuestPortal) {
@@ -2793,9 +2849,12 @@ export default function AdminDashboardScreen({
                         }}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.activateHotelDirectBtnText}>
-                          {isActiveHotel ? '⭐ Active Hotel (Open Site →)' : '⭐ Set Active & Open Site →'}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                          <LucideIcon name="award" size={13} color={isActiveHotel ? "#101114" : "#C5A46D"} />
+                          <Text style={styles.activateHotelDirectBtnText}>
+                            {isActiveHotel ? 'Active Property (Launch)' : 'Set Active & Launch'}
+                          </Text>
+                        </View>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -2806,7 +2865,10 @@ export default function AdminDashboardScreen({
                         }}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.configPmBtnText}>Payment Config ⚙️</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <LucideIcon name="credit-card" size={12} color="#A5A39D" />
+                          <Text style={styles.configPmBtnText}>Payment Config</Text>
+                        </View>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -2868,7 +2930,10 @@ export default function AdminDashboardScreen({
         <View style={styles.sectionHeaderRow}>
           <View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <Text style={styles.sectionTitle}>{icon} {title.toUpperCase()} ({items.length})</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <LucideIcon name={icon || "sparkles"} size={20} color="#C5A46D" />
+                <Text style={styles.sectionTitle}>{title.toUpperCase()} ({items.length})</Text>
+              </View>
               <View style={styles.componentCountBadge}>
                 <Text style={styles.componentCountBadgeText}>
                   {availCount} Available • {unavailCount} Unavailable
@@ -2882,7 +2947,10 @@ export default function AdminDashboardScreen({
             onPress={() => handleOpenCreateModal(categoryKey)}
             activeOpacity={0.8}
           >
-            <Text style={styles.createItemBtnText}>➕ {addLabel}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <LucideIcon name="plus" size={13} color="#101114" />
+              <Text style={styles.createItemBtnText}>{addLabel}</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -2895,7 +2963,7 @@ export default function AdminDashboardScreen({
               value={componentSearchQuery}
               onChangeText={setComponentSearchQuery}
               placeholder={`Search ${title.toLowerCase()} by name, details, or location...`}
-              placeholderTextColor="#64748B"
+              placeholderTextColor="#807E78"
               autoCapitalize="none"
             />
             {componentSearchQuery.length > 0 && (
@@ -2904,7 +2972,7 @@ export default function AdminDashboardScreen({
                 style={styles.clearSearchBtn}
                 activeOpacity={0.7}
               >
-                <Text style={styles.clearSearchBtnText}>✕</Text>
+ <LucideIcon name="x" size={13} color="#A5A39D" />
               </TouchableOpacity>
             )}
           </View>
@@ -2912,8 +2980,8 @@ export default function AdminDashboardScreen({
           <View style={styles.componentAvailTabs}>
             {[
               { key: 'all', label: `All (${items.length})` },
-              { key: 'available', label: `🟢 Available (${availCount})` },
-              { key: 'unavailable', label: `🔴 Unavailable (${unavailCount})` },
+              { key: 'available', label: `Available (${availCount})` },
+              { key: 'unavailable', label: `Unavailable (${unavailCount})` },
             ].map((tab) => (
               <TouchableOpacity
                 key={tab.key}
@@ -2941,7 +3009,7 @@ export default function AdminDashboardScreen({
         <View style={styles.itemsTable}>
           {filteredItems.length === 0 ? (
             <View style={styles.directoryEmptyStateCard}>
-              <Text style={styles.directoryEmptyIcon}>{icon}</Text>
+              <LucideIcon name={icon || "sparkles"} size={32} color="#A5A39D" style={{ marginBottom: 8 }} />
               <Text style={styles.directoryEmptyTitle}>
                 {items.length === 0
                   ? `No ${title} Configured Yet`
@@ -2949,7 +3017,7 @@ export default function AdminDashboardScreen({
               </Text>
               <Text style={styles.directoryEmptySub}>
                 {items.length === 0
-                  ? `No ${title.toLowerCase()} configured for ${currentActiveHotel?.name || 'this hotel'} yet. Click "➕ ${addLabel}" above to create one.`
+ ? `No ${title.toLowerCase()} configured for ${currentActiveHotel?.name || 'this hotel'} yet. Click "+ ${addLabel}" above to create one.`
                   : 'Try searching for different keywords or clear your search filters.'}
               </Text>
               {items.length === 0 ? (
@@ -2958,7 +3026,10 @@ export default function AdminDashboardScreen({
                   onPress={() => handleOpenCreateModal(categoryKey)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.createItemBtnText}>➕ {addLabel}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <LucideIcon name="plus" size={13} color="#101114" />
+              <Text style={styles.createItemBtnText}>{addLabel}</Text>
+            </View>
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
@@ -3008,9 +3079,10 @@ export default function AdminDashboardScreen({
                       onPress={() => handleToggleAvailability(categoryKey, item)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.availToggleText}>
-                        {isAvail ? '🟢 Available' : '🔴 Not Available'}
-                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <LucideIcon name={isAvail ? "check-circle" : "x-circle"} size={12} color={isAvail ? "#4E9F76" : "#D9534F"} />
+                          <Text style={styles.availToggleText}>{isAvail ? 'Available' : 'Unavailable'}</Text>
+                        </View>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -3018,7 +3090,10 @@ export default function AdminDashboardScreen({
                       onPress={() => handleOpenEditModal(categoryKey, item)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.editItemBtnText}>✏️ Edit</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <LucideIcon name="edit" size={12} color="#F2EFE8" />
+                          <Text style={styles.editItemBtnText}>Edit</Text>
+                        </View>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -3026,7 +3101,10 @@ export default function AdminDashboardScreen({
                       onPress={() => handleDeleteItem(categoryKey, item)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.deleteItemBtnText}>🗑️ Delete</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <LucideIcon name="trash-2" size={12} color="#D9534F" />
+                          <Text style={styles.deleteItemBtnText}>Delete</Text>
+                        </View>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -3045,16 +3123,16 @@ export default function AdminDashboardScreen({
     renderComponentSection({
       categoryKey: 'restaurants',
       title: 'Restaurants & Fine Dining',
-      icon: '🍽️',
+ icon: '',
       subtitle: 'Manage dining partners, menus, takeaway, delivery flags, and operational availability',
       items: restaurants,
       addLabel: 'Add New Restaurant',
-      formatSubtitle: (r) => `🍴 ${r.cuisine || 'Continental'} • 📍 ${r.location || 'Hotel Ground Floor'} • ★ ${r.rating || 4.8}`,
+ formatSubtitle: (r) => `${r.cuisine || 'Continental'} • ${r.location || 'Hotel Ground Floor'} • ★ ${r.rating || 4.8}`,
       formatPriceOrRate: (r) => r.priceRange || r.price || '₹₹₹₹',
       renderBadges: (r) => (
         <View style={styles.badgeRow}>
-          <Text style={styles.tagBadge}>Takeaway: {r.takeaway ? '✓ YES' : '✗ NO'}</Text>
-          <Text style={styles.tagBadge}>Delivery: {r.homeDelivery ? '✓ YES' : '✗ NO'}</Text>
+ <Text style={styles.tagBadge}>Takeaway: {r.takeaway ? '✓ YES' : '✗ NO'}</Text>
+ <Text style={styles.tagBadge}>Delivery: {r.homeDelivery ? '✓ YES' : '✗ NO'}</Text>
           {r.timings ? <Text style={styles.tagBadge}>⏱️ {r.timings}</Text> : null}
         </View>
       ),
@@ -3064,11 +3142,11 @@ export default function AdminDashboardScreen({
     renderComponentSection({
       categoryKey: 'gyms',
       title: 'Gyms & Wellness Centers',
-      icon: '🏋️',
+ icon: '',
       subtitle: 'Fitness centers, personal training, spa services, and day pass rates',
       items: gyms,
       addLabel: 'Add New Gym',
-      formatSubtitle: (g) => `⏱️ ${g.timings || '6:00 AM - 10:00 PM'} • 📍 ${g.location || 'Wellness Wing'}`,
+ formatSubtitle: (g) => ` ${g.timings || '6:00 AM - 10:00 PM'} • ${g.location || 'Wellness Wing'}`,
       formatPriceOrRate: (g) => `${g.passPrice || '₹1,500'}/day`,
       renderBadges: (g) => (
         <Text style={styles.facilitiesText}>
@@ -3081,11 +3159,11 @@ export default function AdminDashboardScreen({
     renderComponentSection({
       categoryKey: 'pools',
       title: 'Swimming Pools',
-      icon: '🏊',
+ icon: '',
       subtitle: 'Infinity pools, heated wellness water, and poolside cabanas',
       items: pools,
       addLabel: 'Add Swimming Pool',
-      formatSubtitle: (p) => `⏱️ ${p.timings || p.timing || '6:00 AM - 9:00 PM'} • 📍 ${p.location || 'Hotel Courtyard'} • ★ ${p.rating || 4.9}`,
+ formatSubtitle: (p) => ` ${p.timings || p.timing || '6:00 AM - 9:00 PM'} • ${p.location || 'Hotel Courtyard'} • ★ ${p.rating || 4.9}`,
       formatPriceOrRate: (p) => p.price || 'Resident Access',
       renderBadges: (p) => (
         <Text style={styles.facilitiesText}>
@@ -3098,11 +3176,11 @@ export default function AdminDashboardScreen({
     renderComponentSection({
       categoryKey: 'takeaway',
       title: 'Takeaway Partners',
-      icon: '🥡',
+ icon: '',
       subtitle: 'Express pickup times, minimum order values, and partner availability',
       items: takeaway,
       addLabel: 'Add Takeaway Partner',
-      formatSubtitle: (t) => `⏱️ Ready in ${t.takeawayTime || '15 mins'} • 📍 ${t.location || 'Hotel Lobby'}`,
+ formatSubtitle: (t) => ` Ready in ${t.takeawayTime || '15 mins'} • ${t.location || 'Hotel Lobby'}`,
       formatPriceOrRate: (t) => t.minOrder || 'Min ₹400',
     });
 
@@ -3110,11 +3188,11 @@ export default function AdminDashboardScreen({
     renderComponentSection({
       categoryKey: 'delivery',
       title: 'Home Delivery Services',
-      icon: '🛵',
+ icon: '',
       subtitle: 'Room delivery radius, delivery fees, minimum orders, and status',
       items: homeDelivery,
       addLabel: 'Add Delivery Service',
-      formatSubtitle: (d) => `🛵 Radius: ${d.deliveryRadius || '5 km'} • Fee: ${d.deliveryFee || 'Free'}`,
+ formatSubtitle: (d) => ` Radius: ${d.deliveryRadius || '5 km'} • Fee: ${d.deliveryFee || 'Free'}`,
       formatPriceOrRate: (d) => d.minOrder || 'Min ₹500',
     });
 
@@ -3122,11 +3200,11 @@ export default function AdminDashboardScreen({
     renderComponentSection({
       categoryKey: 'facilities',
       title: 'Hotel Facilities & Services',
-      icon: '🛎️',
+ icon: '',
       subtitle: 'Concierge, executive lounges, spa treatments, valet & premium guest amenities',
       items: facilities,
       addLabel: 'Add Hotel Facility',
-      formatSubtitle: (f) => `⏱️ ${f.timings || '24/7 Available'} • 📍 ${f.location || 'Main Lobby'}`,
+ formatSubtitle: (f) => ` ${f.timings || '24/7 Available'} • ${f.location || 'Main Lobby'}`,
       formatPriceOrRate: (f) => f.category || 'Guest Service',
       renderBadges: (f) => (
         <Text style={styles.facilitiesText}>
@@ -3141,7 +3219,7 @@ export default function AdminDashboardScreen({
     <View style={styles.tabContentContainer}>
       <View style={styles.sectionHeaderRow}>
         <View>
-          <Text style={styles.sectionTitle}>💳 HOTEL PAYMENT METHODS & STATUS MANAGER</Text>
+ <Text style={styles.sectionTitle}> HOTEL PAYMENT METHODS & STATUS MANAGER</Text>
           <Text style={styles.sectionSub}>
             Vertical configuration: select a hotel to manage accepted payment methods and account settlement status.
           </Text>
@@ -3154,7 +3232,7 @@ export default function AdminDashboardScreen({
         {/* TOP: HORIZONTAL HOTEL SELECTOR TABS */}
         <View style={styles.pmHotelsCol}>
           <View style={styles.pmColHeaderRow}>
-            <Text style={styles.pmColHeaderTitle}>🏨 SELECT HOTEL TO CONFIGURE ({hotels.length} PROPERTIES)</Text>
+ <Text style={styles.pmColHeaderTitle}> SELECT HOTEL TO CONFIGURE ({hotels.length} PROPERTIES)</Text>
             <Text style={styles.pmColHeaderSub}>Click any hotel below to configure accepted payment methods & account status</Text>
           </View>
           
@@ -3190,7 +3268,7 @@ export default function AdminDashboardScreen({
                       )}
                     </View>
                     <Text style={styles.pmHotelLoc} numberOfLines={1}>
-                      📍 {h.location}
+ {h.location}
                     </Text>
                     <View style={styles.pmHotelBadges}>
                       <Text
@@ -3199,10 +3277,10 @@ export default function AdminDashboardScreen({
                           isPaid ? styles.pmPayStatusPaid : styles.pmPayStatusPending,
                         ]}
                       >
-                        {isPaid ? '🟢 Paid' : '🔴 Pending'}
+ {isPaid ? ' Paid' : ' Pending'}
                       </Text>
                       <Text style={styles.pmMethodCountBadge}>
-                        💳 {methodCount} Methods
+ {methodCount} Methods
                       </Text>
                     </View>
                   </View>
@@ -3231,7 +3309,7 @@ export default function AdminDashboardScreen({
                 </Text>
               </View>
               <Text style={styles.pmSelectedHotelAddress}>
-                📍 {selectedHotelForPayments?.location}
+ {selectedHotelForPayments?.location}
               </Text>
               
               {/* Hotel Account Payment Status Banner with 1-Click Toggle */}
@@ -3248,8 +3326,8 @@ export default function AdminDashboardScreen({
                 >
                   <Text style={styles.pmAccountStatusText}>
                     {(selectedHotelForPayments?.paymentStatus || '').toLowerCase() === 'paid'
-                      ? '🟢 Account Payment: COMPLETED (PAID) — Click to Mark as Not Made ↺'
-                      : '🔴 Account Payment: NOT MADE / PENDING — Click to Mark as Paid ✓'}
+ ? ' Account Payment: COMPLETED (PAID) — Click to Mark as Not Made ↺'
+ : ' Account Payment: NOT MADE / PENDING — Click to Mark as Paid ✓'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -3260,7 +3338,7 @@ export default function AdminDashboardScreen({
           <View style={styles.pmSectionTitleRow}>
             <View>
               <Text style={styles.pmSectionTitle}>
-                💳 ACCEPTED PAYMENT METHODS (VERTICAL CONFIGURATION)
+ ACCEPTED PAYMENT METHODS (VERTICAL CONFIGURATION)
               </Text>
               <Text style={styles.pmSectionSub}>
                 Click any vertical card below to toggle acceptance on or off for {selectedHotelForPayments?.title}.
@@ -3337,7 +3415,7 @@ export default function AdminDashboardScreen({
                           : styles.vpmToggleTextInactive,
                       ]}
                     >
-                      {isChecked ? '✓ ACCEPTED' : '+ ENABLE'}
+ {isChecked ? '✓ ACCEPTED' : '+ ENABLE'}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -3347,7 +3425,7 @@ export default function AdminDashboardScreen({
 
           {/* Add Custom Payment Method (Vertical Input Card) */}
           <View style={styles.customAddCard}>
-            <Text style={styles.customAddTitle}>➕ ADD CUSTOM PAYMENT METHOD</Text>
+ <Text style={styles.customAddTitle}>+ ADD CUSTOM PAYMENT METHOD</Text>
             <Text style={styles.customAddSub}>
               Enter any bespoke billing agreement, corporate voucher, or alternative currency.
             </Text>
@@ -3355,7 +3433,7 @@ export default function AdminDashboardScreen({
               <TextInput
                 style={styles.customInput}
                 placeholder="e.g. Sodexo Meal Pass, Bitcoin Lightning, Diners Club..."
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#807E78"
                 value={customPaymentInput}
                 onChangeText={setCustomPaymentInput}
               />
@@ -3377,10 +3455,10 @@ export default function AdminDashboardScreen({
             activeOpacity={0.85}
           >
             {isLoading ? (
-              <ActivityIndicator color="#070A12" size="small" />
+              <ActivityIndicator color="#101114" size="small" />
             ) : (
               <Text style={styles.savePaymentsBtnText}>
-                💾 Save Accepted Payment Methods for {selectedHotelForPayments?.title}
+ Save Accepted Payment Methods for {selectedHotelForPayments?.title}
               </Text>
             )}
           </TouchableOpacity>
@@ -3396,7 +3474,7 @@ export default function AdminDashboardScreen({
     <View style={styles.tabContentContainer}>
       <View style={styles.sectionHeaderRow}>
         <View>
-          <Text style={styles.sectionTitle}>⚡ 1-CLICK AVAILABILITY MATRIX</Text>
+ <Text style={styles.sectionTitle}> 1-CLICK AVAILABILITY MATRIX</Text>
           <Text style={styles.sectionSub}>
             Direct operational control: click any badge to toggle between 'Available' and 'Not Available'
           </Text>
@@ -3404,7 +3482,7 @@ export default function AdminDashboardScreen({
       </View>
 
       {/* Hotels Group */}
-      <Text style={styles.matrixGroupTitle}>🏨 Hotels ({hotels.length})</Text>
+ <Text style={styles.matrixGroupTitle}> Hotels ({hotels.length})</Text>
       <View style={styles.matrixGrid}>
         {hotels.map((h) => {
           const isAvail = h.availability === 'Available' || !h.availability;
@@ -3418,7 +3496,7 @@ export default function AdminDashboardScreen({
                 activeOpacity={0.8}
               >
                 <Text style={styles.matrixBadgeText}>
-                  {isAvail ? '🟢 Available' : '🔴 Not Available'}
+ {isAvail ? ' Available' : ' Not Available'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -3427,7 +3505,7 @@ export default function AdminDashboardScreen({
       </View>
 
       {/* Restaurants Group */}
-      <Text style={styles.matrixGroupTitle}>🍽️ Restaurants ({restaurants.length})</Text>
+ <Text style={styles.matrixGroupTitle}> Restaurants ({restaurants.length})</Text>
       <View style={styles.matrixGrid}>
         {restaurants.map((r) => {
           const isAvail = r.availability === 'Available' || !r.availability;
@@ -3441,7 +3519,7 @@ export default function AdminDashboardScreen({
                 activeOpacity={0.8}
               >
                 <Text style={styles.matrixBadgeText}>
-                  {isAvail ? '🟢 Available' : '🔴 Not Available'}
+ {isAvail ? ' Available' : ' Not Available'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -3450,7 +3528,7 @@ export default function AdminDashboardScreen({
       </View>
 
       {/* Gyms Group */}
-      <Text style={styles.matrixGroupTitle}>🏋️ Gyms ({gyms.length})</Text>
+ <Text style={styles.matrixGroupTitle}> Gyms ({gyms.length})</Text>
       <View style={styles.matrixGrid}>
         {gyms.map((g) => {
           const isAvail = g.availability === 'Available' || !g.availability;
@@ -3464,7 +3542,7 @@ export default function AdminDashboardScreen({
                 activeOpacity={0.8}
               >
                 <Text style={styles.matrixBadgeText}>
-                  {isAvail ? '🟢 Available' : '🔴 Not Available'}
+ {isAvail ? ' Available' : ' Not Available'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -3479,15 +3557,15 @@ export default function AdminDashboardScreen({
   // ===========================================================================
   const renderPlacesManagerTab = () => {
     const STANDARD_PLACE_CATEGORIES = [
-      { key: 'touristPlaces', label: 'Tourist Places', icon: '🏛️' },
-      { key: 'shopping', label: 'Shopping & Malls', icon: '🛍️' },
-      { key: 'transportation', label: 'Transit & Mobility', icon: '🚆' },
-      { key: 'hospitals', label: 'Hospitals (24/7)', icon: '🏥' },
-      { key: 'pharmacies', label: 'Pharmacies (24/7)', icon: '💊' },
-      { key: 'gyms', label: 'Wellness & Gyms', icon: '🏋️' },
-      { key: 'pools', label: 'Swimming Pools', icon: '🏊' },
-      { key: 'takeaways', label: 'Takeaways', icon: '🥡' },
-      { key: 'dining', label: 'Fine Dining', icon: '🍽️' },
+      { key: 'touristPlaces', label: 'Tourist Places', icon: 'compass' },
+      { key: 'shopping', label: 'Shopping & Malls', icon: 'shopping-bag' },
+      { key: 'transportation', label: 'Transit & Mobility', icon: 'truck' },
+      { key: 'hospitals', label: 'Hospitals (24/7)', icon: 'shield-check' },
+      { key: 'pharmacies', label: 'Pharmacies (24/7)', icon: 'activity' },
+      { key: 'gyms', label: 'Wellness & Gyms', icon: 'dumbbell' },
+      { key: 'pools', label: 'Swimming Pools', icon: 'waves' },
+      { key: 'takeaways', label: 'Takeaways', icon: 'shopping-bag' },
+      { key: 'dining', label: 'Fine Dining', icon: 'utensils' },
     ];
 
     const allCategories = [
@@ -3495,7 +3573,7 @@ export default function AdminDashboardScreen({
       ...((currentActiveHotel?.customCategories || []).map((c) => ({
         key: c.key || c.id,
         label: c.name || c.label || c.key,
-        icon: c.icon || '🌟',
+        icon: c.icon || 'sparkles',
         isCustom: true,
       }))),
     ];
@@ -3519,9 +3597,10 @@ export default function AdminDashboardScreen({
         {/* 1. Header & Live Origin Verification Bar */}
         <View style={styles.sectionHeaderRow}>
           <View>
-            <Text style={styles.sectionTitle}>
-              📍 NEARBY PLACES & CATEGORIES MANAGER
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <LucideIcon name="compass" size={20} color="#C5A46D" />
+              <Text style={styles.sectionTitle}>NEARBY PLACES & CATEGORIES</Text>
+            </View>
             <Text style={styles.sectionSub}>
               Manage attractions, shopping, transit, medical gateways and custom categories for {currentActiveHotel?.name || 'Active Hotel'}
             </Text>
@@ -3533,17 +3612,21 @@ export default function AdminDashboardScreen({
               onPress={() => handleOpenAddPlaceModal(selectedPlaceCategory)}
               activeOpacity={0.8}
             >
-              <Text style={styles.createItemBtnText}>
-                ➕ Add Place to {activeCatObj.label}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <LucideIcon name="plus" size={13} color="#101114" />
+                  <Text style={styles.createItemBtnText}>Add Place to {activeCatObj.label}</Text>
+                </View>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.addBtn, { borderColor: '#E2C082' }]}
+              style={[styles.addBtn, { borderColor: '#C5A46D' }]}
               onPress={() => setCustomCatModalVisible(true)}
               activeOpacity={0.8}
             >
-              <Text style={styles.addBtnText}>✨ Add Custom Category</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                <LucideIcon name="plus" size={13} color="#C5A46D" />
+                <Text style={styles.addBtnText}>Add Custom Category</Text>
+              </View>
             </TouchableOpacity>
 
             {activeCatObj.isCustom && (
@@ -3552,7 +3635,10 @@ export default function AdminDashboardScreen({
                 onPress={() => handleDeleteCustomCategory(activeCatObj.key, activeCatObj.label)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.deleteItemBtnText}>🗑️ Delete Category</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <LucideIcon name="trash-2" size={12} color="#D9534F" />
+                    <Text style={styles.deleteItemBtnText}>Delete Category</Text>
+                  </View>
               </TouchableOpacity>
             )}
           </View>
@@ -3561,7 +3647,7 @@ export default function AdminDashboardScreen({
         {/* 2. LIVE ORIGIN VERIFICATION BANNER */}
         <View style={styles.placesOriginBanner}>
           <View style={styles.placesOriginHeader}>
-            <Text style={styles.placesOriginIcon}>🏨</Text>
+ <Text style={styles.placesOriginIcon}></Text>
             <View style={{ flex: 1 }}>
               <View style={styles.placesOriginTitleRow}>
                 <Text style={styles.placesOriginTitle}>
@@ -3570,8 +3656,8 @@ export default function AdminDashboardScreen({
                 <View style={styles.placesOriginStatusBadge}>
                   <Text style={styles.placesOriginStatusText}>
                     {currentActiveHotel?.latitude && currentActiveHotel?.longitude
-                      ? '🟢 GPS ORIGIN VERIFIED'
-                      : '⚠️ GPS COORDS NOT SET'}
+ ? ' GPS ORIGIN VERIFIED'
+ : ' GPS COORDS NOT SET'}
                   </Text>
                 </View>
               </View>
@@ -3579,10 +3665,10 @@ export default function AdminDashboardScreen({
                 {currentActiveHotel?.name || 'Hotel Not Configured'} ({currentActiveHotel?.city || 'Unset'})
               </Text>
               <Text style={styles.placesOriginCoords}>
-                📍 Origin: Lat: {currentActiveHotel?.latitude ?? 'Not set'}, Lng: {currentActiveHotel?.longitude ?? 'Not set'} • Address: {currentActiveHotel?.address || 'Not set'}
+ Origin: Lat: {currentActiveHotel?.latitude ?? 'Not set'}, Lng: {currentActiveHotel?.longitude ?? 'Not set'} • Address: {currentActiveHotel?.address || 'Not set'}
               </Text>
               <Text style={styles.placesOriginFormula}>
-                Formula: origin={currentActiveHotel?.latitude || 'hotel_lat'},{currentActiveHotel?.longitude || 'hotel_lng'} ➔ destination=place.latitude,place.longitude
+ Formula: origin={currentActiveHotel?.latitude || 'hotel_lat'},{currentActiveHotel?.longitude || 'hotel_lng'} -> destination=place.latitude,place.longitude
               </Text>
             </View>
           </View>
@@ -3595,7 +3681,7 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <Text style={styles.placesPresetBtnText}>
-                ⚡ Populate Verified Places for {currentActiveHotel?.city || 'City'}
+ Populate Verified Places for {currentActiveHotel?.city || 'City'}
               </Text>
             </TouchableOpacity>
 
@@ -3605,7 +3691,7 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <Text style={styles.placesClearBtnText}>
-                🧹 Clear All Places (Test Empty State)
+ Clear All Places (Test Empty State)
               </Text>
             </TouchableOpacity>
           </View>
@@ -3676,14 +3762,14 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <Text style={styles.inlineAddPlaceBtnText}>
-                ➕ Add New Place
+ + Add New Place
               </Text>
             </TouchableOpacity>
           </View>
 
           {currentCategoryPlaces.length === 0 ? (
             <View style={styles.placesEmptyCard}>
-              <Text style={styles.placesEmptyIcon}>📍</Text>
+ <Text style={styles.placesEmptyIcon}></Text>
               <Text style={styles.placesEmptyTitle}>
                 No {activeCatObj.label} added yet for {currentActiveHotel?.city || 'this hotel'}
               </Text>
@@ -3697,7 +3783,7 @@ export default function AdminDashboardScreen({
                   activeOpacity={0.8}
                 >
                   <Text style={styles.placesEmptyAddBtnText}>
-                    ➕ Add First Place to {activeCatObj.label}
+ + Add First Place to {activeCatObj.label}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -3706,7 +3792,7 @@ export default function AdminDashboardScreen({
                   activeOpacity={0.8}
                 >
                   <Text style={styles.placesEmptyPopulateBtnText}>
-                    ⚡ Load City Preset Places
+ Load City Preset Places
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -3731,7 +3817,7 @@ export default function AdminDashboardScreen({
                         </Text>
                         <View style={styles.placeItemBadge}>
                           <Text style={styles.placeItemBadgeText}>
-                            ★ {place.rating || 4.8}
+ ★ {place.rating || 4.8}
                           </Text>
                         </View>
                       </View>
@@ -3743,7 +3829,7 @@ export default function AdminDashboardScreen({
                       {/* Location & GPS Info */}
                       <View style={styles.placeItemMetaRow}>
                         <Text style={styles.placeItemMetaText}>
-                          📍 {place.address || place.location || 'Local Area'} ({place.distance || '1.2 km'})
+ {place.address || place.location || 'Local Area'} ({place.distance || '1.2 km'})
                         </Text>
                         <Text
                           style={[
@@ -3783,7 +3869,7 @@ export default function AdminDashboardScreen({
                         onPress={() => handleOpenEditPlaceModal(selectedPlaceCategory, place)}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.placeItemEditBtnText}>✏️ Edit</Text>
+ <Text style={styles.placeItemEditBtnText}> Edit</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -3791,7 +3877,10 @@ export default function AdminDashboardScreen({
                         onPress={() => handleTestDirections(place)}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.placeItemDirBtnText}>🧭 Test Directions</Text>
+ <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <LucideIcon name="compass" size={13} color="#F2EFE8" />
+                          <Text style={styles.placeItemDirBtnText}>Test Directions</Text>
+                        </View>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -3799,7 +3888,7 @@ export default function AdminDashboardScreen({
                         onPress={() => handleDeletePlace(selectedPlaceCategory, place.id, place.title)}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.placeItemDeleteBtnText}>🗑️ Delete</Text>
+ <Text style={styles.placeItemDeleteBtnText}> Delete</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -3828,7 +3917,7 @@ export default function AdminDashboardScreen({
             <View style={styles.modalHeader}>
               <View>
                 <Text style={styles.modalHeaderTitle}>
-                  {editingPlaceId ? '✏️ Edit Place Details' : '➕ Add New Place to Active Hotel'}
+ {editingPlaceId ? ' Edit Place Details' : '+ Add New Place to Active Hotel'}
                 </Text>
                 <Text style={styles.modalHeaderSub}>
                   {editingPlaceId
@@ -3840,7 +3929,7 @@ export default function AdminDashboardScreen({
                 style={styles.modalCloseBtn}
                 onPress={() => setPlaceModalVisible(false)}
               >
-                <Text style={styles.modalCloseText}>✕</Text>
+ <LucideIcon name="x" size={16} color="#A5A39D" />
               </TouchableOpacity>
             </View>
 
@@ -3852,19 +3941,19 @@ export default function AdminDashboardScreen({
               <Text style={styles.formLabel}>Target Category *</Text>
               <View style={styles.availSelectorRow}>
                 {[
-                  { key: 'touristPlaces', label: 'Tourist Places', icon: '🏛️' },
-                  { key: 'shopping', label: 'Shopping', icon: '🛍️' },
-                  { key: 'transportation', label: 'Transit', icon: '🚆' },
-                  { key: 'hospitals', label: 'Hospitals', icon: '🏥' },
-                  { key: 'pharmacies', label: 'Pharmacies', icon: '💊' },
-                  { key: 'gyms', label: 'Gyms', icon: '🏋️' },
-                  { key: 'pools', label: 'Swimming Pools', icon: '🏊' },
-                  { key: 'takeaways', label: 'Takeaways', icon: '🥡' },
-                  { key: 'dining', label: 'Dining', icon: '🍽️' },
+ { key: 'touristPlaces', label: 'Tourist Places', icon: '' },
+ { key: 'shopping', label: 'Shopping', icon: '' },
+ { key: 'transportation', label: 'Transit', icon: '' },
+ { key: 'hospitals', label: 'Hospitals', icon: '' },
+ { key: 'pharmacies', label: 'Pharmacies', icon: '' },
+ { key: 'gyms', label: 'Gyms', icon: '' },
+ { key: 'pools', label: 'Swimming Pools', icon: '' },
+ { key: 'takeaways', label: 'Takeaways', icon: '' },
+ { key: 'dining', label: 'Dining', icon: '' },
                   ...((currentActiveHotel?.customCategories || []).map((c) => ({
                     key: c.key || c.id,
                     label: c.name || c.label || c.key,
-                    icon: c.icon || '🌟',
+                    icon: c.icon || 'sparkles',
                   }))),
                 ].map((c) => {
                   const cKey = c.key;
@@ -3875,7 +3964,7 @@ export default function AdminDashboardScreen({
                       style={[styles.availPill, isSel && styles.availPillActiveGreen]}
                       onPress={() => setNewPlaceForm({ ...newPlaceForm, category: cKey })}
                     >
-                      <Text style={[styles.availPillText, isSel && { color: '#E2C082' }]}>
+                      <Text style={[styles.availPillText, isSel && { color: '#C5A46D' }]}>
                         {c.icon} {c.label}
                       </Text>
                     </TouchableOpacity>
@@ -3887,7 +3976,7 @@ export default function AdminDashboardScreen({
               <TextInput
                 style={styles.formInput}
                 placeholder="e.g. Lalbagh Botanical Gardens"
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#807E78"
                 value={newPlaceForm.title}
                 onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, title: text })}
               />
@@ -3896,7 +3985,7 @@ export default function AdminDashboardScreen({
               <TextInput
                 style={styles.formInput}
                 placeholder="e.g. Historic Glass House & 240-Acre Royal Botanical Haven"
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#807E78"
                 value={newPlaceForm.subtitle}
                 onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, subtitle: text })}
               />
@@ -3907,7 +3996,7 @@ export default function AdminDashboardScreen({
                   <TextInput
                     style={styles.formInput}
                     placeholder="e.g. 12.9507"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#807E78"
                     value={newPlaceForm.latitude}
                     onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, latitude: text })}
                     keyboardType="numeric"
@@ -3918,7 +4007,7 @@ export default function AdminDashboardScreen({
                   <TextInput
                     style={styles.formInput}
                     placeholder="e.g. 77.5848"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#807E78"
                     value={newPlaceForm.longitude}
                     onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, longitude: text })}
                     keyboardType="numeric"
@@ -3932,7 +4021,7 @@ export default function AdminDashboardScreen({
                   <TextInput
                     style={styles.formInput}
                     placeholder="e.g. 123 Main Avenue, City, Postal Code"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#807E78"
                     value={newPlaceForm.address}
                     onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, address: text })}
                   />
@@ -3942,7 +4031,7 @@ export default function AdminDashboardScreen({
                   <TextInput
                     style={styles.formInput}
                     placeholder="e.g. 3.2 km"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#807E78"
                     value={newPlaceForm.distance}
                     onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, distance: text })}
                   />
@@ -3955,7 +4044,7 @@ export default function AdminDashboardScreen({
                   <TextInput
                     style={styles.formInput}
                     placeholder="e.g. 4.9"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#807E78"
                     value={newPlaceForm.rating}
                     onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, rating: text })}
                   />
@@ -3965,7 +4054,7 @@ export default function AdminDashboardScreen({
                   <TextInput
                     style={styles.formInput}
                     placeholder="e.g. 6:00 AM - 7:00 PM"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#807E78"
                     value={newPlaceForm.timings}
                     onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, timings: text })}
                   />
@@ -3976,7 +4065,7 @@ export default function AdminDashboardScreen({
               <TextInput
                 style={styles.formInput}
                 placeholder="https://images.unsplash.com/photo-..."
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#807E78"
                 value={newPlaceForm.imageLink}
                 onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, imageLink: text })}
               />
@@ -3985,7 +4074,7 @@ export default function AdminDashboardScreen({
               <TextInput
                 style={styles.formInput}
                 placeholder="https://example.com"
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#807E78"
                 value={newPlaceForm.websiteUrl}
                 onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, websiteUrl: text })}
               />
@@ -3995,36 +4084,36 @@ export default function AdminDashboardScreen({
                 <Text style={styles.formLabel}>Faculty 5 Data Points Specification:</Text>
                 <TextInput
                   style={[styles.formInput, { marginBottom: 6 }]}
-                  placeholder="Data 1 (e.g. ★ 4.9 Guest Rating)"
-                  placeholderTextColor="#64748B"
+ placeholder="Data 1 (e.g. ★ 4.9 Guest Rating)"
+                  placeholderTextColor="#807E78"
                   value={newPlaceForm.data1}
                   onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, data1: text })}
                 />
                 <TextInput
                   style={[styles.formInput, { marginBottom: 6 }]}
                   placeholder="Data 2 (e.g. 2.4 km from Hotel)"
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor="#807E78"
                   value={newPlaceForm.data2}
                   onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, data2: text })}
                 />
                 <TextInput
                   style={[styles.formInput, { marginBottom: 6 }]}
                   placeholder="Data 3 (e.g. Priority Resident Privilege)"
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor="#807E78"
                   value={newPlaceForm.data3}
                   onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, data3: text })}
                 />
                 <TextInput
                   style={[styles.formInput, { marginBottom: 6 }]}
                   placeholder="Data 4 (e.g. Open 6am - 7pm)"
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor="#807E78"
                   value={newPlaceForm.data4}
                   onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, data4: text })}
                 />
                 <TextInput
                   style={styles.formInput}
                   placeholder="Data 5 (e.g. Concierge Chauffeur Booking)"
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor="#807E78"
                   value={newPlaceForm.data5}
                   onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, data5: text })}
                 />
@@ -4043,7 +4132,7 @@ export default function AdminDashboardScreen({
                 onPress={handleSaveNewPlace}
               >
                 <Text style={styles.modalSaveText}>
-                  {editingPlaceId ? '💾 Save Place Changes' : '✨ Add Place & Generate 10-Digit ID'}
+ {editingPlaceId ? ' Save Place Changes' : ' Add Place & Generate 10-Digit ID'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -4068,7 +4157,7 @@ export default function AdminDashboardScreen({
           <View style={[styles.modalContainer, { maxWidth: 450 }]}>
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalHeaderTitle}>✨ Add Custom Category</Text>
+ <Text style={styles.modalHeaderTitle}> Add Custom Category</Text>
                 <Text style={styles.modalHeaderSub}>
                   Create bespoke tracks (e.g. Art Galleries, Temples, Beaches, Nightlife)
                 </Text>
@@ -4077,7 +4166,7 @@ export default function AdminDashboardScreen({
                 style={styles.modalCloseBtn}
                 onPress={() => setCustomCatModalVisible(false)}
               >
-                <Text style={styles.modalCloseText}>✕</Text>
+ <LucideIcon name="x" size={16} color="#A5A39D" />
               </TouchableOpacity>
             </View>
 
@@ -4086,7 +4175,7 @@ export default function AdminDashboardScreen({
               <TextInput
                 style={styles.formInput}
                 placeholder="e.g. Art Galleries & Museums"
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#807E78"
                 value={customCatName}
                 onChangeText={(text) => {
                   setCustomCatName(text);
@@ -4100,7 +4189,7 @@ export default function AdminDashboardScreen({
               <TextInput
                 style={styles.formInput}
                 placeholder="e.g. art_galleries"
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#807E78"
                 value={customCatKey}
                 onChangeText={setCustomCatKey}
               />
@@ -4108,8 +4197,8 @@ export default function AdminDashboardScreen({
               <Text style={styles.formLabel}>Category Icon (Emoji)</Text>
               <TextInput
                 style={styles.formInput}
-                placeholder="e.g. 🎨"
-                placeholderTextColor="#64748B"
+ placeholder="e.g. sparkles"
+                placeholderTextColor="#807E78"
                 value={customCatIcon}
                 onChangeText={setCustomCatIcon}
               />
@@ -4168,7 +4257,7 @@ export default function AdminDashboardScreen({
             <View style={styles.modalHeader}>
               <View>
                 <Text style={styles.modalHeaderTitle}>
-                  {isEdit ? `✏️ Edit ${catLabel}` : `➕ Add New ${catLabel}`}
+ {isEdit ? ` Edit ${catLabel}` : `+ Add New ${catLabel}`}
                 </Text>
                 <Text style={styles.modalHeaderSub}>
                   Persists to MongoDB & updates Guest Portal immediately ({modalCategory})
@@ -4178,7 +4267,7 @@ export default function AdminDashboardScreen({
                 style={styles.modalCloseBtn}
                 onPress={() => setItemModalVisible(false)}
               >
-                <Text style={styles.modalCloseText}>✕</Text>
+ <LucideIcon name="x" size={16} color="#A5A39D" />
               </TouchableOpacity>
             </View>
 
@@ -4188,13 +4277,13 @@ export default function AdminDashboardScreen({
                 <Text style={styles.formCategoryPickerLabel}>SELECT COMPONENT CATEGORY:</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryChipsScroll}>
                   {[
-                    { key: 'restaurants', label: '🍽️ Dining', defaultPrice: '₹₹₹₹' },
-                    { key: 'gyms', label: '🏋️ Gym & Fitness', defaultPrice: '₹1,500 / day pass' },
-                    { key: 'pools', label: '🏊 Swimming Pool', defaultPrice: 'Resident Access Available' },
-                    { key: 'facilities', label: '🛎️ Facility / Service', defaultPrice: 'Complimentary' },
-                    { key: 'takeaway', label: '🥡 Takeaway', defaultPrice: 'Min ₹400' },
-                    { key: 'delivery', label: '🛵 Room Delivery', defaultPrice: 'Free Suite Delivery' },
-                    { key: 'hotels', label: '🏨 Hotel Property', defaultPrice: '₹8,500 / night' },
+ { key: 'restaurants', label: ' Dining', defaultPrice: '₹₹₹₹' },
+ { key: 'gyms', label: ' Gym & Fitness', defaultPrice: '₹1,500 / day pass' },
+ { key: 'pools', label: ' Swimming Pool', defaultPrice: 'Resident Access Available' },
+ { key: 'facilities', label: ' Facility / Service', defaultPrice: 'Complimentary' },
+ { key: 'takeaway', label: ' Takeaway', defaultPrice: 'Min ₹400' },
+ { key: 'delivery', label: ' Room Delivery', defaultPrice: 'Free Suite Delivery' },
+ { key: 'hotels', label: ' Hotel Property', defaultPrice: '₹8,500 / night' },
                   ].map((cat) => {
                     const isSelected = modalCategory === cat.key;
                     return (
@@ -4237,7 +4326,7 @@ export default function AdminDashboardScreen({
               <TextInput
                 style={styles.formInput}
                 placeholder="e.g. Royal Sea Palace Resort"
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#807E78"
                 value={formFields.title}
                 onChangeText={(text) => setFormFields({ ...formFields, title: text })}
               />
@@ -4247,7 +4336,7 @@ export default function AdminDashboardScreen({
               <TextInput
                 style={styles.formInput}
                 placeholder="e.g. 5-Star Heritage Palace Hotel & Suites"
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#807E78"
                 value={formFields.subtitle}
                 onChangeText={(text) => setFormFields({ ...formFields, subtitle: text })}
               />
@@ -4259,7 +4348,7 @@ export default function AdminDashboardScreen({
                   <TextInput
                     style={styles.formInput}
                     placeholder="e.g. City Center / Neighborhood"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#807E78"
                     value={formFields.location}
                     onChangeText={(text) => setFormFields({ ...formFields, location: text })}
                   />
@@ -4269,7 +4358,7 @@ export default function AdminDashboardScreen({
                   <TextInput
                     style={styles.formInput}
                     placeholder="e.g. 0.5 km"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#807E78"
                     value={formFields.distance}
                     onChangeText={(text) => setFormFields({ ...formFields, distance: text })}
                   />
@@ -4297,7 +4386,7 @@ export default function AdminDashboardScreen({
                   <TextInput
                     style={styles.formInput}
                     placeholder="e.g. ₹24,500 / night"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#807E78"
                     value={formFields.price}
                     onChangeText={(text) => setFormFields({ ...formFields, price: text })}
                   />
@@ -4307,7 +4396,7 @@ export default function AdminDashboardScreen({
                   <TextInput
                     style={styles.formInput}
                     placeholder="e.g. 4.9"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#807E78"
                     value={formFields.rating}
                     onChangeText={(text) => setFormFields({ ...formFields, rating: text })}
                   />
@@ -4319,7 +4408,7 @@ export default function AdminDashboardScreen({
               <TextInput
                 style={styles.formInput}
                 placeholder="https://images.unsplash.com/photo-..."
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#807E78"
                 value={formFields.imageLink}
                 onChangeText={(text) => setFormFields({ ...formFields, imageLink: text })}
               />
@@ -4334,7 +4423,7 @@ export default function AdminDashboardScreen({
                   ]}
                   onPress={() => setFormFields({ ...formFields, availability: 'Available' })}
                 >
-                  <Text style={styles.availPillText}>🟢 Available</Text>
+ <Text style={styles.availPillText}> Available</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -4344,7 +4433,7 @@ export default function AdminDashboardScreen({
                   ]}
                   onPress={() => setFormFields({ ...formFields, availability: 'Not Available' })}
                 >
-                  <Text style={styles.availPillText}>🔴 Not Available</Text>
+ <Text style={styles.availPillText}> Not Available</Text>
                 </TouchableOpacity>
               </View>
 
@@ -4355,7 +4444,7 @@ export default function AdminDashboardScreen({
                   <TextInput
                     style={styles.formInput}
                     placeholder="e.g. Pan-Asian & Sushi"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#807E78"
                     value={formFields.cuisine}
                     onChangeText={(text) => setFormFields({ ...formFields, cuisine: text })}
                   />
@@ -4370,7 +4459,7 @@ export default function AdminDashboardScreen({
                       }
                     >
                       <Text style={styles.checkboxIcon}>
-                        {formFields.takeawayEnabled ? '☑' : '☐'}
+ <LucideIcon name={formFields.takeawayEnabled ? "check-circle" : "circle"} size={16} color={formFields.takeawayEnabled ? "#C5A46D" : "#807E78"} />
                       </Text>
                       <Text style={styles.checkboxLabel}>Enable Takeaway Pickup</Text>
                     </TouchableOpacity>
@@ -4385,7 +4474,7 @@ export default function AdminDashboardScreen({
                       }
                     >
                       <Text style={styles.checkboxIcon}>
-                        {formFields.homeDeliveryEnabled ? '☑' : '☐'}
+ <LucideIcon name={formFields.homeDeliveryEnabled ? "check-circle" : "circle"} size={16} color={formFields.homeDeliveryEnabled ? "#C5A46D" : "#807E78"} />
                       </Text>
                       <Text style={styles.checkboxLabel}>Enable Room Delivery</Text>
                     </TouchableOpacity>
@@ -4399,7 +4488,7 @@ export default function AdminDashboardScreen({
                   <TextInput
                     style={styles.formInput}
                     placeholder="e.g. 6:00 AM - 10:00 PM Daily"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#807E78"
                     value={formFields.timings}
                     onChangeText={(text) => setFormFields({ ...formFields, timings: text })}
                   />
@@ -4412,7 +4501,7 @@ export default function AdminDashboardScreen({
                   <TextInput
                     style={styles.formInput}
                     placeholder="e.g. 15 mins ready or 25-30 mins"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#807E78"
                     value={formFields.timeEstimate}
                     onChangeText={(text) => setFormFields({ ...formFields, timeEstimate: text })}
                   />
@@ -4454,7 +4543,7 @@ export default function AdminDashboardScreen({
                               isChecked && styles.optCheckboxChecked,
                             ]}
                           >
-                            {isChecked ? '☑' : '☐'}
+ <LucideIcon name={isChecked ? "check-circle" : "circle"} size={16} color={isChecked ? "#C5A46D" : "#807E78"} />
                           </Text>
                           <Text
                             style={[
@@ -4489,10 +4578,10 @@ export default function AdminDashboardScreen({
                 activeOpacity={0.85}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#070A12" size="small" />
+                  <ActivityIndicator color="#101114" size="small" />
                 ) : (
                   <Text style={styles.modalSaveText}>
-                    {isEdit ? '💾 Update & Save in MongoDB' : '✨ Add & Save in MongoDB'}
+                    isEdit ? 'Update & Save' : 'Save Component'
                   </Text>
                 )}
               </TouchableOpacity>
@@ -4508,7 +4597,7 @@ export default function AdminDashboardScreen({
       {/* Top Admin Navigation Bar */}
       <View style={styles.adminHeader}>
         <View style={styles.adminHeaderLeft}>
-          <Text style={styles.adminHeaderLogo}>🛠️</Text>
+          <LucideIcon name="hotel" size={22} color="#C5A46D" />
           <View>
             <Text style={styles.adminHeaderTitle}>HOTEL ADMIN CONSOLE</Text>
             <Text style={styles.adminHeaderSubtitle}>
@@ -4519,7 +4608,7 @@ export default function AdminDashboardScreen({
             <View style={styles.headerActiveHotelPill}>
               <View style={styles.headerActiveDot} />
               <Text style={styles.headerActiveHotelText} numberOfLines={1}>
-                🏨 {currentActiveHotel.name} ({currentActiveHotel.city || 'Active'})
+ {currentActiveHotel.name} ({currentActiveHotel.city || 'Active'})
               </Text>
             </View>
           )}
@@ -4531,7 +4620,10 @@ export default function AdminDashboardScreen({
             onPress={() => handleOpenCreateModal('restaurants')}
             activeOpacity={0.8}
           >
-            <Text style={styles.addComponentHeaderBtnText}>✨ + Add Component</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <LucideIcon name="plus" size={14} color="#101114" />
+              <Text style={styles.addComponentHeaderBtnText}>Add Component</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -4545,17 +4637,19 @@ export default function AdminDashboardScreen({
             }}
             activeOpacity={0.8}
           >
-            <Text style={styles.guestPortalBtnText}>
-              🚀 Open Guest Website ({currentActiveHotel?.name ? (currentActiveHotel.city || 'Active') : 'Portal'}) →
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <LucideIcon name="external-link" size={14} color="#F2EFE8" />
+              <Text style={styles.guestPortalBtnText}>
+                Open Guest Website ({currentActiveHotel?.name ? (currentActiveHotel.city || 'Active') : 'Portal'})
+              </Text>
+            </View>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.logoutBtn}
-            onPress={onLogout}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.logoutBtnText}>Logout</Text>
+          <TouchableOpacity style={styles.logoutBtn} onPress={onLogout} activeOpacity={0.8}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <LucideIcon name="log-out" size={13} color="#D9534F" />
+              <Text style={styles.logoutBtnText}>Logout</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -4601,7 +4695,7 @@ export default function AdminDashboardScreen({
                     }}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.tabIcon}>{tab.icon}</Text>
+                    <LucideIcon name={tab.icon} size={17} color={isActive ? "#C5A46D" : "#A5A39D"} />
                     <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
                       {tab.label}
                     </Text>
@@ -4644,7 +4738,7 @@ export default function AdminDashboardScreen({
 const styles = StyleSheet.create({
   screenWrapper: {
     flex: 1,
-    backgroundColor: '#070A12',
+    backgroundColor: '#101114',
   },
   adminHeader: {
     flexDirection: 'row',
@@ -4654,7 +4748,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: 'rgba(15, 23, 42, 0.95)',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomColor: '#2A2B31',
     flexWrap: 'wrap',
     gap: 12,
   },
@@ -4667,13 +4761,13 @@ const styles = StyleSheet.create({
     fontSize: 22,
   },
   adminHeaderTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 14,
     fontWeight: '900',
     letterSpacing: 1,
   },
   adminHeaderSubtitle: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11,
   },
   adminHeaderRight: {
@@ -4684,7 +4778,7 @@ const styles = StyleSheet.create({
   addComponentHeaderBtn: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    backgroundColor: '#E2C082',
+    backgroundColor: '#C5A46D',
     borderRadius: 6,
     borderWidth: 1,
     borderColor: '#F6E05E',
@@ -4693,33 +4787,33 @@ const styles = StyleSheet.create({
     }),
   },
   addComponentHeaderBtnText: {
-    color: '#0A0F1D',
+    color: '#101114',
     fontSize: 11,
     fontWeight: '900',
   },
   guestPortalBtn: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    backgroundColor: 'rgba(226, 192, 130, 0.15)',
+    backgroundColor: 'rgba(197, 164, 109, 0.15)',
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#E2C082',
+    borderColor: '#C5A46D',
   },
   guestPortalBtnText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 11,
     fontWeight: '800',
   },
   logoutBtn: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: 'rgba(217, 83, 79, 0.15)',
     borderRadius: 6,
     borderWidth: 1,
     borderColor: 'rgba(248, 113, 113, 0.4)',
   },
   logoutBtnText: {
-    color: '#FCA5A5',
+    color: '#D9534F',
     fontSize: 11,
     fontWeight: '700',
   },
@@ -4760,7 +4854,7 @@ const styles = StyleSheet.create({
     width: 220,
     backgroundColor: 'rgba(10, 15, 28, 0.95)',
     borderRightWidth: 1,
-    borderRightColor: 'rgba(255, 255, 255, 0.06)',
+    borderRightColor: '#2A2B31',
     paddingVertical: 12,
     paddingHorizontal: 8,
   },
@@ -4768,7 +4862,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRightWidth: 0,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomColor: '#2A2B31',
     paddingVertical: 6,
   },
   tabsScrollContent: {
@@ -4784,20 +4878,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   tabButtonActive: {
-    backgroundColor: 'rgba(226, 192, 130, 0.16)',
+    backgroundColor: 'rgba(197, 164, 109, 0.16)',
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.4)',
+    borderColor: 'rgba(197, 164, 109, 0.4)',
   },
   tabIcon: {
     fontSize: 15,
   },
   tabLabel: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 12,
     fontWeight: '600',
   },
   tabLabelActive: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontWeight: '800',
   },
 
@@ -4817,35 +4911,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    backgroundColor: '#1C1D21',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     flexWrap: 'wrap',
     gap: 12,
   },
   overviewGreeting: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 14,
     fontWeight: '900',
     letterSpacing: 1,
   },
   overviewSub: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11,
     marginTop: 2,
   },
   resetButton: {
     paddingVertical: 8,
     paddingHorizontal: 14,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: 'rgba(217, 83, 79, 0.15)',
     borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(248, 113, 113, 0.4)',
   },
   resetButtonText: {
-    color: '#FCA5A5',
+    color: '#D9534F',
     fontSize: 11,
     fontWeight: '700',
   },
@@ -4858,11 +4952,11 @@ const styles = StyleSheet.create({
   metricCard: {
     flex: 1,
     minWidth: 150,
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    backgroundColor: '#1C1D21',
     borderRadius: 10,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#2A2B31',
     gap: 4,
     ...Platform.select({
       web: {
@@ -4875,22 +4969,22 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   metricValue: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 18,
     fontWeight: '900',
   },
   metricLabel: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 11.5,
     fontWeight: '700',
   },
   metricSub: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 10,
   },
 
   subSectionTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 13,
     fontWeight: '800',
     marginTop: 8,
@@ -4903,11 +4997,11 @@ const styles = StyleSheet.create({
   shortcutCard: {
     flex: 1,
     minWidth: 200,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: '#1C1D21',
     borderRadius: 10,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#2A2B31',
     gap: 6,
     ...Platform.select({
       web: {
@@ -4919,12 +5013,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   shortcutTitle: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 12.5,
     fontWeight: '800',
   },
   shortcutDesc: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11,
     lineHeight: 16,
   },
@@ -4938,16 +5032,16 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    borderBottomColor: '#2A2B31',
   },
   sectionTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 15,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
   sectionSub: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11.5,
     marginTop: 2,
   },
@@ -4959,10 +5053,10 @@ const styles = StyleSheet.create({
   createItemBtn: {
     paddingVertical: 7,
     paddingHorizontal: 14,
-    backgroundColor: 'rgba(226, 192, 130, 0.22)',
+    backgroundColor: 'rgba(197, 164, 109, 0.22)',
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#E2C082',
+    borderColor: '#C5A46D',
     ...Platform.select({
       web: {
         cursor: 'pointer',
@@ -4970,20 +5064,20 @@ const styles = StyleSheet.create({
     }),
   },
   createItemBtnText: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 12,
     fontWeight: '800',
   },
   addBtn: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: '#2A2B31',
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#2A2B31',
   },
   addBtnText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 12,
     fontWeight: '800',
   },
@@ -4995,7 +5089,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15, 23, 42, 0.85)',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     padding: 16,
     gap: 14,
     shadowColor: '#000',
@@ -5012,7 +5106,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 80,
     borderRadius: 10,
-    backgroundColor: '#1E293B',
+    backgroundColor: '#25262B',
   },
   verticalHotelMainInfo: {
     flex: 1,
@@ -5026,23 +5120,23 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   verticalHotelTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 0.3,
   },
   verticalHotelPrice: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 15,
     fontWeight: '800',
   },
   verticalHotelLocation: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 12,
     fontWeight: '500',
   },
   verticalHotelDesc: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 11.5,
     lineHeight: 16,
     marginTop: 2,
@@ -5063,7 +5157,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(52, 211, 153, 0.35)',
   },
   paymentBarUnpaid: {
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    backgroundColor: 'rgba(217, 83, 79, 0.12)',
     borderColor: 'rgba(248, 113, 113, 0.4)',
   },
   paymentStatusInfo: {
@@ -5082,13 +5176,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   paymentTextPaid: {
-    color: '#34D399',
+    color: '#4E9F76',
   },
   paymentTextUnpaid: {
-    color: '#F87171',
+    color: '#D9534F',
   },
   paymentStatusSub: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11,
     marginTop: 1,
   },
@@ -5102,7 +5196,7 @@ const styles = StyleSheet.create({
     }),
   },
   paymentToggleBtnMarkUnpaid: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: 'rgba(217, 83, 79, 0.15)',
     borderColor: 'rgba(248, 113, 113, 0.4)',
   },
   paymentToggleBtnMarkPaid: {
@@ -5110,7 +5204,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(52, 211, 153, 0.5)',
   },
   paymentToggleBtnText: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 11,
     fontWeight: '800',
   },
@@ -5130,11 +5224,11 @@ const styles = StyleSheet.create({
   tableCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    backgroundColor: '#1C1D21',
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#2A2B31',
     gap: 12,
     flexWrap: 'wrap',
   },
@@ -5154,17 +5248,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tableItemTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 13.5,
     fontWeight: '800',
   },
   tablePrice: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 12,
     fontWeight: '800',
   },
   tableItemSub: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11,
   },
   hotelPmRow: {
@@ -5175,7 +5269,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   hotelPmLabel: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 10.5,
     fontWeight: '700',
   },
@@ -5185,15 +5279,15 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   hotelPmChip: {
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    backgroundColor: '#25262B',
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#2A2B31',
   },
   hotelPmChipText: {
-    color: '#E2E8F0',
+    color: '#F2EFE8',
     fontSize: 10,
     fontWeight: '600',
   },
@@ -5203,7 +5297,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   tagBadge: {
-    color: '#93C5FD',
+    color: '#A5A39D',
     fontSize: 10,
     backgroundColor: 'rgba(59, 130, 246, 0.1)',
     paddingHorizontal: 6,
@@ -5211,7 +5305,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   facilitiesText: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 10.5,
   },
   tableActionsCol: {
@@ -5230,15 +5324,15 @@ const styles = StyleSheet.create({
     }),
   },
   availGreenBtn: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    backgroundColor: 'rgba(78, 159, 118, 0.15)',
     borderColor: 'rgba(74, 222, 128, 0.4)',
   },
   availRedBtn: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: 'rgba(217, 83, 79, 0.15)',
     borderColor: 'rgba(248, 113, 113, 0.4)',
   },
   availToggleText: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 11,
     fontWeight: '800',
   },
@@ -5261,7 +5355,7 @@ const styles = StyleSheet.create({
   deleteItemBtn: {
     paddingVertical: 6,
     paddingHorizontal: 10,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: 'rgba(217, 83, 79, 0.15)',
     borderRadius: 6,
     borderWidth: 1,
     borderColor: 'rgba(248, 113, 113, 0.35)',
@@ -5270,20 +5364,20 @@ const styles = StyleSheet.create({
     }),
   },
   deleteItemBtnText: {
-    color: '#FCA5A5',
+    color: '#D9534F',
     fontSize: 11,
     fontWeight: '800',
   },
   configPmBtn: {
     paddingVertical: 6,
     paddingHorizontal: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: '#2A2B31',
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#2A2B31',
   },
   configPmBtnText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 11,
     fontWeight: '700',
   },
@@ -5306,7 +5400,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15, 23, 42, 0.65)',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     padding: 12,
   },
   pmHotelsColMobile: {
@@ -5316,19 +5410,19 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     marginBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomColor: '#2A2B31',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   pmColHeaderTitle: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.8,
   },
   pmColHeaderSub: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 10,
   },
   pmHotelsHorizontalScroll: {
@@ -5345,10 +5439,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     padding: 10,
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    backgroundColor: '#1C1D21',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#2A2B31',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
@@ -5358,27 +5452,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     padding: 10,
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    backgroundColor: '#1C1D21',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#2A2B31',
     marginBottom: 8,
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   pmHotelCardActive: {
-    backgroundColor: 'rgba(226, 192, 130, 0.14)',
-    borderColor: '#E2C082',
+    backgroundColor: 'rgba(197, 164, 109, 0.14)',
+    borderColor: '#C5A46D',
     ...Platform.select({
-      web: { boxShadow: '0 0 12px rgba(226, 192, 130, 0.25)' },
+      web: { boxShadow: '0 0 12px rgba(197, 164, 109, 0.25)' },
     }),
   },
   pmHotelThumb: {
     width: 52,
     height: 52,
     borderRadius: 8,
-    backgroundColor: '#1E293B',
+    backgroundColor: '#25262B',
   },
   pmHotelMeta: {
     flex: 1,
@@ -5390,29 +5484,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pmHotelName: {
-    color: '#E2E8F0',
+    color: '#F2EFE8',
     fontSize: 12,
     fontWeight: '700',
     flex: 1,
   },
   pmHotelNameActive: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontWeight: '800',
   },
   pmActiveBadge: {
-    backgroundColor: '#E2C082',
+    backgroundColor: '#C5A46D',
     paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 3,
   },
   pmActiveBadgeText: {
-    color: '#070A12',
+    color: '#101114',
     fontSize: 8,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
   pmHotelLoc: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 10,
   },
   pmHotelBadges: {
@@ -5429,22 +5523,22 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   pmPayStatusPaid: {
-    backgroundColor: 'rgba(34, 197, 94, 0.2)',
-    color: '#4ADE80',
+    backgroundColor: 'rgba(78, 159, 118, 0.2)',
+    color: '#4E9F76',
     borderWidth: 1,
     borderColor: 'rgba(74, 222, 128, 0.4)',
   },
   pmPayStatusPending: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    color: '#F87171',
+    backgroundColor: 'rgba(217, 83, 79, 0.2)',
+    color: '#D9534F',
     borderWidth: 1,
     borderColor: 'rgba(248, 113, 113, 0.4)',
   },
   pmMethodCountBadge: {
     fontSize: 9,
     fontWeight: '600',
-    color: '#CBD5E1',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    color: '#A5A39D',
+    backgroundColor: '#2A2B31',
     paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 4,
@@ -5461,7 +5555,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.25)',
+    borderColor: 'rgba(197, 164, 109, 0.25)',
   },
   pmSelectedHotelThumb: {
     width: 74,
@@ -5478,17 +5572,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pmSelectedHotelTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 16,
     fontWeight: '800',
   },
   pmSelectedHotelPrice: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 13,
     fontWeight: '800',
   },
   pmSelectedHotelAddress: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11,
   },
   pmAccountStatusRow: {
@@ -5505,15 +5599,15 @@ const styles = StyleSheet.create({
     }),
   },
   pmAccountStatusPaid: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    backgroundColor: 'rgba(78, 159, 118, 0.15)',
     borderColor: 'rgba(74, 222, 128, 0.4)',
   },
   pmAccountStatusPending: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: 'rgba(217, 83, 79, 0.15)',
     borderColor: 'rgba(248, 113, 113, 0.4)',
   },
   pmAccountStatusText: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 11,
     fontWeight: '800',
   },
@@ -5524,18 +5618,18 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   pmSectionTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 13,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   pmSectionSub: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11,
     marginTop: 2,
   },
   pmActiveCounter: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    backgroundColor: 'rgba(78, 159, 118, 0.15)',
     borderWidth: 1,
     borderColor: 'rgba(74, 222, 128, 0.35)',
     paddingHorizontal: 10,
@@ -5543,7 +5637,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   pmActiveCounterText: {
-    color: '#4ADE80',
+    color: '#4E9F76',
     fontSize: 11,
     fontWeight: '800',
   },
@@ -5558,14 +5652,14 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   verticalPaymentItemChecked: {
-    backgroundColor: 'rgba(226, 192, 130, 0.1)',
-    borderColor: '#E2C082',
+    backgroundColor: 'rgba(197, 164, 109, 0.1)',
+    borderColor: '#C5A46D',
   },
   vpmIconWrap: {
     width: 44,
@@ -5573,13 +5667,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#2A2B31',
     justifyContent: 'center',
     alignItems: 'center',
   },
   vpmIconWrapChecked: {
-    backgroundColor: 'rgba(226, 192, 130, 0.2)',
-    borderColor: '#E2C082',
+    backgroundColor: 'rgba(197, 164, 109, 0.2)',
+    borderColor: '#C5A46D',
   },
   vpmIconText: {
     fontSize: 20,
@@ -5594,29 +5688,29 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   vpmTitleText: {
-    color: '#CBD5E1',
+    color: '#A5A39D',
     fontSize: 13,
     fontWeight: '700',
   },
   vpmTitleTextChecked: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontWeight: '800',
   },
   vpmTagBadge: {
     fontSize: 9.5,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#807E78',
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 4,
   },
   vpmTagBadgeChecked: {
-    color: '#E2C082',
-    backgroundColor: 'rgba(226, 192, 130, 0.15)',
+    color: '#C5A46D',
+    backgroundColor: 'rgba(197, 164, 109, 0.15)',
   },
   vpmDescText: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11,
     lineHeight: 15,
   },
@@ -5627,8 +5721,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   vpmToggleBtnActive: {
-    backgroundColor: 'rgba(34, 197, 94, 0.2)',
-    borderColor: '#4ADE80',
+    backgroundColor: 'rgba(78, 159, 118, 0.2)',
+    borderColor: '#4E9F76',
   },
   vpmToggleBtnInactive: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -5640,28 +5734,28 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   vpmToggleTextActive: {
-    color: '#4ADE80',
+    color: '#4E9F76',
   },
   vpmToggleTextInactive: {
-    color: '#94A3B8',
+    color: '#A5A39D',
   },
   customAddCard: {
     backgroundColor: 'rgba(15, 23, 42, 0.65)',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     padding: 12,
     gap: 6,
     marginTop: 4,
   },
   customAddTitle: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   customAddSub: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 10.5,
     marginBottom: 4,
   },
@@ -5672,17 +5766,17 @@ const styles = StyleSheet.create({
   },
   customInput: {
     flex: 1,
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    backgroundColor: '#25262B',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#2A2B31',
     paddingHorizontal: 12,
     paddingVertical: 8,
     color: '#FFFFFF',
     fontSize: 12,
   },
   customAddBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: '#2A2B31',
     borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
@@ -5691,12 +5785,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   customAddBtnText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 11.5,
     fontWeight: '700',
   },
   savePaymentsBtn: {
-    backgroundColor: '#E2C082',
+    backgroundColor: '#C5A46D',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
@@ -5706,7 +5800,7 @@ const styles = StyleSheet.create({
     }),
   },
   savePaymentsBtnText: {
-    color: '#070A12',
+    color: '#101114',
     fontSize: 12.5,
     fontWeight: '900',
     letterSpacing: 0.5,
@@ -5714,7 +5808,7 @@ const styles = StyleSheet.create({
 
   // Availability Matrix
   matrixGroupTitle: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 12.5,
     fontWeight: '800',
     marginTop: 8,
@@ -5727,20 +5821,20 @@ const styles = StyleSheet.create({
   matrixCard: {
     flex: 1,
     minWidth: 160,
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    backgroundColor: '#1C1D21',
     borderRadius: 8,
     padding: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#2A2B31',
     gap: 4,
   },
   matrixCardTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 12,
     fontWeight: '700',
   },
   matrixCardSub: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 10,
   },
   matrixBadge: {
@@ -5769,11 +5863,11 @@ const styles = StyleSheet.create({
     fontSize: 32,
   },
   bookingCard: {
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    backgroundColor: '#1C1D21',
     borderRadius: 10,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     gap: 6,
   },
   bookingHeader: {
@@ -5784,12 +5878,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   bookingTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 13.5,
     fontWeight: '800',
   },
   bookingRefText: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 10,
     marginTop: 1,
   },
@@ -5799,10 +5893,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   bookingStatusBadge: {
-    color: '#4ADE80',
+    color: '#4E9F76',
     fontSize: 10.5,
     fontWeight: '800',
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    backgroundColor: 'rgba(78, 159, 118, 0.15)',
     paddingVertical: 3,
     paddingHorizontal: 8,
     borderRadius: 6,
@@ -5812,7 +5906,7 @@ const styles = StyleSheet.create({
   cancelBookingBtn: {
     paddingVertical: 3,
     paddingHorizontal: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: 'rgba(217, 83, 79, 0.15)',
     borderRadius: 6,
     borderWidth: 1,
     borderColor: 'rgba(248, 113, 113, 0.3)',
@@ -5821,12 +5915,12 @@ const styles = StyleSheet.create({
     }),
   },
   cancelBookingText: {
-    color: '#FCA5A5',
+    color: '#D9534F',
     fontSize: 10.5,
     fontWeight: '700',
   },
   bookingDetailText: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11.5,
   },
 
@@ -5842,10 +5936,10 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 680,
     maxHeight: '90%',
-    backgroundColor: '#0A0F1D',
+    backgroundColor: '#101114',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2C082',
+    borderColor: '#C5A46D',
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOpacity: 0.6,
@@ -5860,16 +5954,16 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     backgroundColor: 'rgba(15, 23, 42, 0.95)',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomColor: '#2A2B31',
   },
   modalHeaderTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 15,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
   modalHeaderSub: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11,
     marginTop: 2,
   },
@@ -5877,12 +5971,12 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: '#2A2B31',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalCloseText: {
-    color: '#CBD5E1',
+    color: '#A5A39D',
     fontSize: 14,
     fontWeight: '700',
   },
@@ -5890,12 +5984,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 12,
     paddingBottom: 8,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: '#1C1D21',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomColor: '#2A2B31',
   },
   formCategoryPickerLabel: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.8,
@@ -5908,7 +6002,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 11,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: '#2A2B31',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
     marginRight: 6,
@@ -5917,16 +6011,16 @@ const styles = StyleSheet.create({
     }),
   },
   categoryChipActive: {
-    backgroundColor: 'rgba(226, 192, 130, 0.25)',
-    borderColor: '#E2C082',
+    backgroundColor: 'rgba(197, 164, 109, 0.25)',
+    borderColor: '#C5A46D',
   },
   categoryChipText: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11,
     fontWeight: '700',
   },
   categoryChipTextActive: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontWeight: '800',
   },
   modalScrollView: {
@@ -5946,14 +6040,14 @@ const styles = StyleSheet.create({
     height: 140,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#2A2B31',
   },
   formImageNote: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 10,
   },
   formLabel: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -5963,7 +6057,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(30, 41, 59, 0.7)',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#2A2B31',
     paddingHorizontal: 12,
     paddingVertical: 9,
     color: '#FFFFFF',
@@ -5988,28 +6082,28 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: 'rgba(30, 41, 59, 0.7)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     alignItems: 'center',
   },
   availPillActiveGreen: {
-    backgroundColor: 'rgba(34, 197, 94, 0.2)',
-    borderColor: '#4ADE80',
+    backgroundColor: 'rgba(78, 159, 118, 0.2)',
+    borderColor: '#4E9F76',
   },
   availPillActiveRed: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    borderColor: '#F87171',
+    backgroundColor: 'rgba(217, 83, 79, 0.2)',
+    borderColor: '#D9534F',
   },
   availPillText: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 11.5,
     fontWeight: '800',
   },
   catSpecificBlock: {
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: '#1C1D21',
     borderRadius: 8,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#2A2B31',
     gap: 8,
     marginTop: 6,
   },
@@ -6025,11 +6119,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   checkboxIcon: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 15,
   },
   checkboxLabel: {
-    color: '#CBD5E1',
+    color: '#A5A39D',
     fontSize: 11.5,
     fontWeight: '600',
   },
@@ -6041,7 +6135,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     backgroundColor: 'rgba(15, 23, 42, 0.95)',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    borderTopColor: '#2A2B31',
     gap: 12,
   },
   modalCancelBtn: {
@@ -6053,7 +6147,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
   },
   modalCancelText: {
-    color: '#CBD5E1',
+    color: '#A5A39D',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -6061,13 +6155,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 18,
     borderRadius: 8,
-    backgroundColor: '#E2C082',
+    backgroundColor: '#C5A46D',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   modalSaveText: {
-    color: '#070A12',
+    color: '#101114',
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 0.3,
@@ -6079,16 +6173,16 @@ const styles = StyleSheet.create({
   activeGuestLaunchBtn: {
     paddingVertical: 10,
     paddingHorizontal: 16,
-    backgroundColor: '#E2C082',
+    backgroundColor: '#C5A46D',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#F3DCA8',
+    borderColor: '#D8BD8A',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   activeGuestLaunchText: {
-    color: '#070A12',
+    color: '#101114',
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 0.3,
@@ -6100,12 +6194,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   activeStatusCardActive: {
-    backgroundColor: 'rgba(34, 197, 94, 0.12)',
-    borderColor: 'rgba(34, 197, 94, 0.4)',
+    backgroundColor: 'rgba(78, 159, 118, 0.12)',
+    borderColor: 'rgba(78, 159, 118, 0.4)',
   },
   activeStatusCardEmpty: {
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
-    borderColor: 'rgba(239, 68, 68, 0.35)',
+    backgroundColor: 'rgba(217, 83, 79, 0.12)',
+    borderColor: 'rgba(217, 83, 79, 0.35)',
   },
   activeStatusHeader: {
     flexDirection: 'row',
@@ -6116,48 +6210,48 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   activeStatusTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 14,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
   activeStatusDetails: {
-    color: '#CBD5E1',
+    color: '#A5A39D',
     fontSize: 12,
     marginTop: 4,
   },
   clearActiveBtn: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    backgroundColor: 'rgba(217, 83, 79, 0.2)',
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.5)',
+    borderColor: 'rgba(217, 83, 79, 0.5)',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   clearActiveBtnText: {
-    color: '#FCA5A5',
+    color: '#D9534F',
     fontSize: 11,
     fontWeight: '700',
   },
   presetSection: {
     marginBottom: 24,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: '#1C1D21',
     borderRadius: 12,
     padding: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
   },
   presetSectionTitle: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 13,
     fontWeight: '900',
     letterSpacing: 0.8,
   },
   presetSectionSub: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 12,
     marginTop: 4,
     marginBottom: 14,
@@ -6170,46 +6264,46 @@ const styles = StyleSheet.create({
   presetCard: {
     flex: 1,
     minWidth: 260,
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    backgroundColor: '#25262B',
     borderRadius: 10,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.25)',
+    borderColor: 'rgba(197, 164, 109, 0.25)',
     ...Platform.select({
       web: { cursor: 'pointer', transition: 'all 0.2s ease' },
     }),
   },
   presetCardLabel: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 11,
     fontWeight: '800',
     marginBottom: 4,
   },
   presetCardName: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 13,
     fontWeight: '800',
     marginBottom: 4,
   },
   presetCardCoords: {
-    color: '#CBD5E1',
+    color: '#A5A39D',
     fontSize: 11,
     marginBottom: 6,
   },
   presetCardHint: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 10.5,
     fontStyle: 'italic',
   },
   configFormCard: {
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    backgroundColor: '#1C1D21',
     borderRadius: 12,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.2)',
+    borderColor: 'rgba(197, 164, 109, 0.2)',
   },
   configFormTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 14,
     fontWeight: '900',
     letterSpacing: 0.6,
@@ -6226,7 +6320,7 @@ const styles = StyleSheet.create({
     minWidth: 260,
   },
   formLabel: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -6237,13 +6331,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 13,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   fieldHint: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 10.5,
     marginTop: 4,
     fontStyle: 'italic',
@@ -6256,7 +6350,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    borderTopColor: '#2A2B31',
   },
   saveOnlyBtn: {
     paddingVertical: 12,
@@ -6270,7 +6364,7 @@ const styles = StyleSheet.create({
     }),
   },
   saveOnlyBtnText: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 13,
     fontWeight: '800',
   },
@@ -6278,15 +6372,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
-    backgroundColor: '#E2C082',
+    backgroundColor: '#C5A46D',
     borderWidth: 1,
-    borderColor: '#F3DCA8',
+    borderColor: '#D8BD8A',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   saveAndLaunchBtnText: {
-    color: '#070A12',
+    color: '#101114',
     fontSize: 13,
     fontWeight: '900',
     letterSpacing: 0.4,
@@ -6294,17 +6388,17 @@ const styles = StyleSheet.create({
   activateHotelDirectBtn: {
     paddingVertical: 5,
     paddingHorizontal: 10,
-    backgroundColor: 'rgba(226, 192, 130, 0.15)',
+    backgroundColor: 'rgba(197, 164, 109, 0.15)',
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#E2C082',
+    borderColor: '#C5A46D',
     alignItems: 'center',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   activateHotelDirectBtnText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 10.5,
     fontWeight: '800',
   },
@@ -6317,7 +6411,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.3)',
+    borderColor: 'rgba(197, 164, 109, 0.3)',
     marginBottom: 16,
     gap: 14,
   },
@@ -6328,17 +6422,17 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomColor: '#2A2B31',
     paddingBottom: 12,
   },
   gallerySectionTitle: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 13,
     fontWeight: '900',
     letterSpacing: 0.6,
   },
   gallerySectionSub: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11,
     marginTop: 3,
   },
@@ -6348,7 +6442,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#10B981',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#34D399',
+    borderColor: '#4E9F76',
     ...Platform.select({
       web: { cursor: 'pointer', transition: 'all 0.2s ease' },
     }),
@@ -6362,7 +6456,7 @@ const styles = StyleSheet.create({
     }),
   },
   uploadDeviceBtnText: {
-    color: '#070A12',
+    color: '#101114',
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 0.3,
@@ -6380,7 +6474,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.25)',
+    borderColor: 'rgba(197, 164, 109, 0.25)',
     gap: 8,
   },
   slotImageWrapper: {
@@ -6388,7 +6482,7 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 8,
     overflow: 'hidden',
-    backgroundColor: '#070A12',
+    backgroundColor: '#101114',
   },
   slotImageThumb: {
     width: '100%',
@@ -6408,7 +6502,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   slotBadgePillText: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 10,
     fontWeight: '800',
   },
@@ -6416,7 +6510,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 6,
     right: 6,
-    backgroundColor: 'rgba(239, 68, 68, 0.9)',
+    backgroundColor: 'rgba(217, 83, 79, 0.9)',
     width: 24,
     height: 24,
     borderRadius: 12,
@@ -6436,31 +6530,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(226, 192, 130, 0.12)',
+    backgroundColor: 'rgba(197, 164, 109, 0.12)',
     paddingVertical: 5,
     paddingHorizontal: 8,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.35)',
+    borderColor: 'rgba(197, 164, 109, 0.35)',
   },
   slotIdIcon: {
     fontSize: 13,
   },
   slotIdLabel: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 8.5,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   slotIdValue: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 12,
     fontWeight: '900',
     fontFamily: Platform.OS === 'web' ? 'monospace' : undefined,
     letterSpacing: 1,
   },
   slotCaptionText: {
-    color: '#CBD5E1',
+    color: '#A5A39D',
     fontSize: 11,
     fontWeight: '600',
   },
@@ -6483,17 +6577,17 @@ const styles = StyleSheet.create({
   },
   emptySlotIcon: {
     fontSize: 24,
-    color: '#94A3B8',
+    color: '#A5A39D',
     marginBottom: 6,
   },
   emptySlotTitle: {
-    color: '#CBD5E1',
+    color: '#A5A39D',
     fontSize: 11.5,
     fontWeight: '700',
     textAlign: 'center',
   },
   emptySlotHint: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 10,
     marginTop: 2,
     textAlign: 'center',
@@ -6503,11 +6597,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     gap: 8,
   },
   addUrlBoxTitle: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 10.5,
     fontWeight: '800',
     letterSpacing: 0.6,
@@ -6521,16 +6615,16 @@ const styles = StyleSheet.create({
   addUrlActionBtn: {
     paddingVertical: 10,
     paddingHorizontal: 14,
-    backgroundColor: 'rgba(226, 192, 130, 0.2)',
+    backgroundColor: 'rgba(197, 164, 109, 0.2)',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E2C082',
+    borderColor: '#C5A46D',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   addUrlActionBtnText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 11.5,
     fontWeight: '800',
   },
@@ -6544,7 +6638,7 @@ const styles = StyleSheet.create({
   reorderBtn: {
     flex: 1,
     paddingVertical: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: '#2A2B31',
     borderRadius: 4,
     alignItems: 'center',
     borderWidth: 1,
@@ -6560,7 +6654,7 @@ const styles = StyleSheet.create({
     }),
   },
   reorderBtnText: {
-    color: '#CBD5E1',
+    color: '#A5A39D',
     fontSize: 10,
     fontWeight: '700',
   },
@@ -6573,7 +6667,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.35)',
+    borderColor: 'rgba(197, 164, 109, 0.35)',
     gap: 12,
   },
   placesOriginHeader: {
@@ -6592,37 +6686,37 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   placesOriginTitle: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 11,
     fontWeight: '900',
     letterSpacing: 0.8,
   },
   placesOriginStatusBadge: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    backgroundColor: 'rgba(78, 159, 118, 0.15)',
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.4)',
+    borderColor: 'rgba(78, 159, 118, 0.4)',
   },
   placesOriginStatusText: {
-    color: '#4ADE80',
+    color: '#4E9F76',
     fontSize: 10,
     fontWeight: '800',
   },
   placesOriginHotelName: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 16,
     fontWeight: '900',
     marginTop: 2,
   },
   placesOriginCoords: {
-    color: '#CBD5E1',
+    color: '#A5A39D',
     fontSize: 12,
     marginTop: 4,
   },
   placesOriginFormula: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 10.5,
     marginTop: 4,
     fontFamily: Platform.OS === 'web' ? 'monospace' : undefined,
@@ -6633,7 +6727,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    borderTopColor: '#2A2B31',
   },
   placesPresetBtn: {
     paddingVertical: 8,
@@ -6641,20 +6735,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16, 185, 129, 0.2)',
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#34D399',
+    borderColor: '#4E9F76',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   placesPresetBtnText: {
-    color: '#34D399',
+    color: '#4E9F76',
     fontSize: 11.5,
     fontWeight: '800',
   },
   placesClearBtn: {
     paddingVertical: 8,
     paddingHorizontal: 14,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: 'rgba(217, 83, 79, 0.15)',
     borderRadius: 6,
     borderWidth: 1,
     borderColor: 'rgba(248, 113, 113, 0.4)',
@@ -6663,20 +6757,20 @@ const styles = StyleSheet.create({
     }),
   },
   placesClearBtnText: {
-    color: '#FCA5A5',
+    color: '#D9534F',
     fontSize: 11.5,
     fontWeight: '800',
   },
   placesCatSelectorBox: {
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    backgroundColor: '#1C1D21',
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     gap: 8,
   },
   placesCatSelectorLabel: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 10.5,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -6691,47 +6785,47 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 7,
     paddingHorizontal: 12,
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    backgroundColor: '#25262B',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#2A2B31',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   placesCatChipActive: {
-    backgroundColor: 'rgba(226, 192, 130, 0.2)',
-    borderColor: '#E2C082',
+    backgroundColor: 'rgba(197, 164, 109, 0.2)',
+    borderColor: '#C5A46D',
   },
   placesCatIcon: {
     fontSize: 14,
   },
   placesCatText: {
-    color: '#CBD5E1',
+    color: '#A5A39D',
     fontSize: 12,
     fontWeight: '700',
   },
   placesCatTextActive: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontWeight: '800',
   },
   placesCatCountBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#2A2B31',
     borderRadius: 10,
     paddingHorizontal: 6,
     paddingVertical: 1,
   },
   placesCatCountBadgeActive: {
-    backgroundColor: 'rgba(226, 192, 130, 0.3)',
+    backgroundColor: 'rgba(197, 164, 109, 0.3)',
   },
   placesCatCountText: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 10,
     fontWeight: '800',
   },
   placesCatCountTextActive: {
-    color: '#070A12',
-    backgroundColor: '#E2C082',
+    color: '#101114',
+    backgroundColor: '#C5A46D',
     borderRadius: 8,
     paddingHorizontal: 4,
   },
@@ -6746,7 +6840,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   placesListHeaderTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 13,
     fontWeight: '900',
     letterSpacing: 0.6,
@@ -6754,16 +6848,16 @@ const styles = StyleSheet.create({
   inlineAddPlaceBtn: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    backgroundColor: 'rgba(226, 192, 130, 0.2)',
+    backgroundColor: 'rgba(197, 164, 109, 0.2)',
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#E2C082',
+    borderColor: '#C5A46D',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   inlineAddPlaceBtnText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 11.5,
     fontWeight: '800',
   },
@@ -6782,13 +6876,13 @@ const styles = StyleSheet.create({
     fontSize: 32,
   },
   placesEmptyTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 14,
     fontWeight: '800',
     textAlign: 'center',
   },
   placesEmptySub: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 12,
     textAlign: 'center',
     maxWidth: 420,
@@ -6804,14 +6898,14 @@ const styles = StyleSheet.create({
   placesEmptyAddBtn: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: '#E2C082',
+    backgroundColor: '#C5A46D',
     borderRadius: 8,
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   placesEmptyAddBtnText: {
-    color: '#070A12',
+    color: '#101114',
     fontSize: 12,
     fontWeight: '900',
   },
@@ -6821,13 +6915,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16, 185, 129, 0.2)',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#34D399',
+    borderColor: '#4E9F76',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   placesEmptyPopulateBtnText: {
-    color: '#34D399',
+    color: '#4E9F76',
     fontSize: 12,
     fontWeight: '800',
   },
@@ -6840,7 +6934,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     gap: 12,
     alignItems: 'center',
     flexWrap: 'wrap',
@@ -6849,7 +6943,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 8,
-    backgroundColor: '#1E293B',
+    backgroundColor: '#25262B',
   },
   placeItemInfoCol: {
     flex: 1,
@@ -6863,24 +6957,24 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   placeItemTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 14,
     fontWeight: '800',
     flex: 1,
   },
   placeItemBadge: {
-    backgroundColor: 'rgba(226, 192, 130, 0.15)',
+    backgroundColor: 'rgba(197, 164, 109, 0.15)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
   placeItemBadgeText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 10.5,
     fontWeight: '800',
   },
   placeItemSubtitle: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11.5,
   },
   placeItemMetaRow: {
@@ -6890,7 +6984,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   placeItemMetaText: {
-    color: '#CBD5E1',
+    color: '#A5A39D',
     fontSize: 11,
   },
   placeItemCoordsBadge: {
@@ -6901,12 +6995,12 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'web' ? 'monospace' : undefined,
   },
   placeItemCoordsValid: {
-    color: '#34D399',
+    color: '#4E9F76',
     backgroundColor: 'rgba(16, 185, 129, 0.15)',
   },
   placeItemCoordsMissing: {
-    color: '#F87171',
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    color: '#D9534F',
+    backgroundColor: 'rgba(217, 83, 79, 0.15)',
   },
   placeIdAndDataRow: {
     flexDirection: 'row',
@@ -6919,26 +7013,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(226, 192, 130, 0.12)',
+    backgroundColor: 'rgba(197, 164, 109, 0.12)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.25)',
+    borderColor: 'rgba(197, 164, 109, 0.25)',
   },
   placeItem10DigitLabel: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 8.5,
     fontWeight: '800',
   },
   placeItem10DigitValue: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 10,
     fontWeight: '900',
     fontFamily: Platform.OS === 'web' ? 'monospace' : undefined,
   },
   placeItemDataPoint: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 10.5,
   },
   placeItemActionsCol: {
@@ -6958,30 +7052,30 @@ const styles = StyleSheet.create({
     }),
   },
   placeItemEditBtnText: {
-    color: '#93C5FD',
+    color: '#A5A39D',
     fontSize: 11,
     fontWeight: '700',
   },
   placeItemDirBtn: {
     paddingVertical: 7,
     paddingHorizontal: 12,
-    backgroundColor: 'rgba(226, 192, 130, 0.15)',
+    backgroundColor: 'rgba(197, 164, 109, 0.15)',
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#E2C082',
+    borderColor: '#C5A46D',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   placeItemDirBtnText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 11,
     fontWeight: '800',
   },
   placeItemDeleteBtn: {
     paddingVertical: 7,
     paddingHorizontal: 10,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: 'rgba(217, 83, 79, 0.15)',
     borderRadius: 6,
     borderWidth: 1,
     borderColor: 'rgba(248, 113, 113, 0.3)',
@@ -6990,12 +7084,12 @@ const styles = StyleSheet.create({
     }),
   },
   placeItemDeleteBtnText: {
-    color: '#FCA5A5',
+    color: '#D9534F',
     fontSize: 11,
     fontWeight: '700',
   },
   hotelSearchSubmitBtn: {
-    backgroundColor: '#E2C082',
+    backgroundColor: '#C5A46D',
     paddingHorizontal: 20,
     height: 36,
     borderRadius: 7,
@@ -7003,7 +7097,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minWidth: 80,
     ...Platform.select({
-      web: { cursor: 'pointer', boxShadow: '0 2px 8px rgba(226, 192, 130, 0.3)' },
+      web: { cursor: 'pointer', boxShadow: '0 2px 8px rgba(197, 164, 109, 0.3)' },
     }),
   },
   hotelSearchSubmitBtnText: {
@@ -7013,14 +7107,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   saveConfigBtn: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#4E9F76',
     paddingVertical: 11,
     paddingHorizontal: 18,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     ...Platform.select({
-      web: { cursor: 'pointer', boxShadow: '0 2px 10px rgba(34, 197, 94, 0.25)' },
+      web: { cursor: 'pointer', boxShadow: '0 2px 10px rgba(78, 159, 118, 0.25)' },
     }),
   },
   saveConfigBtnText: {
@@ -7030,13 +7124,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // --- STAGE 3: DARK LUXURY ADMIN STYLES (#070A12, #0F1014, #E2C082) ---
+  // --- STAGE 3: DARK LUXURY ADMIN STYLES (#101114, #1C1D21, #C5A46D) ---
   headerActiveHotelPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(226, 192, 130, 0.08)',
+    backgroundColor: 'rgba(197, 164, 109, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.25)',
+    borderColor: 'rgba(197, 164, 109, 0.25)',
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -7047,10 +7141,10 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#4E9F76',
   },
   headerActiveHotelText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 11.5,
     fontWeight: '700',
     maxWidth: 240,
@@ -7062,7 +7156,7 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
   },
   tabSectionHeaderText: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.2,
@@ -7072,9 +7166,9 @@ const styles = StyleSheet.create({
   liveDbPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    backgroundColor: 'rgba(78, 159, 118, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.3)',
+    borderColor: 'rgba(78, 159, 118, 0.3)',
     borderRadius: 16,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -7084,10 +7178,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#4E9F76',
   },
   liveDbText: {
-    color: '#86EFAC',
+    color: '#4E9F76',
     fontSize: 11,
     fontWeight: '700',
   },
@@ -7099,7 +7193,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   headerPrimaryActionBtn: {
-    backgroundColor: '#E2C082',
+    backgroundColor: '#C5A46D',
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 8,
@@ -7110,7 +7204,7 @@ const styles = StyleSheet.create({
     }),
   },
   headerPrimaryActionBtnText: {
-    color: '#070A12',
+    color: '#101114',
     fontSize: 12.5,
     fontWeight: '800',
     letterSpacing: 0.3,
@@ -7129,18 +7223,18 @@ const styles = StyleSheet.create({
     }),
   },
   headerGuestLaunchBtnText: {
-    color: '#93C5FD',
+    color: '#A5A39D',
     fontSize: 12.5,
     fontWeight: '700',
   },
 
   activeHotelProfileCard: {
-    backgroundColor: '#0F1014',
+    backgroundColor: '#1C1D21',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.25)',
+    borderColor: 'rgba(197, 164, 109, 0.25)',
     borderLeftWidth: 4,
-    borderLeftColor: '#E2C082',
+    borderLeftColor: '#C5A46D',
     padding: 18,
     marginBottom: 16,
   },
@@ -7152,7 +7246,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   activeHotelBadgeText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.2,
@@ -7163,13 +7257,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   statusBadgeApproved: {
-    backgroundColor: '#15803D',
+    backgroundColor: '#2E5A44',
   },
   statusBadgePending: {
-    backgroundColor: '#B45309',
+    backgroundColor: '#8C6F3E',
   },
   statusBadgeRejected: {
-    backgroundColor: '#B91C1C',
+    backgroundColor: '#8C2424',
   },
   statusBadgePillText: {
     color: '#FFFFFF',
@@ -7178,14 +7272,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   activeHotelNameText: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 20,
     fontWeight: '800',
     marginTop: 4,
     marginBottom: 4,
   },
   activeHotelLocationText: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 13,
     marginBottom: 8,
   },
@@ -7196,7 +7290,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   activeHotelMetaItem: {
-    color: '#CBD5E1',
+    color: '#A5A39D',
     fontSize: 11.5,
     fontWeight: '600',
   },
@@ -7211,9 +7305,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   profileActionBtn: {
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    backgroundColor: '#25262B',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#2A2B31',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -7222,7 +7316,7 @@ const styles = StyleSheet.create({
     }),
   },
   profileActionBtnText: {
-    color: '#E2E8F0',
+    color: '#F2EFE8',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -7235,7 +7329,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(22, 26, 41, 0.9)',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.25)',
+    borderColor: 'rgba(197, 164, 109, 0.25)',
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
@@ -7244,24 +7338,24 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   totalComponentsLabel: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
   totalComponentsNumber: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 38,
     fontWeight: '900',
     marginVertical: 2,
   },
   totalComponentsSub: {
-    color: '#CBD5E1',
+    color: '#A5A39D',
     fontSize: 12.5,
   },
   addComponentDirectBtn: {
-    backgroundColor: '#E2C082',
+    backgroundColor: '#C5A46D',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
@@ -7272,7 +7366,7 @@ const styles = StyleSheet.create({
     }),
   },
   addComponentDirectBtnText: {
-    color: '#070A12',
+    color: '#101114',
     fontSize: 13,
     fontWeight: '800',
   },
@@ -7285,10 +7379,10 @@ const styles = StyleSheet.create({
   },
 
   activitySection: {
-    backgroundColor: '#0F1014',
+    backgroundColor: '#1C1D21',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     padding: 18,
     marginBottom: 16,
   },
@@ -7301,16 +7395,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   activitySectionSub: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 11.5,
     marginTop: 2,
   },
   liveActivityPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(34, 197, 94, 0.08)',
+    backgroundColor: 'rgba(78, 159, 118, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.25)',
+    borderColor: 'rgba(78, 159, 118, 0.25)',
     borderRadius: 16,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -7320,10 +7414,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#4E9F76',
   },
   liveActivityText: {
-    color: '#86EFAC',
+    color: '#4E9F76',
     fontSize: 10.5,
     fontWeight: '700',
   },
@@ -7343,12 +7437,12 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   activityEmptyTitle: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 13.5,
     fontWeight: '700',
   },
   activityEmptySub: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 11.5,
     textAlign: 'center',
     maxWidth: 440,
@@ -7371,25 +7465,25 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   activityTimeText: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 11,
     fontWeight: '600',
   },
   activityTypeBadge: {
-    backgroundColor: 'rgba(226, 192, 130, 0.12)',
+    backgroundColor: 'rgba(197, 164, 109, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.25)',
+    borderColor: 'rgba(197, 164, 109, 0.25)',
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   activityTypeText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 9.5,
     fontWeight: '800',
   },
   activityDescText: {
-    color: '#F1F5F9',
+    color: '#F2EFE8',
     fontSize: 12,
     flex: 1,
   },
@@ -7401,15 +7495,15 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   countPillApproved: {
-    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+    backgroundColor: 'rgba(78, 159, 118, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.3)',
+    borderColor: 'rgba(78, 159, 118, 0.3)',
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   countPillApprovedText: {
-    color: '#86EFAC',
+    color: '#4E9F76',
     fontSize: 10.5,
     fontWeight: '700',
   },
@@ -7422,20 +7516,20 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   countPillPendingText: {
-    color: '#FCD34D',
+    color: '#D49A3D',
     fontSize: 10.5,
     fontWeight: '700',
   },
   countPillRejected: {
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    backgroundColor: 'rgba(217, 83, 79, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderColor: 'rgba(217, 83, 79, 0.3)',
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   countPillRejectedText: {
-    color: '#FCA5A5',
+    color: '#D9534F',
     fontSize: 10.5,
     fontWeight: '700',
   },
@@ -7444,10 +7538,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#0F1014',
+    backgroundColor: '#1C1D21',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     padding: 10,
     marginBottom: 16,
     gap: 12,
@@ -7458,22 +7552,22 @@ const styles = StyleSheet.create({
     minWidth: 260,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    backgroundColor: '#1C1D21',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     paddingHorizontal: 12,
     gap: 8,
   },
   searchIconText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 14,
     fontWeight: '800',
   },
   directorySearchInput: {
     flex: 1,
     height: 38,
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 12.5,
     outlineStyle: 'none',
   },
@@ -7484,7 +7578,7 @@ const styles = StyleSheet.create({
     }),
   },
   clearSearchBtnText: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -7498,31 +7592,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: '#1C1D21',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#2A2B31',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   statusFilterTabActive: {
-    backgroundColor: 'rgba(226, 192, 130, 0.15)',
-    borderColor: '#E2C082',
+    backgroundColor: 'rgba(197, 164, 109, 0.15)',
+    borderColor: '#C5A46D',
   },
   statusFilterTabText: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11,
     fontWeight: '700',
   },
   statusFilterTabTextActive: {
-    color: '#E2C082',
+    color: '#C5A46D',
   },
 
   directoryEmptyStateCard: {
-    backgroundColor: '#0F1014',
+    backgroundColor: '#1C1D21',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#2A2B31',
     padding: 32,
     alignItems: 'center',
     justifyContent: 'center',
@@ -7533,21 +7627,21 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   directoryEmptyTitle: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 15,
     fontWeight: '800',
   },
   directoryEmptySub: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 12.5,
     textAlign: 'center',
     maxWidth: 460,
   },
   resetFiltersBtn: {
     marginTop: 10,
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    backgroundColor: '#25262B',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#2A2B31',
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -7556,7 +7650,7 @@ const styles = StyleSheet.create({
     }),
   },
   resetFiltersBtnText: {
-    color: '#F1F5F9',
+    color: '#F2EFE8',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -7566,26 +7660,26 @@ const styles = StyleSheet.create({
     height: 75,
     borderRadius: 8,
     overflow: 'hidden',
-    backgroundColor: '#1E293B',
+    backgroundColor: '#25262B',
   },
   verticalHotelThumb: {
     width: '100%',
     height: '100%',
   },
   verticalHotelCardActive: {
-    borderColor: 'rgba(226, 192, 130, 0.5)',
+    borderColor: 'rgba(197, 164, 109, 0.5)',
     backgroundColor: 'rgba(22, 26, 41, 0.85)',
   },
   activeHotelPillBadge: {
-    backgroundColor: 'rgba(226, 192, 130, 0.18)',
+    backgroundColor: 'rgba(197, 164, 109, 0.18)',
     borderWidth: 1,
-    borderColor: '#E2C082',
+    borderColor: '#C5A46D',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
   },
   activeHotelPillBadgeText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 9.5,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -7596,13 +7690,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   hotelStatusApproved: {
-    backgroundColor: '#15803D',
+    backgroundColor: '#2E5A44',
   },
   hotelStatusPending: {
-    backgroundColor: '#B45309',
+    backgroundColor: '#8C6F3E',
   },
   hotelStatusRejected: {
-    backgroundColor: '#B91C1C',
+    backgroundColor: '#8C2424',
   },
   hotelStatusBadgeText: {
     color: '#FFFFFF',
@@ -7611,18 +7705,18 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   activateHotelDirectBtnCurrent: {
-    backgroundColor: '#E2C082',
-    borderColor: '#E2C082',
+    backgroundColor: '#C5A46D',
+    borderColor: '#C5A46D',
   },
 
   componentControlsBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#0F1014',
+    backgroundColor: '#1C1D21',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     padding: 10,
     marginBottom: 14,
     gap: 12,
@@ -7633,17 +7727,17 @@ const styles = StyleSheet.create({
     minWidth: 240,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    backgroundColor: '#1C1D21',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     paddingHorizontal: 12,
     gap: 8,
   },
   componentSearchInput: {
     flex: 1,
     height: 38,
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 12.5,
     outlineStyle: 'none',
   },
@@ -7657,35 +7751,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: '#1C1D21',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#2A2B31',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   componentAvailTabActive: {
-    backgroundColor: 'rgba(226, 192, 130, 0.15)',
-    borderColor: '#E2C082',
+    backgroundColor: 'rgba(197, 164, 109, 0.15)',
+    borderColor: '#C5A46D',
   },
   componentAvailTabText: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11,
     fontWeight: '700',
   },
   componentAvailTabTextActive: {
-    color: '#E2C082',
+    color: '#C5A46D',
   },
   componentCountBadge: {
-    backgroundColor: 'rgba(226, 192, 130, 0.1)',
+    backgroundColor: 'rgba(197, 164, 109, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.25)',
+    borderColor: 'rgba(197, 164, 109, 0.25)',
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   componentCountBadgeText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 10.5,
     fontWeight: '700',
   },

@@ -3,7 +3,7 @@
 // Enterprise Platform Super Admin Console
 //
 // Features:
-// 1. Professional Dark Luxury Theme (#070A12, #0F1014, #E2C082)
+// 1. Professional Dark Luxury Theme (#101114, #1C1D21, #C5A46D)
 // 2. Enterprise Sidebar Navigation (Overview, Approvals, Properties, Admins, Logs, Security)
 // 3. Hotel Approval Requests Queue with real backend data & interactive Accept/Reject
 // 4. Complete Hotel Inspection Modal (GPS, Address, Owner, Price, Rating, 8-Image Gallery)
@@ -27,16 +27,18 @@ import {
   TextInput,
 } from 'react-native';
 
+import LucideIcon from '../components/LucideIcon';
+import { LUXURY_THEME } from '../theme/luxuryTheme';
 import { apiService } from '../services/apiService';
 import { authService } from '../services/authService';
 
 const SUPER_ADMIN_TABS = [
-  { id: 'overview', label: 'Platform Overview', icon: '📊' },
-  { id: 'approvals', label: 'Hotel Approval Queue', icon: '⏳' },
-  { id: 'hotels', label: 'All Hotel Properties', icon: '🏢' },
-  { id: 'admins', label: 'Admins & Owners', icon: '👥' },
-  { id: 'logs', label: 'Platform Audit Logs', icon: '📜' },
-  { id: 'security', label: 'Security & Health', icon: '🛡️' },
+  { id: 'overview', label: 'Platform Overview', icon: 'layout-dashboard' },
+  { id: 'approvals', label: 'Hotel Approval Queue', icon: 'clock' },
+  { id: 'hotels', label: 'All Hotel Properties', icon: 'building-2' },
+  { id: 'admins', label: 'Admins & Owners', icon: 'users' },
+  { id: 'logs', label: 'Platform Audit Logs', icon: 'file-text' },
+  { id: 'security', label: 'Security & Health', icon: 'shield-check' },
 ];
 
 export default function SuperAdminDashboardScreen({
@@ -341,7 +343,10 @@ export default function SuperAdminDashboardScreen({
             }}
             activeOpacity={0.85}
           >
-            <Text style={styles.heroPrimaryBtnText}>⏳ Review Pending ({pendingCount})</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <LucideIcon name="clock" size={15} color="#101114" />
+              <Text style={styles.heroPrimaryBtnText}>Review Pending ({pendingCount})</Text>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.heroSecondaryBtn}
@@ -351,7 +356,10 @@ export default function SuperAdminDashboardScreen({
             }}
             activeOpacity={0.85}
           >
-            <Text style={styles.heroSecondaryBtnText}>👥 + Add Admin</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <LucideIcon name="user-plus" size={15} color="#F2EFE8" />
+              <Text style={styles.heroSecondaryBtnText}>Add Administrator</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -359,7 +367,7 @@ export default function SuperAdminDashboardScreen({
       {/* Metric Cards Grid */}
       <View style={styles.metricsGrid}>
         <TouchableOpacity
-          style={[styles.metricCard, { borderLeftColor: '#F59E0B' }]}
+          style={[styles.metricCard, { borderLeftColor: '#D49A3D' }]}
           onPress={() => {
             setActiveTab('approvals');
             setFilterTab('pending');
@@ -368,14 +376,14 @@ export default function SuperAdminDashboardScreen({
         >
           <View style={styles.metricCardHeader}>
             <Text style={styles.metricCardLabel}>PENDING APPROVALS</Text>
-            <Text style={styles.metricCardIcon}>⏳</Text>
+            <LucideIcon name="clock" size={18} color="#D49A3D" />
           </View>
-          <Text style={[styles.metricCardValue, { color: '#F59E0B' }]}>{pendingCount}</Text>
+          <Text style={[styles.metricCardValue, { color: '#D49A3D' }]}>{pendingCount}</Text>
           <Text style={styles.metricCardSub}>Awaiting Super Admin decision</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.metricCard, { borderLeftColor: '#10B981' }]}
+          style={[styles.metricCard, { borderLeftColor: '#4E9F76' }]}
           onPress={() => {
             setActiveTab('hotels');
             setFilterTab('approved');
@@ -384,14 +392,14 @@ export default function SuperAdminDashboardScreen({
         >
           <View style={styles.metricCardHeader}>
             <Text style={styles.metricCardLabel}>APPROVED PROPERTIES</Text>
-            <Text style={styles.metricCardIcon}>✓</Text>
+            <LucideIcon name="check-circle" size={18} color="#4E9F76" />
           </View>
-          <Text style={[styles.metricCardValue, { color: '#10B981' }]}>{approvedCount}</Text>
+          <Text style={[styles.metricCardValue, { color: '#4E9F76' }]}>{approvedCount}</Text>
           <Text style={styles.metricCardSub}>Live on public guest portal</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.metricCard, { borderLeftColor: '#EF4444' }]}
+          style={[styles.metricCard, { borderLeftColor: '#D9534F' }]}
           onPress={() => {
             setActiveTab('hotels');
             setFilterTab('rejected');
@@ -400,22 +408,22 @@ export default function SuperAdminDashboardScreen({
         >
           <View style={styles.metricCardHeader}>
             <Text style={styles.metricCardLabel}>REJECTED PROPERTIES</Text>
-            <Text style={styles.metricCardIcon}>✕</Text>
+            <LucideIcon name="x-circle" size={18} color="#D9534F" />
           </View>
-          <Text style={[styles.metricCardValue, { color: '#EF4444' }]}>{rejectedCount}</Text>
+          <Text style={[styles.metricCardValue, { color: '#D9534F' }]}>{rejectedCount}</Text>
           <Text style={styles.metricCardSub}>Blocked with owner explanation</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.metricCard, { borderLeftColor: '#E2C082' }]}
+          style={[styles.metricCard, { borderLeftColor: '#C5A46D' }]}
           onPress={() => setActiveTab('admins')}
           activeOpacity={0.8}
         >
           <View style={styles.metricCardHeader}>
             <Text style={styles.metricCardLabel}>TOTAL ADMINISTRATORS</Text>
-            <Text style={styles.metricCardIcon}>👥</Text>
+            <LucideIcon name="users" size={18} color="#C5A46D" />
           </View>
-          <Text style={[styles.metricCardValue, { color: '#E2C082' }]}>{admins.length}</Text>
+          <Text style={[styles.metricCardValue, { color: '#C5A46D' }]}>{admins.length}</Text>
           <Text style={styles.metricCardSub}>
             {admins.filter((a) => a.role === 'superadmin').length} Super • {admins.filter((a) => a.role === 'clientadmin').length} Owners
           </Text>
@@ -425,13 +433,16 @@ export default function SuperAdminDashboardScreen({
       {/* System Security & Architecture Overview */}
       <View style={styles.sectionCard}>
         <View style={styles.sectionCardHeader}>
-          <Text style={styles.sectionCardTitle}>🛡️ PLATFORM SECURITY & INTEGRITY STATUS</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <LucideIcon name="shield-check" size={18} color="#C5A46D" />
+            <Text style={styles.sectionCardTitle}>PLATFORM SECURITY & INTEGRITY STATUS</Text>
+          </View>
           <Text style={styles.sectionCardSub}>Active security controls protecting multi-tenant operations</Text>
         </View>
 
         <View style={styles.securityGrid}>
           <View style={styles.securityItem}>
-            <Text style={styles.securityStatusIcon}>🔒</Text>
+            <LucideIcon name="lock" size={18} color="#C5A46D" />
             <View style={{ flex: 1 }}>
               <Text style={styles.securityTitle}>JWT Bearer Authentication</Text>
               <Text style={styles.securityDesc}>All administrative routes strictly assert signed HMAC-SHA256 tokens.</Text>
@@ -442,7 +453,7 @@ export default function SuperAdminDashboardScreen({
           </View>
 
           <View style={styles.securityItem}>
-            <Text style={styles.securityStatusIcon}>🛡️</Text>
+            <LucideIcon name="shield" size={18} color="#C5A46D" />
             <View style={{ flex: 1 }}>
               <Text style={styles.securityTitle}>Role-Based Access Control (RBAC)</Text>
               <Text style={styles.securityDesc}>Super Admin endpoints require verified superadmin role. Regular admins return 403.</Text>
@@ -453,7 +464,7 @@ export default function SuperAdminDashboardScreen({
           </View>
 
           <View style={styles.securityItem}>
-            <Text style={styles.securityStatusIcon}>🌐</Text>
+            <LucideIcon name="server" size={18} color="#C5A46D" />
             <View style={{ flex: 1 }}>
               <Text style={styles.securityTitle}>Public Guest Isolation</Text>
               <Text style={styles.securityDesc}>Guest website queries strictly return properties with status: "approved".</Text>
@@ -464,7 +475,7 @@ export default function SuperAdminDashboardScreen({
           </View>
 
           <View style={styles.securityItem}>
-            <Text style={styles.securityStatusIcon}>📦</Text>
+            <LucideIcon name="database" size={18} color="#C5A46D" />
             <View style={{ flex: 1 }}>
               <Text style={styles.securityTitle}>Database Multi-Tenancy</Text>
               <Text style={styles.securityDesc}>Component queries enforce hotelPropertyId boundaries with zero fallback leakage.</Text>
@@ -480,7 +491,10 @@ export default function SuperAdminDashboardScreen({
       <View style={styles.sectionCard}>
         <View style={styles.sectionCardHeader}>
           <View>
-            <Text style={styles.sectionCardTitle}>📜 RECENT PLATFORM AUDIT EVENTS</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <LucideIcon name="file-text" size={18} color="#C5A46D" />
+              <Text style={styles.sectionCardTitle}>RECENT PLATFORM AUDIT EVENTS</Text>
+            </View>
             <Text style={styles.sectionCardSub}>Real-time log of administrative actions taken during this session</Text>
           </View>
           <View style={styles.liveActivityPill}>
@@ -505,10 +519,10 @@ export default function SuperAdminDashboardScreen({
                 <View
                   style={[
                     styles.auditActionBadge,
-                    log.type === 'approve' && { backgroundColor: 'rgba(34, 197, 94, 0.15)', borderColor: '#22C55E' },
-                    log.type === 'reject' && { backgroundColor: 'rgba(239, 68, 68, 0.15)', borderColor: '#EF4444' },
-                    log.type === 'create' && { backgroundColor: 'rgba(226, 192, 130, 0.15)', borderColor: '#E2C082' },
-                    log.type === 'delete' && { backgroundColor: 'rgba(148, 163, 184, 0.15)', borderColor: '#94A3B8' },
+                    log.type === 'approve' && { backgroundColor: 'rgba(78, 159, 118, 0.15)', borderColor: '#4E9F76' },
+                    log.type === 'reject' && { backgroundColor: 'rgba(217, 83, 79, 0.15)', borderColor: '#D9534F' },
+                    log.type === 'create' && { backgroundColor: 'rgba(197, 164, 109, 0.15)', borderColor: '#C5A46D' },
+                    log.type === 'delete' && { backgroundColor: 'rgba(148, 163, 184, 0.15)', borderColor: '#A5A39D' },
                   ]}
                 >
                   <Text style={styles.auditActionText}>{log.action}</Text>
@@ -546,7 +560,10 @@ export default function SuperAdminDashboardScreen({
           onPress={loadHotels}
           activeOpacity={0.8}
         >
-          <Text style={styles.refreshBtnText}>🔄 Refresh Queue</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <LucideIcon name="refresh-cw" size={13} color="#F2EFE8" />
+            <Text style={styles.refreshBtnText}>Refresh Queue</Text>
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -582,14 +599,14 @@ export default function SuperAdminDashboardScreen({
           <TextInput
             style={styles.searchInput}
             placeholder="Search by hotel name, owner ID, city, address..."
-            placeholderTextColor="#64748B"
+            placeholderTextColor="#807E78"
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoCapitalize="none"
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
-              <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '700' }}>✕</Text>
+              <LucideIcon name="x" size={13} color="#A5A39D" />
             </TouchableOpacity>
           )}
         </View>
@@ -599,13 +616,13 @@ export default function SuperAdminDashboardScreen({
       <View style={styles.tableCard}>
         {isLoading ? (
           <View style={styles.stateBox}>
-            <ActivityIndicator size="large" color="#E2C082" />
+            <ActivityIndicator size="large" color="#C5A46D" />
             <Text style={styles.stateText}>Loading hotel requests from backend database...</Text>
           </View>
         ) : errorMessage ? (
           <View style={styles.stateBox}>
-            <Text style={{ fontSize: 32, marginBottom: 8 }}>⚠️</Text>
-            <Text style={[styles.stateText, { color: '#F87171' }]}>{errorMessage}</Text>
+            <LucideIcon name="alert-triangle" size={32} color="#D49A3D" style={{ marginBottom: 8 }} />
+            <Text style={[styles.stateText, { color: '#D9534F' }]}>{errorMessage}</Text>
             <TouchableOpacity style={styles.retryBtn} onPress={loadHotels}>
               <Text style={styles.retryBtnText}>Retry Fetching</Text>
             </TouchableOpacity>
@@ -613,7 +630,7 @@ export default function SuperAdminDashboardScreen({
         ) : filteredHotels.length === 0 ? (
           <View style={styles.stateBox}>
             <Text style={{ fontSize: 36, marginBottom: 8 }}>
-              {filterTab === 'pending' ? '✨' : '📋'}
+              <LucideIcon name={filterTab === "pending" ? "clock" : "file-text"} size={32} color="#A5A39D" style={{ marginBottom: 8 }} />
             </Text>
             <Text style={styles.emptyTitle}>
               {filterTab === 'pending'
@@ -657,7 +674,7 @@ export default function SuperAdminDashboardScreen({
                       />
                     ) : (
                       <View style={[styles.hotelThumb, styles.hotelThumbPlaceholder]}>
-                        <Text style={{ fontSize: 16 }}>🏨</Text>
+                        <LucideIcon name="building-2" size={18} color="#A5A39D" />
                       </View>
                     )}
                     <View style={{ flex: 1 }}>
@@ -682,7 +699,10 @@ export default function SuperAdminDashboardScreen({
                   {/* Location */}
                   <View style={[styles.tdCell, { flex: 1.4 }]}>
                     <Text style={styles.locationText} numberOfLines={1}>
-                      📍 {item.city || item.location || 'Local Area'}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <LucideIcon name="map-pin" size={13} color="#A5A39D" />
+                      <Text style={styles.locationText} numberOfLines={1}>{item.city || item.location || 'Local Area'}</Text>
+                    </View>
                     </Text>
                   </View>
 
@@ -699,9 +719,9 @@ export default function SuperAdminDashboardScreen({
                       <Text
                         style={[
                           styles.statusPillText,
-                          status === 'approved' && { color: '#86EFAC' },
-                          status === 'rejected' && { color: '#FCA5A5' },
-                          status === 'pending' && { color: '#FCD34D' },
+                          status === 'approved' && { color: '#4E9F76' },
+                          status === 'rejected' && { color: '#D9534F' },
+                          status === 'pending' && { color: '#D49A3D' },
                         ]}
                       >
                         {status.toUpperCase()}
@@ -716,7 +736,10 @@ export default function SuperAdminDashboardScreen({
                       onPress={() => setViewingHotel(item)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.actionBtnViewText}>👁️ View</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <LucideIcon name="eye" size={13} color="#C5A46D" />
+                        <Text style={styles.actionBtnViewText}>View</Text>
+                      </View>
                     </TouchableOpacity>
 
                     {status !== 'approved' && (
@@ -727,7 +750,10 @@ export default function SuperAdminDashboardScreen({
                         activeOpacity={0.8}
                       >
                         <Text style={styles.actionBtnAcceptText}>
-                          {isItemActionLoading ? '...' : '✓ Accept'}
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <LucideIcon name="check" size={13} color="#101114" />
+                          <Text style={styles.actionBtnAcceptText}>{isItemActionLoading ? '...' : 'Approve'}</Text>
+                        </View>
                         </Text>
                       </TouchableOpacity>
                     )}
@@ -739,7 +765,10 @@ export default function SuperAdminDashboardScreen({
                         disabled={isItemActionLoading}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.actionBtnRejectText}>✕ Reject</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <LucideIcon name="x" size={13} color="#D9534F" />
+                          <Text style={styles.actionBtnRejectText}>Reject</Text>
+                        </View>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -765,7 +794,10 @@ export default function SuperAdminDashboardScreen({
           </Text>
         </View>
         <TouchableOpacity style={styles.refreshBtn} onPress={loadHotels} activeOpacity={0.8}>
-          <Text style={styles.refreshBtnText}>🔄 Refresh Properties</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <LucideIcon name="refresh-cw" size={13} color="#F2EFE8" />
+            <Text style={styles.refreshBtnText}>Refresh Properties</Text>
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -800,7 +832,7 @@ export default function SuperAdminDashboardScreen({
           <TextInput
             style={styles.searchInput}
             placeholder="Search hotels by name, location, or owner..."
-            placeholderTextColor="#64748B"
+            placeholderTextColor="#807E78"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -810,7 +842,7 @@ export default function SuperAdminDashboardScreen({
       <View style={styles.hotelsGrid}>
         {filteredHotels.length === 0 ? (
           <View style={styles.stateBox}>
-            <Text style={{ fontSize: 32, marginBottom: 8 }}>🏢</Text>
+            <LucideIcon name="building-2" size={32} color="#A5A39D" style={{ marginBottom: 8 }} />
             <Text style={styles.emptyTitle}>No Hotels Match Current Filter</Text>
             <Text style={styles.emptySubtitle}>Try adjusting your search query or reset filter to view all properties.</Text>
           </View>
@@ -844,9 +876,9 @@ export default function SuperAdminDashboardScreen({
                       <Text
                         style={[
                           styles.statusPillText,
-                          status === 'approved' && { color: '#86EFAC' },
-                          status === 'rejected' && { color: '#FCA5A5' },
-                          status === 'pending' && { color: '#FCD34D' },
+                          status === 'approved' && { color: '#4E9F76' },
+                          status === 'rejected' && { color: '#D9534F' },
+                          status === 'pending' && { color: '#D49A3D' },
                         ]}
                       >
                         {status.toUpperCase()}
@@ -854,9 +886,13 @@ export default function SuperAdminDashboardScreen({
                     </View>
                   </View>
 
-                  <Text style={styles.hotelGridCardLocation}>
-                    📍 {h.city || h.location || 'Local Area'} • ★ {h.rating || 4.9}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 3 }}>
+                    <LucideIcon name="map-pin" size={12} color="#A5A39D" />
+                    <Text style={styles.hotelGridCardLocation}>{h.city || h.location || 'Local Area'}</Text>
+                    <Text style={{ color: '#2A2B31' }}>•</Text>
+                    <LucideIcon name="star" size={12} color="#C5A46D" />
+                    <Text style={styles.hotelGridCardLocation}>{h.rating || 4.9}</Text>
+                  </View>
                   <Text style={styles.hotelGridCardPrice}>{h.pricePerNight || '₹18,500 / night'}</Text>
                   <Text style={styles.hotelGridCardOwner}>Owner: {h.hotelAdminId || 'admin'}</Text>
 
@@ -866,7 +902,10 @@ export default function SuperAdminDashboardScreen({
                       onPress={() => setViewingHotel(h)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.gridBtnViewText}>👁️ View Details</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <LucideIcon name="eye" size={12} color="#C5A46D" />
+                        <Text style={styles.gridBtnViewText}>Details</Text>
+                      </View>
                     </TouchableOpacity>
 
                     {status !== 'approved' && (
@@ -875,7 +914,10 @@ export default function SuperAdminDashboardScreen({
                         onPress={() => handleAccept(h)}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.gridBtnAcceptText}>✓ Approve</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <LucideIcon name="check" size={12} color="#101114" />
+                          <Text style={styles.gridBtnAcceptText}>Approve</Text>
+                        </View>
                       </TouchableOpacity>
                     )}
 
@@ -885,7 +927,10 @@ export default function SuperAdminDashboardScreen({
                         onPress={() => handleOpenRejectModal(h)}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.gridBtnRejectText}>✕ Reject</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <LucideIcon name="x" size={12} color="#D9534F" />
+                          <Text style={styles.gridBtnRejectText}>Reject</Text>
+                        </View>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -925,10 +970,16 @@ export default function SuperAdminDashboardScreen({
             onPress={() => setCreateAdminModalVisible(true)}
             activeOpacity={0.85}
           >
-            <Text style={styles.createAdminBtnText}>✨ + Create Administrator</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <LucideIcon name="plus" size={14} color="#101114" />
+              <Text style={styles.createAdminBtnText}>Create Administrator</Text>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity style={styles.refreshBtn} onPress={loadAdmins} activeOpacity={0.8}>
-            <Text style={styles.refreshBtnText}>🔄 Refresh</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <LucideIcon name="refresh-cw" size={13} color="#F2EFE8" />
+              <Text style={styles.refreshBtnText}>Refresh</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -940,14 +991,14 @@ export default function SuperAdminDashboardScreen({
           <TextInput
             style={styles.searchInput}
             placeholder="Search administrators by username, email, or role..."
-            placeholderTextColor="#64748B"
+            placeholderTextColor="#807E78"
             value={adminSearchQuery}
             onChangeText={setAdminSearchQuery}
             autoCapitalize="none"
           />
           {adminSearchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setAdminSearchQuery('')} style={{ padding: 4 }}>
-              <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '700' }}>✕</Text>
+              <LucideIcon name="x" size={13} color="#A5A39D" />
             </TouchableOpacity>
           )}
         </View>
@@ -957,12 +1008,12 @@ export default function SuperAdminDashboardScreen({
       <View style={styles.tableCard}>
         {isLoadingAdmins ? (
           <View style={styles.stateBox}>
-            <ActivityIndicator size="large" color="#E2C082" />
+            <ActivityIndicator size="large" color="#C5A46D" />
             <Text style={styles.stateText}>Loading administrators from backend database...</Text>
           </View>
         ) : filteredAdmins.length === 0 ? (
           <View style={styles.stateBox}>
-            <Text style={{ fontSize: 32, marginBottom: 8 }}>👥</Text>
+            <LucideIcon name="users" size={32} color="#A5A39D" style={{ marginBottom: 8 }} />
             <Text style={styles.emptyTitle}>No Administrators Match Current Search</Text>
             <Text style={styles.emptySubtitle}>Try searching for a different username or email address.</Text>
           </View>
@@ -1007,10 +1058,15 @@ export default function SuperAdminDashboardScreen({
                       <Text
                         style={[
                           styles.adminRolePillText,
-                          isSuper ? { color: '#E2C082' } : { color: '#93C5FD' },
+                          isSuper ? { color: '#C5A46D' } : { color: '#A5A39D' },
                         ]}
                       >
-                        {isSuper ? '★ SUPER ADMIN' : '🏢 HOTEL OWNER'}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <LucideIcon name={isSuper ? "award" : "building-2"} size={12} color={isSuper ? "#C5A46D" : "#A5A39D"} />
+                          <Text style={[styles.adminRolePillText, isSuper ? { color: '#C5A46D' } : { color: '#A5A39D' }]}>
+                            {isSuper ? 'SUPER ADMIN' : 'HOTEL OWNER'}
+                          </Text>
+                        </View>
                       </Text>
                     </View>
                   </View>
@@ -1027,14 +1083,17 @@ export default function SuperAdminDashboardScreen({
 
                   <View style={[styles.tdCell, { flex: 1.2, flexDirection: 'row', justifyContent: 'flex-end' }]}>
                     {isCurrent ? (
-                      <Text style={{ color: '#64748B', fontSize: 11, fontStyle: 'italic' }}>Protected</Text>
+                      <Text style={{ color: '#807E78', fontSize: 11, fontStyle: 'italic' }}>Protected</Text>
                     ) : (
                       <TouchableOpacity
                         style={styles.deleteAdminBtn}
                         onPress={() => handleDeleteAdmin(item)}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.deleteAdminBtnText}>🗑️ Delete</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <LucideIcon name="trash-2" size={12} color="#D9534F" />
+                          <Text style={styles.deleteAdminBtnText}>Delete</Text>
+                        </View>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -1064,14 +1123,17 @@ export default function SuperAdminDashboardScreen({
           onPress={() => logAuditEvent('AUDIT_SYNC', 'Platform audit log manually synchronized with backend state', 'info')}
           activeOpacity={0.8}
         >
-          <Text style={styles.refreshBtnText}>🔄 Ping Event Bus</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <LucideIcon name="activity" size={13} color="#F2EFE8" />
+            <Text style={styles.refreshBtnText}>Ping Event Bus</Text>
+          </View>
         </TouchableOpacity>
       </View>
 
       <View style={styles.sectionCard}>
         {auditLogs.length === 0 ? (
           <View style={styles.emptyActivityBox}>
-            <Text style={{ fontSize: 32, marginBottom: 4 }}>📜</Text>
+            <LucideIcon name="file-text" size={32} color="#A5A39D" style={{ marginBottom: 8 }} />
             <Text style={styles.emptyActivityTitle}>No Audit Events Logged in Current Session</Text>
             <Text style={styles.emptyActivitySub}>
               All administrative decisions (approvals, rejections, administrator creations) will be recorded here live in real time.
@@ -1085,10 +1147,10 @@ export default function SuperAdminDashboardScreen({
                 <View
                   style={[
                     styles.auditActionBadge,
-                    log.type === 'approve' && { backgroundColor: 'rgba(34, 197, 94, 0.15)', borderColor: '#22C55E' },
-                    log.type === 'reject' && { backgroundColor: 'rgba(239, 68, 68, 0.15)', borderColor: '#EF4444' },
-                    log.type === 'create' && { backgroundColor: 'rgba(226, 192, 130, 0.15)', borderColor: '#E2C082' },
-                    log.type === 'delete' && { backgroundColor: 'rgba(148, 163, 184, 0.15)', borderColor: '#94A3B8' },
+                    log.type === 'approve' && { backgroundColor: 'rgba(78, 159, 118, 0.15)', borderColor: '#4E9F76' },
+                    log.type === 'reject' && { backgroundColor: 'rgba(217, 83, 79, 0.15)', borderColor: '#D9534F' },
+                    log.type === 'create' && { backgroundColor: 'rgba(197, 164, 109, 0.15)', borderColor: '#C5A46D' },
+                    log.type === 'delete' && { backgroundColor: 'rgba(148, 163, 184, 0.15)', borderColor: '#A5A39D' },
                   ]}
                 >
                   <Text style={styles.auditActionText}>{log.action}</Text>
@@ -1118,7 +1180,7 @@ export default function SuperAdminDashboardScreen({
 
       <View style={styles.securityGrid}>
         <View style={styles.securityItem}>
-          <Text style={styles.securityStatusIcon}>🟢</Text>
+          <LucideIcon name="database" size={18} color="#4E9F76" />
           <View style={{ flex: 1 }}>
             <Text style={styles.securityTitle}>MongoDB Database (hotelApiDb)</Text>
             <Text style={styles.securityDesc}>Connected to live MongoDB cluster. Strict schema validation enabled.</Text>
@@ -1129,7 +1191,7 @@ export default function SuperAdminDashboardScreen({
         </View>
 
         <View style={styles.securityItem}>
-          <Text style={styles.securityStatusIcon}>🔒</Text>
+          <LucideIcon name="lock" size={18} color="#C5A46D" />
           <View style={{ flex: 1 }}>
             <Text style={styles.securityTitle}>JWT Secret & Cryptographic Signature</Text>
             <Text style={styles.securityDesc}>HMAC-SHA256 signature algorithm active. Tokens expire automatically after 24 hours.</Text>
@@ -1140,7 +1202,7 @@ export default function SuperAdminDashboardScreen({
         </View>
 
         <View style={styles.securityItem}>
-          <Text style={styles.securityStatusIcon}>🛡️</Text>
+          <LucideIcon name="shield-check" size={18} color="#C5A46D" />
           <View style={{ flex: 1 }}>
             <Text style={styles.securityTitle}>Public Registration Privilege Escalation Guard</Text>
             <Text style={styles.securityDesc}>Public registration hardcoded to role: "clientadmin". Super Admin creation requires authenticated master token.</Text>
@@ -1151,7 +1213,7 @@ export default function SuperAdminDashboardScreen({
         </View>
 
         <View style={styles.securityItem}>
-          <Text style={styles.securityStatusIcon}>⚡</Text>
+          <LucideIcon name="server" size={18} color="#C5A46D" />
           <View style={{ flex: 1 }}>
             <Text style={styles.securityTitle}>Multi-Tenant Component Data Boundary</Text>
             <Text style={styles.securityDesc}>Component controllers return empty arrays for unconfigured hotels with zero cross-tenant fallback leakage.</Text>
@@ -1183,7 +1245,7 @@ export default function SuperAdminDashboardScreen({
       <View style={styles.headerBar}>
         <View style={styles.headerLeft}>
           <View style={styles.crestCircle}>
-            <Text style={styles.crestIcon}>★</Text>
+            <LucideIcon name="award" size={20} color="#C5A46D" />
           </View>
           <View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -1204,7 +1266,10 @@ export default function SuperAdminDashboardScreen({
             onPress={onSwitchToOwnerAdmin}
             activeOpacity={0.8}
           >
-            <Text style={styles.headerNavBtnText}>🏢 Hotel Owner View</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <LucideIcon name="building-2" size={14} color="#F2EFE8" />
+              <Text style={styles.headerNavBtnText}>Hotel Owner View</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1212,7 +1277,10 @@ export default function SuperAdminDashboardScreen({
             onPress={onBackToGuestPortal}
             activeOpacity={0.8}
           >
-            <Text style={styles.headerNavBtnText}>🌐 Guest Website</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <LucideIcon name="external-link" size={14} color="#F2EFE8" />
+              <Text style={styles.headerNavBtnText}>Guest Website</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1220,7 +1288,10 @@ export default function SuperAdminDashboardScreen({
             onPress={onLogout}
             activeOpacity={0.8}
           >
-            <Text style={styles.logoutBtnText}>Logout</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <LucideIcon name="log-out" size={13} color="#D9534F" />
+              <Text style={styles.logoutBtnText}>Logout</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -1249,7 +1320,7 @@ export default function SuperAdminDashboardScreen({
                   onPress={() => setActiveTab(tab.id)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.sidebarTabIcon}>{tab.icon}</Text>
+                  <LucideIcon name={tab.icon} size={17} color={isActive ? "#C5A46D" : "#A5A39D"} />
                   <Text style={[styles.sidebarTabLabel, isActive && styles.sidebarTabLabelActive]}>
                     {tab.label}
                   </Text>
@@ -1305,9 +1376,9 @@ export default function SuperAdminDashboardScreen({
                       <Text
                         style={[
                           styles.statusPillText,
-                          viewingHotel.status === 'approved' && { color: '#86EFAC' },
-                          viewingHotel.status === 'rejected' && { color: '#FCA5A5' },
-                          (!viewingHotel.status || viewingHotel.status === 'pending') && { color: '#FCD34D' },
+                          viewingHotel.status === 'approved' && { color: '#4E9F76' },
+                          viewingHotel.status === 'rejected' && { color: '#D9534F' },
+                          (!viewingHotel.status || viewingHotel.status === 'pending') && { color: '#D49A3D' },
                         ]}
                       >
                         {(viewingHotel.status || 'pending').toUpperCase()}
@@ -1315,14 +1386,14 @@ export default function SuperAdminDashboardScreen({
                     </View>
                   </View>
                   <Text style={styles.modalHeaderSubtitle}>
-                    Submitted by Owner: <Text style={{ color: '#E2C082' }}>{viewingHotel.hotelAdminId || 'admin'}</Text>
+                    Submitted by Owner: <Text style={{ color: '#C5A46D' }}>{viewingHotel.hotelAdminId || 'admin'}</Text>
                   </Text>
                 </View>
                 <TouchableOpacity
                   style={styles.modalCloseBtn}
                   onPress={() => setViewingHotel(null)}
                 >
-                  <Text style={styles.modalCloseBtnText}>✕</Text>
+                  <LucideIcon name="x" size={16} color="#A5A39D" />
                 </TouchableOpacity>
               </View>
 
@@ -1330,7 +1401,10 @@ export default function SuperAdminDashboardScreen({
                 {/* Rejection Notice if rejected */}
                 {viewingHotel.status === 'rejected' && (
                   <View style={styles.rejectionNoticeCard}>
-                    <Text style={styles.rejectionNoticeTitle}>⚠️ REJECTION DETAILS</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <LucideIcon name="alert-triangle" size={14} color="#D9534F" />
+                        <Text style={styles.rejectionNoticeTitle}>REJECTION DETAILS</Text>
+                      </View>
                     <Text style={styles.rejectionNoticeText}>
                       {viewingHotel.rejectionReason || 'No specific rejection reason provided.'}
                     </Text>
@@ -1363,7 +1437,10 @@ export default function SuperAdminDashboardScreen({
 
                   <View style={styles.detailItem}>
                     <Text style={styles.detailLabel}>STAR RATING</Text>
-                    <Text style={styles.detailValue}>★ {viewingHotel.rating || 4.9} / 5.0</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <LucideIcon name="star" size={13} color="#C5A46D" />
+                      <Text style={styles.detailValue}>{viewingHotel.rating || 4.9} / 5.0</Text>
+                    </View>
                   </View>
 
                   <View style={styles.detailItem}>
@@ -1392,7 +1469,7 @@ export default function SuperAdminDashboardScreen({
                 {/* Uploaded Images Gallery (up to 8) */}
                 <View style={styles.modalGallerySection}>
                   <Text style={styles.galleryHeading}>
-                    📸 UPLOADED HOTEL IMAGES (
+                    UPLOADED HOTEL IMAGES (
                     {Array.isArray(viewingHotel.images) ? viewingHotel.images.length : (viewingHotel.imageLink ? 1 : 0)} / 8 IMAGES)
                   </Text>
                   <View style={styles.galleryGrid}>
@@ -1431,7 +1508,10 @@ export default function SuperAdminDashboardScreen({
                         handleOpenRejectModal(target);
                       }}
                     >
-                      <Text style={styles.modalRejectBtnText}>✕ Reject Hotel</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <LucideIcon name="x" size={14} color="#D9534F" />
+                    <Text style={styles.modalRejectBtnText}>Reject Hotel</Text>
+                  </View>
                     </TouchableOpacity>
                   )}
 
@@ -1440,7 +1520,10 @@ export default function SuperAdminDashboardScreen({
                       style={styles.modalApproveBtn}
                       onPress={() => handleAccept(viewingHotel)}
                     >
-                      <Text style={styles.modalApproveBtnText}>✓ Accept & Approve Hotel</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <LucideIcon name="check" size={14} color="#101114" />
+                    <Text style={styles.modalApproveBtnText}>Approve Hotel</Text>
+                  </View>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -1473,7 +1556,7 @@ export default function SuperAdminDashboardScreen({
                   style={styles.modalCloseBtn}
                   onPress={() => setRejectingHotel(null)}
                 >
-                  <Text style={styles.modalCloseBtnText}>✕</Text>
+                  <LucideIcon name="x" size={16} color="#A5A39D" />
                 </TouchableOpacity>
               </View>
 
@@ -1484,7 +1567,7 @@ export default function SuperAdminDashboardScreen({
                   multiline
                   numberOfLines={4}
                   placeholder="e.g. Incomplete address, coordinates do not match location, or missing pictures."
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor="#807E78"
                   value={rejectionReasonInput}
                   onChangeText={setRejectionReasonInput}
                 />
@@ -1536,7 +1619,7 @@ export default function SuperAdminDashboardScreen({
                   style={styles.modalCloseBtn}
                   onPress={() => setCreateAdminModalVisible(false)}
                 >
-                  <Text style={styles.modalCloseBtnText}>✕</Text>
+                  <LucideIcon name="x" size={16} color="#A5A39D" />
                 </TouchableOpacity>
               </View>
 
@@ -1552,7 +1635,7 @@ export default function SuperAdminDashboardScreen({
                     onPress={() => setNewAdminForm((f) => ({ ...f, role: 'clientadmin' }))}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.roleOptionIcon}>🏢</Text>
+                    <LucideIcon name="building-2" size={18} color="#A5A39D" />
                     <Text style={styles.roleOptionTitle}>Hotel Owner</Text>
                     <Text style={styles.roleOptionSub}>Manages property amenities & operations</Text>
                   </TouchableOpacity>
@@ -1565,7 +1648,7 @@ export default function SuperAdminDashboardScreen({
                     onPress={() => setNewAdminForm((f) => ({ ...f, role: 'superadmin' }))}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.roleOptionIcon}>★</Text>
+                    <LucideIcon name="award" size={18} color="#C5A46D" />
                     <Text style={styles.roleOptionTitle}>Super Admin</Text>
                     <Text style={styles.roleOptionSub}>Global approvals & governance master</Text>
                   </TouchableOpacity>
@@ -1576,7 +1659,7 @@ export default function SuperAdminDashboardScreen({
                 <TextInput
                   style={styles.formTextInput}
                   placeholder="e.g. manager_taj"
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor="#807E78"
                   value={newAdminForm.username}
                   onChangeText={(text) => setNewAdminForm((f) => ({ ...f, username: text }))}
                   autoCapitalize="none"
@@ -1586,7 +1669,7 @@ export default function SuperAdminDashboardScreen({
                 <TextInput
                   style={styles.formTextInput}
                   placeholder="Enter secure initial password"
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor="#807E78"
                   secureTextEntry
                   value={newAdminForm.password}
                   onChangeText={(text) => setNewAdminForm((f) => ({ ...f, password: text }))}
@@ -1596,7 +1679,7 @@ export default function SuperAdminDashboardScreen({
                 <TextInput
                   style={styles.formTextInput}
                   placeholder="e.g. manager@hotel.com"
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor="#807E78"
                   keyboardType="email-address"
                   value={newAdminForm.email}
                   onChangeText={(text) => setNewAdminForm((f) => ({ ...f, email: text }))}
@@ -1607,7 +1690,7 @@ export default function SuperAdminDashboardScreen({
                 <TextInput
                   style={styles.formTextInput}
                   placeholder="e.g. +91 98765 43210"
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor="#807E78"
                   value={newAdminForm.contactNumber}
                   onChangeText={(text) => setNewAdminForm((f) => ({ ...f, contactNumber: text }))}
                 />
@@ -1616,7 +1699,7 @@ export default function SuperAdminDashboardScreen({
                 <TextInput
                   style={styles.formTextInput}
                   placeholder="e.g. Bengaluru Property Office"
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor="#807E78"
                   value={newAdminForm.address}
                   onChangeText={(text) => setNewAdminForm((f) => ({ ...f, address: text }))}
                 />
@@ -1648,12 +1731,12 @@ export default function SuperAdminDashboardScreen({
 const styles = StyleSheet.create({
   rootContainer: {
     flex: 1,
-    backgroundColor: '#070A12',
+    backgroundColor: '#101114',
   },
   headerBar: {
-    backgroundColor: '#0F1014',
+    backgroundColor: '#15161A',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(226, 192, 130, 0.2)',
+    borderBottomColor: 'rgba(197, 164, 109, 0.2)',
     paddingHorizontal: 20,
     paddingVertical: 14,
     flexDirection: 'row',
@@ -1671,39 +1754,39 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: 'rgba(226, 192, 130, 0.15)',
+    backgroundColor: 'rgba(197, 164, 109, 0.15)',
     borderWidth: 1.5,
-    borderColor: '#E2C082',
+    borderColor: '#C5A46D',
     alignItems: 'center',
     justifyContent: 'center',
   },
   crestIcon: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 18,
     fontWeight: '800',
   },
   headerTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 0.8,
   },
   badgeSuperAdmin: {
-    backgroundColor: 'rgba(226, 192, 130, 0.15)',
+    backgroundColor: 'rgba(197, 164, 109, 0.15)',
     borderWidth: 1,
-    borderColor: '#E2C082',
+    borderColor: '#C5A46D',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
   },
   badgeSuperAdminText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 9.5,
     fontWeight: '800',
     letterSpacing: 0.8,
   },
   headerSubtitle: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11.5,
     marginTop: 2,
   },
@@ -1714,9 +1797,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   headerNavBtn: {
-    backgroundColor: 'rgba(30, 41, 59, 0.6)',
+    backgroundColor: '#25262B',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#2A2B31',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -1725,14 +1808,14 @@ const styles = StyleSheet.create({
     }),
   },
   headerNavBtnText: {
-    color: '#E2E8F0',
+    color: '#F2EFE8',
     fontSize: 12,
     fontWeight: '700',
   },
   logoutBtn: {
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    backgroundColor: 'rgba(217, 83, 79, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.35)',
+    borderColor: 'rgba(217, 83, 79, 0.35)',
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -1741,7 +1824,7 @@ const styles = StyleSheet.create({
     }),
   },
   logoutBtnText: {
-    color: '#FCA5A5',
+    color: '#D9534F',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -1756,15 +1839,15 @@ const styles = StyleSheet.create({
   },
   sidebar: {
     width: 240,
-    backgroundColor: '#0F1014',
+    backgroundColor: '#15161A',
     borderRightWidth: 1,
-    borderRightColor: 'rgba(255, 255, 255, 0.08)',
+    borderRightColor: '#2A2B31',
   },
   sidebarMobile: {
     width: '100%',
     borderRightWidth: 0,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomColor: '#2A2B31',
   },
   sidebarScrollContent: {
     paddingVertical: 12,
@@ -1775,7 +1858,7 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
   },
   sidebarSectionLabel: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.2,
@@ -1793,24 +1876,24 @@ const styles = StyleSheet.create({
     }),
   },
   sidebarTabBtnActive: {
-    backgroundColor: 'rgba(226, 192, 130, 0.08)',
-    borderLeftColor: '#E2C082',
+    backgroundColor: 'rgba(197, 164, 109, 0.08)',
+    borderLeftColor: '#C5A46D',
   },
   sidebarTabIcon: {
     fontSize: 16,
   },
   sidebarTabLabel: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 12.5,
     fontWeight: '600',
     flex: 1,
   },
   sidebarTabLabelActive: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontWeight: '800',
   },
   sidebarBadge: {
-    backgroundColor: '#B45309',
+    backgroundColor: '#8C6F3E',
     borderRadius: 10,
     paddingHorizontal: 7,
     paddingVertical: 1,
@@ -1823,7 +1906,7 @@ const styles = StyleSheet.create({
 
   contentArea: {
     flex: 1,
-    backgroundColor: '#070A12',
+    backgroundColor: '#101114',
   },
   contentAreaInner: {
     padding: 20,
@@ -1834,12 +1917,12 @@ const styles = StyleSheet.create({
 
   // Overview Hero Card
   overviewHeroCard: {
-    backgroundColor: '#0F1014',
+    backgroundColor: '#1C1D21',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.25)',
+    borderColor: 'rgba(197, 164, 109, 0.25)',
     borderLeftWidth: 4,
-    borderLeftColor: '#E2C082',
+    borderLeftColor: '#C5A46D',
     padding: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1848,7 +1931,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   overviewHeroTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -1856,9 +1939,9 @@ const styles = StyleSheet.create({
   liveHealthBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    backgroundColor: 'rgba(78, 159, 118, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.3)',
+    borderColor: 'rgba(78, 159, 118, 0.3)',
     borderRadius: 14,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -1868,15 +1951,15 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#4E9F76',
   },
   liveHealthText: {
-    color: '#86EFAC',
+    color: '#4E9F76',
     fontSize: 11,
     fontWeight: '700',
   },
   overviewHeroSubtitle: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 12.5,
     marginTop: 4,
   },
@@ -1887,7 +1970,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   heroPrimaryBtn: {
-    backgroundColor: '#E2C082',
+    backgroundColor: '#C5A46D',
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 8,
@@ -1896,14 +1979,14 @@ const styles = StyleSheet.create({
     }),
   },
   heroPrimaryBtnText: {
-    color: '#070A12',
+    color: '#101114',
     fontSize: 12.5,
     fontWeight: '800',
   },
   heroSecondaryBtn: {
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    backgroundColor: '#25262B',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#2A2B31',
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 8,
@@ -1912,7 +1995,7 @@ const styles = StyleSheet.create({
     }),
   },
   heroSecondaryBtnText: {
-    color: '#E2E8F0',
+    color: '#F2EFE8',
     fontSize: 12.5,
     fontWeight: '700',
   },
@@ -1926,10 +2009,10 @@ const styles = StyleSheet.create({
   metricCard: {
     flex: 1,
     minWidth: 180,
-    backgroundColor: '#0F1014',
+    backgroundColor: '#1C1D21',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     borderLeftWidth: 4,
     padding: 16,
     gap: 4,
@@ -1943,7 +2026,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   metricCardLabel: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 10.5,
     fontWeight: '800',
     letterSpacing: 1,
@@ -1956,16 +2039,16 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   metricCardSub: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 11,
   },
 
   // Section Cards
   sectionCard: {
-    backgroundColor: '#0F1014',
+    backgroundColor: '#1C1D21',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     padding: 18,
   },
   sectionCardHeader: {
@@ -1977,13 +2060,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   sectionCardTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 13.5,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   sectionCardSub: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 11.5,
     marginTop: 2,
   },
@@ -1997,7 +2080,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15, 23, 42, 0.5)',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#2A2B31',
     padding: 12,
     gap: 12,
   },
@@ -2005,25 +2088,25 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   securityTitle: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 12.5,
     fontWeight: '700',
   },
   securityDesc: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11.5,
     marginTop: 1,
   },
   verifiedBadge: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    backgroundColor: 'rgba(78, 159, 118, 0.15)',
     borderWidth: 1,
-    borderColor: '#22C55E',
+    borderColor: '#4E9F76',
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
   verifiedBadgeText: {
-    color: '#86EFAC',
+    color: '#4E9F76',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.8,
@@ -2033,9 +2116,9 @@ const styles = StyleSheet.create({
   liveActivityPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    backgroundColor: 'rgba(78, 159, 118, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.3)',
+    borderColor: 'rgba(78, 159, 118, 0.3)',
     borderRadius: 14,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -2045,10 +2128,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#4E9F76',
   },
   liveActivityText: {
-    color: '#86EFAC',
+    color: '#4E9F76',
     fontSize: 10.5,
     fontWeight: '700',
   },
@@ -2059,12 +2142,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   emptyActivityTitle: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 13.5,
     fontWeight: '700',
   },
   emptyActivitySub: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 11.5,
     textAlign: 'center',
     maxWidth: 420,
@@ -2084,26 +2167,26 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   auditTimeText: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 11,
     fontWeight: '600',
     minWidth: 70,
   },
   auditActionBadge: {
-    backgroundColor: 'rgba(226, 192, 130, 0.1)',
+    backgroundColor: 'rgba(197, 164, 109, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.25)',
+    borderColor: 'rgba(197, 164, 109, 0.25)',
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   auditActionText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 9.5,
     fontWeight: '800',
   },
   auditDescText: {
-    color: '#F1F5F9',
+    color: '#F2EFE8',
     fontSize: 12,
     flex: 1,
   },
@@ -2117,33 +2200,33 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sectionHeaderTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   sectionHeaderSubtitle: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 12,
     marginTop: 2,
   },
   badgePendingCount: {
     backgroundColor: 'rgba(245, 158, 11, 0.15)',
     borderWidth: 1,
-    borderColor: '#F59E0B',
+    borderColor: '#D49A3D',
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   badgePendingCountText: {
-    color: '#FCD34D',
+    color: '#D49A3D',
     fontSize: 10.5,
     fontWeight: '800',
   },
   refreshBtn: {
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    backgroundColor: '#25262B',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#2A2B31',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -2152,7 +2235,7 @@ const styles = StyleSheet.create({
     }),
   },
   refreshBtnText: {
-    color: '#E2E8F0',
+    color: '#F2EFE8',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -2162,10 +2245,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#0F1014',
+    backgroundColor: '#1C1D21',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     padding: 10,
     gap: 12,
     flexWrap: 'wrap',
@@ -2180,56 +2263,56 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: '#1C1D21',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#2A2B31',
     ...Platform.select({
       web: { cursor: 'pointer' },
     }),
   },
   statusTabBtnActive: {
-    backgroundColor: 'rgba(226, 192, 130, 0.15)',
-    borderColor: '#E2C082',
+    backgroundColor: 'rgba(197, 164, 109, 0.15)',
+    borderColor: '#C5A46D',
   },
   statusTabBtnText: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11,
     fontWeight: '700',
   },
   statusTabBtnTextActive: {
-    color: '#E2C082',
+    color: '#C5A46D',
   },
   searchWrap: {
     flex: 1,
     minWidth: 260,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    backgroundColor: '#1C1D21',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     paddingHorizontal: 12,
     gap: 8,
   },
   searchIcon: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 14,
     fontWeight: '800',
   },
   searchInput: {
     flex: 1,
     height: 38,
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 12.5,
     outlineStyle: 'none',
   },
 
   // Table Card
   tableCard: {
-    backgroundColor: '#0F1014',
+    backgroundColor: '#1C1D21',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     overflow: 'hidden',
   },
   tableWrapper: {
@@ -2240,12 +2323,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(15, 23, 42, 0.9)',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomColor: '#2A2B31',
     paddingVertical: 10,
     paddingHorizontal: 16,
   },
   thCell: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 10.5,
     fontWeight: '800',
     letterSpacing: 1,
@@ -2270,40 +2353,40 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   hotelThumbPlaceholder: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#25262B',
     alignItems: 'center',
     justifyContent: 'center',
   },
   hotelNameText: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 13,
     fontWeight: '700',
   },
   hotelSubText: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 11,
     marginTop: 2,
   },
   ownerBadge: {
-    backgroundColor: 'rgba(226, 192, 130, 0.08)',
+    backgroundColor: 'rgba(197, 164, 109, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.2)',
+    borderColor: 'rgba(197, 164, 109, 0.2)',
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
     alignSelf: 'flex-start',
   },
   ownerBadgeText: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 11,
     fontWeight: '600',
   },
   locationText: {
-    color: '#CBD5E1',
+    color: '#A5A39D',
     fontSize: 12,
   },
   dateText: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 11.5,
   },
   statusPill: {
@@ -2313,13 +2396,13 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   statusApproved: {
-    backgroundColor: '#15803D',
+    backgroundColor: '#2E5A44',
   },
   statusPending: {
-    backgroundColor: '#B45309',
+    backgroundColor: '#8C6F3E',
   },
   statusRejected: {
-    backgroundColor: '#B91C1C',
+    backgroundColor: '#8C2424',
   },
   statusPillText: {
     fontSize: 9.5,
@@ -2329,9 +2412,9 @@ const styles = StyleSheet.create({
 
   // Actions
   actionBtnView: {
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    backgroundColor: '#25262B',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#2A2B31',
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -2340,12 +2423,12 @@ const styles = StyleSheet.create({
     }),
   },
   actionBtnViewText: {
-    color: '#E2E8F0',
+    color: '#F2EFE8',
     fontSize: 11.5,
     fontWeight: '700',
   },
   actionBtnAccept: {
-    backgroundColor: '#15803D',
+    backgroundColor: '#2E5A44',
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -2359,7 +2442,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   actionBtnReject: {
-    backgroundColor: '#B91C1C',
+    backgroundColor: '#8C2424',
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -2375,7 +2458,7 @@ const styles = StyleSheet.create({
 
   // Admin Management Styles
   createAdminBtn: {
-    backgroundColor: '#E2C082',
+    backgroundColor: '#C5A46D',
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -2384,30 +2467,30 @@ const styles = StyleSheet.create({
     }),
   },
   createAdminBtnText: {
-    color: '#070A12',
+    color: '#101114',
     fontSize: 12.5,
     fontWeight: '800',
   },
   adminUsernameText: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 13,
     fontWeight: '700',
   },
   adminEmailText: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 11,
     marginTop: 2,
   },
   currentAdminBadge: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    backgroundColor: 'rgba(78, 159, 118, 0.15)',
     borderWidth: 1,
-    borderColor: '#22C55E',
+    borderColor: '#4E9F76',
     borderRadius: 4,
     paddingHorizontal: 5,
     paddingVertical: 1,
   },
   currentAdminBadgeText: {
-    color: '#86EFAC',
+    color: '#4E9F76',
     fontSize: 9,
     fontWeight: '800',
   },
@@ -2419,8 +2502,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   adminRolePillSuper: {
-    backgroundColor: 'rgba(226, 192, 130, 0.15)',
-    borderColor: '#E2C082',
+    backgroundColor: 'rgba(197, 164, 109, 0.15)',
+    borderColor: '#C5A46D',
   },
   adminRolePillOwner: {
     backgroundColor: 'rgba(59, 130, 246, 0.15)',
@@ -2432,9 +2515,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   deleteAdminBtn: {
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    backgroundColor: 'rgba(217, 83, 79, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderColor: 'rgba(217, 83, 79, 0.3)',
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -2443,7 +2526,7 @@ const styles = StyleSheet.create({
     }),
   },
   deleteAdminBtnText: {
-    color: '#FCA5A5',
+    color: '#D9534F',
     fontSize: 11,
     fontWeight: '700',
   },
@@ -2458,39 +2541,39 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 280,
     maxWidth: 380,
-    backgroundColor: '#0F1014',
+    backgroundColor: '#1C1D21',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     overflow: 'hidden',
   },
   hotelGridCardThumb: {
     width: '100%',
     height: 140,
-    backgroundColor: '#1E293B',
+    backgroundColor: '#25262B',
   },
   hotelGridCardBody: {
     padding: 14,
     gap: 4,
   },
   hotelGridCardTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 14,
     fontWeight: '800',
     flex: 1,
   },
   hotelGridCardLocation: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 12,
   },
   hotelGridCardPrice: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 13,
     fontWeight: '800',
     marginTop: 2,
   },
   hotelGridCardOwner: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 11,
   },
   hotelGridCardActions: {
@@ -2500,7 +2583,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   gridBtnView: {
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    backgroundColor: '#25262B',
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -2509,12 +2592,12 @@ const styles = StyleSheet.create({
     }),
   },
   gridBtnViewText: {
-    color: '#E2E8F0',
+    color: '#F2EFE8',
     fontSize: 11,
     fontWeight: '700',
   },
   gridBtnAccept: {
-    backgroundColor: '#15803D',
+    backgroundColor: '#2E5A44',
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -2528,7 +2611,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   gridBtnReject: {
-    backgroundColor: '#B91C1C',
+    backgroundColor: '#8C2424',
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -2550,32 +2633,32 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   stateText: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 13,
     marginTop: 8,
   },
   emptyTitle: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 14,
     fontWeight: '800',
   },
   emptySubtitle: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 12,
     textAlign: 'center',
     maxWidth: 400,
   },
   retryBtn: {
     marginTop: 12,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: 'rgba(217, 83, 79, 0.15)',
     borderWidth: 1,
-    borderColor: '#EF4444',
+    borderColor: '#D9534F',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 6,
   },
   retryBtnText: {
-    color: '#FCA5A5',
+    color: '#D9534F',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -2588,20 +2671,20 @@ const styles = StyleSheet.create({
     zIndex: 9999,
     backgroundColor: 'rgba(15, 23, 42, 0.95)',
     borderWidth: 1,
-    borderColor: '#E2C082',
+    borderColor: '#C5A46D',
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
   toastError: {
-    borderColor: '#EF4444',
+    borderColor: '#D9534F',
     backgroundColor: '#1C1917',
   },
   toastSuccess: {
-    borderColor: '#22C55E',
+    borderColor: '#4E9F76',
   },
   toastText: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 12.5,
     fontWeight: '600',
   },
@@ -2615,10 +2698,10 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   modalCard: {
-    backgroundColor: '#0F1014',
+    backgroundColor: '#1C1D21',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.3)',
+    borderColor: 'rgba(197, 164, 109, 0.3)',
     overflow: 'hidden',
     width: '100%',
     maxHeight: '90%',
@@ -2630,15 +2713,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomColor: '#2A2B31',
   },
   modalHeaderTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 16,
     fontWeight: '800',
   },
   modalHeaderSubtitle: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 12,
     marginTop: 2,
   },
@@ -2649,7 +2732,7 @@ const styles = StyleSheet.create({
     }),
   },
   modalCloseBtnText: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 16,
     fontWeight: '700',
   },
@@ -2665,47 +2748,47 @@ const styles = StyleSheet.create({
   detailItem: {
     flex: 1,
     minWidth: 140,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: '#1C1D21',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#2A2B31',
     padding: 10,
   },
   detailLabel: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1,
     marginBottom: 2,
   },
   detailValue: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 12.5,
     fontWeight: '600',
   },
   fullAddressCard: {
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: '#1C1D21',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#2A2B31',
     padding: 12,
     marginBottom: 16,
   },
   addressText: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 12.5,
     marginTop: 2,
   },
   rejectionNoticeCard: {
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    backgroundColor: 'rgba(217, 83, 79, 0.12)',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.35)',
+    borderColor: 'rgba(217, 83, 79, 0.35)',
     padding: 12,
     marginBottom: 16,
   },
   rejectionNoticeTitle: {
-    color: '#FCA5A5',
+    color: '#D9534F',
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1,
@@ -2719,7 +2802,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   galleryHeading: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.8,
@@ -2736,7 +2819,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     position: 'relative',
-    backgroundColor: '#1E293B',
+    backgroundColor: '#25262B',
   },
   galleryImageThumb: {
     width: '100%',
@@ -2763,8 +2846,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
-    backgroundColor: '#0F1014',
+    borderTopColor: '#2A2B31',
+    backgroundColor: '#1C1D21',
   },
   modalFooterDismissBtn: {
     paddingHorizontal: 12,
@@ -2774,12 +2857,12 @@ const styles = StyleSheet.create({
     }),
   },
   modalFooterDismissText: {
-    color: '#94A3B8',
+    color: '#A5A39D',
     fontSize: 12.5,
     fontWeight: '600',
   },
   modalApproveBtn: {
-    backgroundColor: '#15803D',
+    backgroundColor: '#2E5A44',
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -2793,7 +2876,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   modalRejectBtn: {
-    backgroundColor: '#B91C1C',
+    backgroundColor: '#8C2424',
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -2809,7 +2892,7 @@ const styles = StyleSheet.create({
 
   // Reject Modal
   rejectModalLabel: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 12,
     fontWeight: '800',
     marginBottom: 8,
@@ -2820,19 +2903,19 @@ const styles = StyleSheet.create({
     borderColor: '#2A2E45',
     borderRadius: 8,
     padding: 12,
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 13,
     minHeight: 90,
     textAlignVertical: 'top',
     outlineStyle: 'none',
   },
   rejectModalHint: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 11.5,
     marginTop: 8,
   },
   modalRejectConfirmBtn: {
-    backgroundColor: '#B91C1C',
+    backgroundColor: '#8C2424',
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 9,
@@ -2848,7 +2931,7 @@ const styles = StyleSheet.create({
 
   // Create Admin Modal Form
   formFieldLabel: {
-    color: '#E2C082',
+    color: '#C5A46D',
     fontSize: 10.5,
     fontWeight: '800',
     letterSpacing: 1,
@@ -2856,13 +2939,13 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   formTextInput: {
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    backgroundColor: '#1C1D21',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 9,
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 13,
     outlineStyle: 'none',
   },
@@ -2873,9 +2956,9 @@ const styles = StyleSheet.create({
   },
   roleOptionCard: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: '#1C1D21',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#2A2B31',
     borderRadius: 8,
     padding: 10,
     alignItems: 'center',
@@ -2884,26 +2967,26 @@ const styles = StyleSheet.create({
     }),
   },
   roleOptionCardActive: {
-    borderColor: '#E2C082',
-    backgroundColor: 'rgba(226, 192, 130, 0.12)',
+    borderColor: '#C5A46D',
+    backgroundColor: 'rgba(197, 164, 109, 0.12)',
   },
   roleOptionIcon: {
     fontSize: 18,
     marginBottom: 2,
   },
   roleOptionTitle: {
-    color: '#F8FAFC',
+    color: '#F2EFE8',
     fontSize: 12,
     fontWeight: '800',
   },
   roleOptionSub: {
-    color: '#64748B',
+    color: '#807E78',
     fontSize: 9.5,
     textAlign: 'center',
     marginTop: 2,
   },
   modalSaveAdminBtn: {
-    backgroundColor: '#E2C082',
+    backgroundColor: '#C5A46D',
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 9,
@@ -2912,7 +2995,7 @@ const styles = StyleSheet.create({
     }),
   },
   modalSaveAdminBtnText: {
-    color: '#070A12',
+    color: '#101114',
     fontSize: 12.5,
     fontWeight: '800',
   },
