@@ -4105,52 +4105,14 @@ export default function AdminDashboardScreen({
                 </View>
               </View>
 
-              {/* Image / Photo Management */}
-              <View style={{ marginBottom: 14 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <Text style={styles.formLabel}>Place Photo</Text>
-                  <TouchableOpacity
-                    style={styles.uploadMiniBtn}
-                    onPress={() => handleTriggerComponentPhotoUpload((url) => setNewPlaceForm((prev) => ({ ...prev, imageLink: url })))}
-                    activeOpacity={0.8}
-                  >
-                    <LucideIcon name="camera" size={13} color="#101114" />
-                    <Text style={styles.uploadMiniBtnText}>Upload Photo (From Device)</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {newPlaceForm.imageLink ? (
-                  <View style={styles.itemPhotoPreviewWrapper}>
-                    <Image source={{ uri: newPlaceForm.imageLink }} style={styles.itemPhotoPreviewThumb} />
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={styles.itemPhotoPreviewLabel} numberOfLines={1}>{newPlaceForm.imageLink}</Text>
-                      <TouchableOpacity
-                        style={styles.deletePhotoBtn}
-                        onPress={() => {
-                          const urlToDelete = newPlaceForm.imageLink;
-                          if (urlToDelete && urlToDelete.includes('/uploads/')) {
-                            apiService.deleteHotelPicture(urlToDelete).catch((e) => console.warn(e));
-                          }
-                          setNewPlaceForm((prev) => ({ ...prev, imageLink: '' }));
-                          showToast('Photo removed', 'info');
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <LucideIcon name="trash" size={12} color="#D9534F" />
-                        <Text style={styles.deletePhotoBtnText}>Delete Photo</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ) : null}
-
-                <TextInput
-                  style={[styles.formInput, { marginTop: 4 }]}
-                  placeholder="Or paste image web link (https://...)"
-                  placeholderTextColor="#807E78"
-                  value={newPlaceForm.imageLink}
-                  onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, imageLink: text })}
-                />
-              </View>
+              <Text style={styles.formLabel}>Image Web Link (URL)</Text>
+              <TextInput
+                style={styles.formInput}
+                placeholder="https://images.unsplash.com/photo-..."
+                placeholderTextColor="#807E78"
+                value={newPlaceForm.imageLink}
+                onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, imageLink: text })}
+              />
 
               <Text style={styles.formLabel}>Website / Portal URL</Text>
               <TextInput
@@ -4485,52 +4447,15 @@ export default function AdminDashboardScreen({
                 </View>
               </View>
 
-              {/* Image / Photo Management */}
-              <View style={{ marginBottom: 14 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <Text style={styles.formLabel}>Component Photo</Text>
-                  <TouchableOpacity
-                    style={styles.uploadMiniBtn}
-                    onPress={() => handleTriggerComponentPhotoUpload((url) => setFormFields((prev) => ({ ...prev, imageLink: url })))}
-                    activeOpacity={0.8}
-                  >
-                    <LucideIcon name="camera" size={13} color="#101114" />
-                    <Text style={styles.uploadMiniBtnText}>Upload Photo (From Device)</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {formFields.imageLink ? (
-                  <View style={styles.itemPhotoPreviewWrapper}>
-                    <Image source={{ uri: formFields.imageLink }} style={styles.itemPhotoPreviewThumb} />
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={styles.itemPhotoPreviewLabel} numberOfLines={1}>{formFields.imageLink}</Text>
-                      <TouchableOpacity
-                        style={styles.deletePhotoBtn}
-                        onPress={() => {
-                          const urlToDelete = formFields.imageLink;
-                          if (urlToDelete && urlToDelete.includes('/uploads/')) {
-                            apiService.deleteHotelPicture(urlToDelete).catch((e) => console.warn(e));
-                          }
-                          setFormFields((prev) => ({ ...prev, imageLink: '' }));
-                          showToast('Photo removed', 'info');
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <LucideIcon name="trash" size={12} color="#D9534F" />
-                        <Text style={styles.deletePhotoBtnText}>Delete Photo</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ) : null}
-
-                <TextInput
-                  style={[styles.formInput, { marginTop: 4 }]}
-                  placeholder="Or paste image web link (https://...)"
-                  placeholderTextColor="#807E78"
-                  value={formFields.imageLink}
-                  onChangeText={(text) => setFormFields({ ...formFields, imageLink: text })}
-                />
-              </View>
+              {/* Image Link */}
+              <Text style={styles.formLabel}>Image Web Link (URL)</Text>
+              <TextInput
+                style={styles.formInput}
+                placeholder="https://images.unsplash.com/photo-..."
+                placeholderTextColor="#807E78"
+                value={formFields.imageLink}
+                onChangeText={(text) => setFormFields({ ...formFields, imageLink: text })}
+              />
 
               {/* Availability Selector */}
               <Text style={styles.formLabel}>Operational Status</Text>
@@ -6579,67 +6504,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 0.3,
-  },
-  uploadMiniBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    backgroundColor: '#C5A46D',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#D8BD8A',
-    ...Platform.select({
-      web: { cursor: 'pointer' },
-    }),
-  },
-  uploadMiniBtnText: {
-    color: '#101114',
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  itemPhotoPreviewWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#15161A',
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#2A2B31',
-    marginTop: 4,
-    marginBottom: 4,
-  },
-  itemPhotoPreviewThumb: {
-    width: 64,
-    height: 48,
-    borderRadius: 6,
-    backgroundColor: '#25262B',
-  },
-  itemPhotoPreviewLabel: {
-    color: '#A5A39D',
-    fontSize: 10,
-    marginBottom: 4,
-  },
-  deletePhotoBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    alignSelf: 'flex-start',
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    backgroundColor: 'rgba(217, 83, 79, 0.15)',
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(217, 83, 79, 0.4)',
-    ...Platform.select({
-      web: { cursor: 'pointer' },
-    }),
-  },
-  deletePhotoBtnText: {
-    color: '#D9534F',
-    fontSize: 10,
-    fontWeight: '700',
   },
   pictureSlotsGrid: {
     flexDirection: 'row',
