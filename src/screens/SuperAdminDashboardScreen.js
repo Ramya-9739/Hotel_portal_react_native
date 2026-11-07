@@ -629,9 +629,9 @@ export default function SuperAdminDashboardScreen({
           </View>
         ) : filteredHotels.length === 0 ? (
           <View style={styles.stateBox}>
-            <Text style={{ fontSize: 36, marginBottom: 8 }}>
+            <View style={{ marginBottom: 8 }}>
               <LucideIcon name={filterTab === "pending" ? "clock" : "file-text"} size={32} color="#A5A39D" style={{ marginBottom: 8 }} />
-            </Text>
+            </View>
             <Text style={styles.emptyTitle}>
               {filterTab === 'pending'
                 ? 'No Pending Hotel Requests'

@@ -1204,13 +1204,15 @@ export default function AdminDashboardScreen({
       subtitle: item.subtitle || item.shortDescription || '',
       location: item.location || '',
       distance: item.distance || '',
-      price:
+      price: String(
         item.pricePerNight ||
         item.priceRange ||
         item.passPrice ||
         item.minOrder ||
         item.deliveryFee ||
-        '',
+        item.price ||
+        ''
+      ),
       rating: String(item.rating || '4.8'),
       imageLink: item.imageLink || '',
       availability: item.availability || 'Available',
@@ -4337,7 +4339,8 @@ export default function AdminDashboardScreen({
                         style={[styles.categoryChip, isSelected && styles.categoryChipActive]}
                         onPress={() => {
                           setModalCategory(cat.key);
-                          if (!formFields.price || formFields.price.includes('₹') || formFields.price.includes('Free') || formFields.price.includes('Complimentary')) {
+                          const curPrice = String(formFields?.price || '');
+                          if (!curPrice || curPrice.includes('₹') || curPrice.includes('Free') || curPrice.includes('Complimentary')) {
                             setFormFields((prev) => ({ ...prev, price: cat.defaultPrice }));
                           }
                         }}
@@ -4503,9 +4506,9 @@ export default function AdminDashboardScreen({
                         })
                       }
                     >
-                      <Text style={styles.checkboxIcon}>
+                      <View style={styles.checkboxIcon}>
                         <LucideIcon name={formFields.takeawayEnabled ? "check-circle" : "circle"} size={16} color={formFields.takeawayEnabled ? "#C5A46D" : "#807E78"} />
-                      </Text>
+                      </View>
                       <Text style={styles.checkboxLabel}>Enable Takeaway Pickup</Text>
                     </TouchableOpacity>
 
@@ -4518,9 +4521,9 @@ export default function AdminDashboardScreen({
                         })
                       }
                     >
-                      <Text style={styles.checkboxIcon}>
+                      <View style={styles.checkboxIcon}>
                         <LucideIcon name={formFields.homeDeliveryEnabled ? "check-circle" : "circle"} size={16} color={formFields.homeDeliveryEnabled ? "#C5A46D" : "#807E78"} />
-                      </Text>
+                      </View>
                       <Text style={styles.checkboxLabel}>Enable Room Delivery</Text>
                     </TouchableOpacity>
                   </View>
@@ -4582,14 +4585,14 @@ export default function AdminDashboardScreen({
                             setFormFields({ ...formFields, paymentMethods: next });
                           }}
                         >
-                          <Text
+                          <View
                             style={[
                               styles.optCheckbox,
                               isChecked && styles.optCheckboxChecked,
                             ]}
                           >
                             <LucideIcon name={isChecked ? "check-circle" : "circle"} size={16} color={isChecked ? "#C5A46D" : "#807E78"} />
-                          </Text>
+                          </View>
                           <Text
                             style={[
                               styles.optLabel,
