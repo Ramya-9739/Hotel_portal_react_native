@@ -944,7 +944,10 @@ class ApiService {
       formData.append('hotelPropertyId', hotelPropertyId || 'general');
 
       const headers = {};
-      const token = this.authToken || (typeof authService !== 'undefined' ? authService.getToken() : null);
+      let token = this.authToken;
+      if (!token && typeof window !== 'undefined' && window?.localStorage) {
+        token = window.localStorage.getItem('@hotel_portal_admin_token') || window.localStorage.getItem('@hotel_portal_super_admin_token');
+      }
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }

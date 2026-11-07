@@ -26,6 +26,7 @@ import {
   Platform,
   useWindowDimensions,
   Modal,
+  Linking,
 } from 'react-native';
 
 import { apiService } from '../services/apiService';
@@ -450,7 +451,7 @@ export default function AdminDashboardScreen({
       copy.splice(toIndex, 0, item);
       return copy;
     });
- showToast(`Reordered picture slot ${fromIndex + 1} -> ${toIndex + 1}`, 'info');
+    showToast(`Reordered picture slot ${fromIndex + 1} -> ${toIndex + 1}`, 'info');
   };
 
   const handleSelectSearchResult = async (result) => {
@@ -791,7 +792,7 @@ export default function AdminDashboardScreen({
       imageLink: '',
       websiteUrl: '',
       timings: '9:00 AM - 6:00 PM',
- data1: '★ 4.8 Rating',
+      data1: '★ 4.8 Rating',
       data2: '1.2 km from Hotel',
       data3: 'Concierge Partner',
       data4: 'Open Today',
@@ -817,7 +818,7 @@ export default function AdminDashboardScreen({
       imageLink: place.imageLink || place.image || place.img || '',
       websiteUrl: place.websiteUrl || place.link || '',
       timings: place.timings || place.hours || place.timing || '',
- data1: place.data1 || (place.rating ? `★ ${place.rating} Rating` : 'Top Rated'),
+      data1: place.data1 || (place.rating ? `★ ${place.rating} Rating` : 'Top Rated'),
       data2: place.data2 || place.distance || '1.0 km from Hotel',
       data3: place.data3 || place.specialty || place.amenity || 'Concierge Partner',
       data4: place.data4 || place.hours || place.timings || 'Open Today',
@@ -900,8 +901,8 @@ export default function AdminDashboardScreen({
         setPlaceModalVisible(false);
         showToast(`Saved & Created "${placeData.title}" in ${targetCat}!`, 'success');
       }
-      await apiService.fetchDatabaseStatus().then((s) => { if (s && s.database) setConnectedDbName(s.database); }).catch(() => {});
-    loadAllAdminData();
+      await apiService.fetchDatabaseStatus().then((s) => { if (s && s.database) setConnectedDbName(s.database); }).catch(() => { });
+      loadAllAdminData();
     } catch (err) {
       showToast('Error saving place: ' + err.message, 'error');
     } finally {
@@ -996,7 +997,7 @@ export default function AdminDashboardScreen({
         id: `custom-${idx}`,
         name: cm,
         shortName: cm,
- icon: '✦',
+        icon: '✦',
         desc: 'Custom hotel-specific payment arrangement configured for this property',
         tag: 'Custom Method',
         isCustom: true,
@@ -1158,31 +1159,31 @@ export default function AdminDashboardScreen({
         category === 'hotels'
           ? '₹8,500 / night'
           : category === 'restaurants'
-          ? '₹₹₹₹'
-          : category === 'gyms'
-          ? '₹1,500 / day pass'
-          : (category === 'pools' || category === 'swimming_pools')
-          ? 'Resident Access Available'
-          : category === 'facilities'
-          ? 'Complimentary'
-          : category === 'takeaway'
-          ? 'Min ₹400'
-          : 'Free Suite Delivery',
+            ? '₹₹₹₹'
+            : category === 'gyms'
+              ? '₹1,500 / day pass'
+              : (category === 'pools' || category === 'swimming_pools')
+                ? 'Resident Access Available'
+                : category === 'facilities'
+                  ? 'Complimentary'
+                  : category === 'takeaway'
+                    ? 'Min ₹400'
+                    : 'Free Suite Delivery',
       rating: '4.8',
       imageLink:
         category === 'hotels'
           ? 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80'
           : category === 'restaurants'
-          ? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80'
-          : category === 'gyms'
-          ? 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80'
-          : (category === 'pools' || category === 'swimming_pools')
-          ? 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=800&q=80'
-          : category === 'facilities'
-          ? 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80'
-          : category === 'takeaway'
-          ? 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80'
-          : 'https://images.unsplash.com/photo-1526367790999-0150786686a2?w=800&q=80',
+            ? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80'
+            : category === 'gyms'
+              ? 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80'
+              : (category === 'pools' || category === 'swimming_pools')
+                ? 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=800&q=80'
+                : category === 'facilities'
+                  ? 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80'
+                  : category === 'takeaway'
+                    ? 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80'
+                    : 'https://images.unsplash.com/photo-1526367790999-0150786686a2?w=800&q=80',
       availability: 'Available',
       cuisine: 'Continental & Indian Fusion',
       timings: '6:00 AM - 10:00 PM Daily',
@@ -1836,14 +1837,14 @@ export default function AdminDashboardScreen({
           backgroundColor: currentActiveHotel?.status === 'approved'
             ? 'rgba(78, 159, 118, 0.12)'
             : currentActiveHotel?.status === 'rejected'
-            ? 'rgba(217, 83, 79, 0.12)'
-            : 'rgba(245, 158, 11, 0.12)',
+              ? 'rgba(217, 83, 79, 0.12)'
+              : 'rgba(245, 158, 11, 0.12)',
           borderWidth: 1,
           borderColor: currentActiveHotel?.status === 'approved'
             ? 'rgba(78, 159, 118, 0.35)'
             : currentActiveHotel?.status === 'rejected'
-            ? 'rgba(217, 83, 79, 0.35)'
-            : 'rgba(245, 158, 11, 0.35)',
+              ? 'rgba(217, 83, 79, 0.35)'
+              : 'rgba(245, 158, 11, 0.35)',
           borderRadius: 12,
           padding: 16,
           marginBottom: 20,
@@ -1859,15 +1860,15 @@ export default function AdminDashboardScreen({
               backgroundColor: currentActiveHotel?.status === 'approved'
                 ? '#2E5A44'
                 : currentActiveHotel?.status === 'rejected'
-                ? '#8C2424'
-                : '#8C6F3E',
+                  ? '#8C2424'
+                  : '#8C6F3E',
             }}>
               <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>
                 {currentActiveHotel?.status === 'approved'
                   ? 'APPROVED'
                   : currentActiveHotel?.status === 'rejected'
-                  ? 'REJECTED'
-                  : 'PENDING'}
+                    ? 'REJECTED'
+                    : 'PENDING'}
               </Text>
             </View>
           </View>
@@ -1894,9 +1895,9 @@ export default function AdminDashboardScreen({
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <LucideIcon name="file-text" size={18} color="#C5A46D" />
-            <Text style={styles.configFormTitle}>HOTEL SPECIFICATIONS & GPS ORIGIN</Text>
-          </View>
+          <LucideIcon name="file-text" size={18} color="#C5A46D" />
+          <Text style={styles.configFormTitle}>HOTEL SPECIFICATIONS & GPS ORIGIN</Text>
+        </View>
 
         <View style={styles.formRow}>
           <View style={styles.formCol}>
@@ -2019,7 +2020,7 @@ export default function AdminDashboardScreen({
                     onPress={() => handleRemoveImage(index)}
                     activeOpacity={0.8}
                   >
- <LucideIcon name="x" size={13} color="#D9534F" />
+                    <LucideIcon name="x" size={13} color="#D9534F" />
                   </TouchableOpacity>
                 </View>
 
@@ -2102,9 +2103,9 @@ export default function AdminDashboardScreen({
                   activeOpacity={0.8}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                  <LucideIcon name="plus" size={13} color="#101114" />
-                  <Text style={styles.addUrlActionBtnText}>Add with 10-Digit ID</Text>
-                </View>
+                    <LucideIcon name="plus" size={13} color="#101114" />
+                    <Text style={styles.addUrlActionBtnText}>Add with 10-Digit ID</Text>
+                  </View>
                 </TouchableOpacity>
               </View>
             </View>
@@ -2143,9 +2144,9 @@ export default function AdminDashboardScreen({
             activeOpacity={0.8}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                <LucideIcon name="check" size={13} color="#101114" />
-                <Text style={styles.saveOnlyBtnText}>Submit for Approval</Text>
-              </View>
+              <LucideIcon name="check" size={13} color="#101114" />
+              <Text style={styles.saveOnlyBtnText}>Submit for Approval</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -2158,7 +2159,7 @@ export default function AdminDashboardScreen({
           >
             <Text style={styles.saveAndLaunchBtnText}>
               {currentActiveHotel?.status === 'approved'
- ? ' LAUNCH GUEST WEBSITE →'
+                ? ' LAUNCH GUEST WEBSITE →'
                 : '⏳ SUBMIT HOTEL FOR APPROVAL'}
             </Text>
           </TouchableOpacity>
@@ -2253,8 +2254,8 @@ export default function AdminDashboardScreen({
                   currentActiveHotel?.status === 'approved'
                     ? styles.statusBadgeApproved
                     : currentActiveHotel?.status === 'rejected'
-                    ? styles.statusBadgeRejected
-                    : styles.statusBadgePending,
+                      ? styles.statusBadgeRejected
+                      : styles.statusBadgePending,
                 ]}>
                   <Text style={styles.statusBadgePillText}>
                     {(currentActiveHotel?.status || 'PENDING').toUpperCase()}
@@ -2637,7 +2638,7 @@ export default function AdminDashboardScreen({
                 style={styles.clearSearchBtn}
                 activeOpacity={0.7}
               >
- <LucideIcon name="x" size={13} color="#A5A39D" />
+                <LucideIcon name="x" size={13} color="#A5A39D" />
               </TouchableOpacity>
             )}
           </View>
@@ -2738,9 +2739,9 @@ export default function AdminDashboardScreen({
                           {isActiveHotel && (
                             <View style={styles.activeHotelPillBadge}>
                               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                              <LucideIcon name="award" size={11} color="#C5A46D" />
-                              <Text style={styles.activeHotelPillBadgeText}>ACTIVE</Text>
-                            </View>
+                                <LucideIcon name="award" size={11} color="#C5A46D" />
+                                <Text style={styles.activeHotelPillBadgeText}>ACTIVE</Text>
+                              </View>
                             </View>
                           )}
                           <View
@@ -2749,8 +2750,8 @@ export default function AdminDashboardScreen({
                               hotelStatus === 'approved'
                                 ? styles.hotelStatusApproved
                                 : hotelStatus === 'rejected'
-                                ? styles.hotelStatusRejected
-                                : styles.hotelStatusPending,
+                                  ? styles.hotelStatusRejected
+                                  : styles.hotelStatusPending,
                             ]}
                           >
                             <Text style={styles.hotelStatusBadgeText}>
@@ -3016,7 +3017,7 @@ export default function AdminDashboardScreen({
                 style={styles.clearSearchBtn}
                 activeOpacity={0.7}
               >
- <LucideIcon name="x" size={13} color="#A5A39D" />
+                <LucideIcon name="x" size={13} color="#A5A39D" />
               </TouchableOpacity>
             )}
           </View>
@@ -3061,7 +3062,7 @@ export default function AdminDashboardScreen({
               </Text>
               <Text style={styles.directoryEmptySub}>
                 {items.length === 0
- ? `No ${title.toLowerCase()} configured for ${currentActiveHotel?.name || 'this hotel'} yet. Click "+ ${addLabel}" above to create one.`
+                  ? `No ${title.toLowerCase()} configured for ${currentActiveHotel?.name || 'this hotel'} yet. Click "+ ${addLabel}" above to create one.`
                   : 'Try searching for different keywords or clear your search filters.'}
               </Text>
               {items.length === 0 ? (
@@ -3071,9 +3072,9 @@ export default function AdminDashboardScreen({
                   activeOpacity={0.8}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-              <LucideIcon name="plus" size={13} color="#101114" />
-              <Text style={styles.createItemBtnText}>{addLabel}</Text>
-            </View>
+                    <LucideIcon name="plus" size={13} color="#101114" />
+                    <Text style={styles.createItemBtnText}>{addLabel}</Text>
+                  </View>
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
@@ -3124,9 +3125,9 @@ export default function AdminDashboardScreen({
                       activeOpacity={0.8}
                     >
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                          <LucideIcon name={isAvail ? "check-circle" : "x-circle"} size={12} color={isAvail ? "#4E9F76" : "#D9534F"} />
-                          <Text style={styles.availToggleText}>{isAvail ? 'Available' : 'Unavailable'}</Text>
-                        </View>
+                        <LucideIcon name={isAvail ? "check-circle" : "x-circle"} size={12} color={isAvail ? "#4E9F76" : "#D9534F"} />
+                        <Text style={styles.availToggleText}>{isAvail ? 'Available' : 'Unavailable'}</Text>
+                      </View>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -3135,9 +3136,9 @@ export default function AdminDashboardScreen({
                       activeOpacity={0.8}
                     >
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                          <LucideIcon name="edit" size={12} color="#F2EFE8" />
-                          <Text style={styles.editItemBtnText}>Edit</Text>
-                        </View>
+                        <LucideIcon name="edit" size={12} color="#F2EFE8" />
+                        <Text style={styles.editItemBtnText}>Edit</Text>
+                      </View>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -3146,9 +3147,9 @@ export default function AdminDashboardScreen({
                       activeOpacity={0.8}
                     >
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                          <LucideIcon name="trash-2" size={12} color="#D9534F" />
-                          <Text style={styles.deleteItemBtnText}>Delete</Text>
-                        </View>
+                        <LucideIcon name="trash-2" size={12} color="#D9534F" />
+                        <Text style={styles.deleteItemBtnText}>Delete</Text>
+                      </View>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -3167,16 +3168,16 @@ export default function AdminDashboardScreen({
     renderComponentSection({
       categoryKey: 'restaurants',
       title: 'Restaurants & Fine Dining',
- icon: '',
+      icon: '',
       subtitle: 'Manage dining partners, menus, takeaway, delivery flags, and operational availability',
       items: restaurants,
       addLabel: 'Add New Restaurant',
- formatSubtitle: (r) => `${r.cuisine || 'Continental'} • ${r.location || 'Hotel Ground Floor'} • ★ ${r.rating || 4.8}`,
+      formatSubtitle: (r) => `${r.cuisine || 'Continental'} • ${r.location || 'Hotel Ground Floor'} • ★ ${r.rating || 4.8}`,
       formatPriceOrRate: (r) => r.priceRange || r.price || '₹₹₹₹',
       renderBadges: (r) => (
         <View style={styles.badgeRow}>
- <Text style={styles.tagBadge}>Takeaway: {r.takeaway ? '✓ YES' : '✗ NO'}</Text>
- <Text style={styles.tagBadge}>Delivery: {r.homeDelivery ? '✓ YES' : '✗ NO'}</Text>
+          <Text style={styles.tagBadge}>Takeaway: {r.takeaway ? '✓ YES' : '✗ NO'}</Text>
+          <Text style={styles.tagBadge}>Delivery: {r.homeDelivery ? '✓ YES' : '✗ NO'}</Text>
           {r.timings ? <Text style={styles.tagBadge}>⏱️ {r.timings}</Text> : null}
         </View>
       ),
@@ -3186,11 +3187,11 @@ export default function AdminDashboardScreen({
     renderComponentSection({
       categoryKey: 'gyms',
       title: 'Gyms & Wellness Centers',
- icon: '',
+      icon: '',
       subtitle: 'Fitness centers, personal training, spa services, and day pass rates',
       items: gyms,
       addLabel: 'Add New Gym',
- formatSubtitle: (g) => ` ${g.timings || '6:00 AM - 10:00 PM'} • ${g.location || 'Wellness Wing'}`,
+      formatSubtitle: (g) => ` ${g.timings || '6:00 AM - 10:00 PM'} • ${g.location || 'Wellness Wing'}`,
       formatPriceOrRate: (g) => `${g.passPrice || '₹1,500'}/day`,
       renderBadges: (g) => (
         <Text style={styles.facilitiesText}>
@@ -3203,11 +3204,11 @@ export default function AdminDashboardScreen({
     renderComponentSection({
       categoryKey: 'pools',
       title: 'Swimming Pools',
- icon: '',
+      icon: '',
       subtitle: 'Infinity pools, heated wellness water, and poolside cabanas',
       items: pools,
       addLabel: 'Add Swimming Pool',
- formatSubtitle: (p) => ` ${p.timings || p.timing || '6:00 AM - 9:00 PM'} • ${p.location || 'Hotel Courtyard'} • ★ ${p.rating || 4.9}`,
+      formatSubtitle: (p) => ` ${p.timings || p.timing || '6:00 AM - 9:00 PM'} • ${p.location || 'Hotel Courtyard'} • ★ ${p.rating || 4.9}`,
       formatPriceOrRate: (p) => p.price || 'Resident Access',
       renderBadges: (p) => (
         <Text style={styles.facilitiesText}>
@@ -3220,11 +3221,11 @@ export default function AdminDashboardScreen({
     renderComponentSection({
       categoryKey: 'takeaway',
       title: 'Takeaway Partners',
- icon: '',
+      icon: '',
       subtitle: 'Express pickup times, minimum order values, and partner availability',
       items: takeaway,
       addLabel: 'Add Takeaway Partner',
- formatSubtitle: (t) => ` Ready in ${t.takeawayTime || '15 mins'} • ${t.location || 'Hotel Lobby'}`,
+      formatSubtitle: (t) => ` Ready in ${t.takeawayTime || '15 mins'} • ${t.location || 'Hotel Lobby'}`,
       formatPriceOrRate: (t) => t.minOrder || 'Min ₹400',
     });
 
@@ -3232,11 +3233,11 @@ export default function AdminDashboardScreen({
     renderComponentSection({
       categoryKey: 'delivery',
       title: 'Home Delivery Services',
- icon: '',
+      icon: '',
       subtitle: 'Room delivery radius, delivery fees, minimum orders, and status',
       items: homeDelivery,
       addLabel: 'Add Delivery Service',
- formatSubtitle: (d) => ` Radius: ${d.deliveryRadius || '5 km'} • Fee: ${d.deliveryFee || 'Free'}`,
+      formatSubtitle: (d) => ` Radius: ${d.deliveryRadius || '5 km'} • Fee: ${d.deliveryFee || 'Free'}`,
       formatPriceOrRate: (d) => d.minOrder || 'Min ₹500',
     });
 
@@ -3244,11 +3245,11 @@ export default function AdminDashboardScreen({
     renderComponentSection({
       categoryKey: 'facilities',
       title: 'Hotel Facilities & Services',
- icon: '',
+      icon: '',
       subtitle: 'Concierge, executive lounges, spa treatments, valet & premium guest amenities',
       items: facilities,
       addLabel: 'Add Hotel Facility',
- formatSubtitle: (f) => ` ${f.timings || '24/7 Available'} • ${f.location || 'Main Lobby'}`,
+      formatSubtitle: (f) => ` ${f.timings || '24/7 Available'} • ${f.location || 'Main Lobby'}`,
       formatPriceOrRate: (f) => f.category || 'Guest Service',
       renderBadges: (f) => (
         <Text style={styles.facilitiesText}>
@@ -3263,7 +3264,7 @@ export default function AdminDashboardScreen({
     <View style={styles.tabContentContainer}>
       <View style={styles.sectionHeaderRow}>
         <View>
- <Text style={styles.sectionTitle}> HOTEL PAYMENT METHODS & STATUS MANAGER</Text>
+          <Text style={styles.sectionTitle}> HOTEL PAYMENT METHODS & STATUS MANAGER</Text>
           <Text style={styles.sectionSub}>
             Vertical configuration: select a hotel to manage accepted payment methods and account settlement status.
           </Text>
@@ -3272,14 +3273,14 @@ export default function AdminDashboardScreen({
 
       {/* Main Full-Width Vertical Workspace (No Right-Side Column) */}
       <View style={styles.pmLayoutRow}>
-        
+
         {/* TOP: HORIZONTAL HOTEL SELECTOR TABS */}
         <View style={styles.pmHotelsCol}>
           <View style={styles.pmColHeaderRow}>
- <Text style={styles.pmColHeaderTitle}> SELECT HOTEL TO CONFIGURE ({hotels.length} PROPERTIES)</Text>
+            <Text style={styles.pmColHeaderTitle}> SELECT HOTEL TO CONFIGURE ({hotels.length} PROPERTIES)</Text>
             <Text style={styles.pmColHeaderSub}>Click any hotel below to configure accepted payment methods & account status</Text>
           </View>
-          
+
           <ScrollView
             horizontal={true}
             showsHorizontalScrollIndicator={false}
@@ -3312,7 +3313,7 @@ export default function AdminDashboardScreen({
                       )}
                     </View>
                     <Text style={styles.pmHotelLoc} numberOfLines={1}>
- {h.location}
+                      {h.location}
                     </Text>
                     <View style={styles.pmHotelBadges}>
                       <Text
@@ -3321,10 +3322,10 @@ export default function AdminDashboardScreen({
                           isPaid ? styles.pmPayStatusPaid : styles.pmPayStatusPending,
                         ]}
                       >
- {isPaid ? ' Paid' : ' Pending'}
+                        {isPaid ? ' Paid' : ' Pending'}
                       </Text>
                       <Text style={styles.pmMethodCountBadge}>
- {methodCount} Methods
+                        {methodCount} Methods
                       </Text>
                     </View>
                   </View>
@@ -3336,7 +3337,7 @@ export default function AdminDashboardScreen({
 
         {/* FULL-WIDTH VERTICAL PAYMENT CONFIGURATION */}
         <View style={styles.pmConfigCol}>
-          
+
           {/* Selected Hotel Overview Card */}
           <View style={styles.pmSelectedHotelHeader}>
             <Image
@@ -3353,9 +3354,9 @@ export default function AdminDashboardScreen({
                 </Text>
               </View>
               <Text style={styles.pmSelectedHotelAddress}>
- {selectedHotelForPayments?.location}
+                {selectedHotelForPayments?.location}
               </Text>
-              
+
               {/* Hotel Account Payment Status Banner with 1-Click Toggle */}
               <View style={styles.pmAccountStatusRow}>
                 <TouchableOpacity
@@ -3370,8 +3371,8 @@ export default function AdminDashboardScreen({
                 >
                   <Text style={styles.pmAccountStatusText}>
                     {(selectedHotelForPayments?.paymentStatus || '').toLowerCase() === 'paid'
- ? ' Account Payment: COMPLETED (PAID) — Click to Mark as Not Made ↺'
- : ' Account Payment: NOT MADE / PENDING — Click to Mark as Paid ✓'}
+                      ? ' Account Payment: COMPLETED (PAID) — Click to Mark as Not Made ↺'
+                      : ' Account Payment: NOT MADE / PENDING — Click to Mark as Paid ✓'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -3382,7 +3383,7 @@ export default function AdminDashboardScreen({
           <View style={styles.pmSectionTitleRow}>
             <View>
               <Text style={styles.pmSectionTitle}>
- ACCEPTED PAYMENT METHODS (VERTICAL CONFIGURATION)
+                ACCEPTED PAYMENT METHODS (VERTICAL CONFIGURATION)
               </Text>
               <Text style={styles.pmSectionSub}>
                 Click any vertical card below to toggle acceptance on or off for {selectedHotelForPayments?.title}.
@@ -3459,7 +3460,7 @@ export default function AdminDashboardScreen({
                           : styles.vpmToggleTextInactive,
                       ]}
                     >
- {isChecked ? '✓ ACCEPTED' : '+ ENABLE'}
+                      {isChecked ? '✓ ACCEPTED' : '+ ENABLE'}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -3469,7 +3470,7 @@ export default function AdminDashboardScreen({
 
           {/* Add Custom Payment Method (Vertical Input Card) */}
           <View style={styles.customAddCard}>
- <Text style={styles.customAddTitle}>+ ADD CUSTOM PAYMENT METHOD</Text>
+            <Text style={styles.customAddTitle}>+ ADD CUSTOM PAYMENT METHOD</Text>
             <Text style={styles.customAddSub}>
               Enter any bespoke billing agreement, corporate voucher, or alternative currency.
             </Text>
@@ -3502,7 +3503,7 @@ export default function AdminDashboardScreen({
               <ActivityIndicator color="#101114" size="small" />
             ) : (
               <Text style={styles.savePaymentsBtnText}>
- Save Accepted Payment Methods for {selectedHotelForPayments?.title}
+                Save Accepted Payment Methods for {selectedHotelForPayments?.title}
               </Text>
             )}
           </TouchableOpacity>
@@ -3518,7 +3519,7 @@ export default function AdminDashboardScreen({
     <View style={styles.tabContentContainer}>
       <View style={styles.sectionHeaderRow}>
         <View>
- <Text style={styles.sectionTitle}> 1-CLICK AVAILABILITY MATRIX</Text>
+          <Text style={styles.sectionTitle}> 1-CLICK AVAILABILITY MATRIX</Text>
           <Text style={styles.sectionSub}>
             Direct operational control: click any badge to toggle between 'Available' and 'Not Available'
           </Text>
@@ -3526,7 +3527,7 @@ export default function AdminDashboardScreen({
       </View>
 
       {/* Hotels Group */}
- <Text style={styles.matrixGroupTitle}> Hotels ({hotels.length})</Text>
+      <Text style={styles.matrixGroupTitle}> Hotels ({hotels.length})</Text>
       <View style={styles.matrixGrid}>
         {hotels.map((h) => {
           const isAvail = h.availability === 'Available' || !h.availability;
@@ -3540,7 +3541,7 @@ export default function AdminDashboardScreen({
                 activeOpacity={0.8}
               >
                 <Text style={styles.matrixBadgeText}>
- {isAvail ? ' Available' : ' Not Available'}
+                  {isAvail ? ' Available' : ' Not Available'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -3549,7 +3550,7 @@ export default function AdminDashboardScreen({
       </View>
 
       {/* Restaurants Group */}
- <Text style={styles.matrixGroupTitle}> Restaurants ({restaurants.length})</Text>
+      <Text style={styles.matrixGroupTitle}> Restaurants ({restaurants.length})</Text>
       <View style={styles.matrixGrid}>
         {restaurants.map((r) => {
           const isAvail = r.availability === 'Available' || !r.availability;
@@ -3563,7 +3564,7 @@ export default function AdminDashboardScreen({
                 activeOpacity={0.8}
               >
                 <Text style={styles.matrixBadgeText}>
- {isAvail ? ' Available' : ' Not Available'}
+                  {isAvail ? ' Available' : ' Not Available'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -3572,7 +3573,7 @@ export default function AdminDashboardScreen({
       </View>
 
       {/* Gyms Group */}
- <Text style={styles.matrixGroupTitle}> Gyms ({gyms.length})</Text>
+      <Text style={styles.matrixGroupTitle}> Gyms ({gyms.length})</Text>
       <View style={styles.matrixGrid}>
         {gyms.map((g) => {
           const isAvail = g.availability === 'Available' || !g.availability;
@@ -3586,7 +3587,7 @@ export default function AdminDashboardScreen({
                 activeOpacity={0.8}
               >
                 <Text style={styles.matrixBadgeText}>
- {isAvail ? ' Available' : ' Not Available'}
+                  {isAvail ? ' Available' : ' Not Available'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -3657,9 +3658,9 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                  <LucideIcon name="plus" size={13} color="#101114" />
-                  <Text style={styles.createItemBtnText}>Add Place to {activeCatObj.label}</Text>
-                </View>
+                <LucideIcon name="plus" size={13} color="#101114" />
+                <Text style={styles.createItemBtnText}>Add Place to {activeCatObj.label}</Text>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -3680,9 +3681,9 @@ export default function AdminDashboardScreen({
                 activeOpacity={0.8}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <LucideIcon name="trash-2" size={12} color="#D9534F" />
-                    <Text style={styles.deleteItemBtnText}>Delete Category</Text>
-                  </View>
+                  <LucideIcon name="trash-2" size={12} color="#D9534F" />
+                  <Text style={styles.deleteItemBtnText}>Delete Category</Text>
+                </View>
               </TouchableOpacity>
             )}
           </View>
@@ -3691,7 +3692,7 @@ export default function AdminDashboardScreen({
         {/* 2. LIVE ORIGIN VERIFICATION BANNER */}
         <View style={styles.placesOriginBanner}>
           <View style={styles.placesOriginHeader}>
- <Text style={styles.placesOriginIcon}></Text>
+            <Text style={styles.placesOriginIcon}></Text>
             <View style={{ flex: 1 }}>
               <View style={styles.placesOriginTitleRow}>
                 <Text style={styles.placesOriginTitle}>
@@ -3700,8 +3701,8 @@ export default function AdminDashboardScreen({
                 <View style={styles.placesOriginStatusBadge}>
                   <Text style={styles.placesOriginStatusText}>
                     {currentActiveHotel?.latitude && currentActiveHotel?.longitude
- ? ' GPS ORIGIN VERIFIED'
- : ' GPS COORDS NOT SET'}
+                      ? ' GPS ORIGIN VERIFIED'
+                      : ' GPS COORDS NOT SET'}
                   </Text>
                 </View>
               </View>
@@ -3709,10 +3710,10 @@ export default function AdminDashboardScreen({
                 {currentActiveHotel?.name || 'Hotel Not Configured'} ({currentActiveHotel?.city || 'Unset'})
               </Text>
               <Text style={styles.placesOriginCoords}>
- Origin: Lat: {currentActiveHotel?.latitude ?? 'Not set'}, Lng: {currentActiveHotel?.longitude ?? 'Not set'} • Address: {currentActiveHotel?.address || 'Not set'}
+                Origin: Lat: {currentActiveHotel?.latitude ?? 'Not set'}, Lng: {currentActiveHotel?.longitude ?? 'Not set'} • Address: {currentActiveHotel?.address || 'Not set'}
               </Text>
               <Text style={styles.placesOriginFormula}>
- Formula: origin={currentActiveHotel?.latitude || 'hotel_lat'},{currentActiveHotel?.longitude || 'hotel_lng'} -> destination=place.latitude,place.longitude
+                Formula: origin={currentActiveHotel?.latitude || 'hotel_lat'},{currentActiveHotel?.longitude || 'hotel_lng'} -> destination=place.latitude,place.longitude
               </Text>
             </View>
           </View>
@@ -3725,7 +3726,7 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <Text style={styles.placesPresetBtnText}>
- Populate Verified Places for {currentActiveHotel?.city || 'City'}
+                Populate Verified Places for {currentActiveHotel?.city || 'City'}
               </Text>
             </TouchableOpacity>
 
@@ -3735,7 +3736,7 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <Text style={styles.placesClearBtnText}>
- Clear All Places (Test Empty State)
+                Clear All Places (Test Empty State)
               </Text>
             </TouchableOpacity>
           </View>
@@ -3806,14 +3807,14 @@ export default function AdminDashboardScreen({
               activeOpacity={0.8}
             >
               <Text style={styles.inlineAddPlaceBtnText}>
- + Add New Place
+                + Add New Place
               </Text>
             </TouchableOpacity>
           </View>
 
           {currentCategoryPlaces.length === 0 ? (
             <View style={styles.placesEmptyCard}>
- <Text style={styles.placesEmptyIcon}></Text>
+              <Text style={styles.placesEmptyIcon}></Text>
               <Text style={styles.placesEmptyTitle}>
                 No {activeCatObj.label} added yet for {currentActiveHotel?.city || 'this hotel'}
               </Text>
@@ -3827,7 +3828,7 @@ export default function AdminDashboardScreen({
                   activeOpacity={0.8}
                 >
                   <Text style={styles.placesEmptyAddBtnText}>
- + Add First Place to {activeCatObj.label}
+                    + Add First Place to {activeCatObj.label}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -3836,7 +3837,7 @@ export default function AdminDashboardScreen({
                   activeOpacity={0.8}
                 >
                   <Text style={styles.placesEmptyPopulateBtnText}>
- Load City Preset Places
+                    Load City Preset Places
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -3861,7 +3862,7 @@ export default function AdminDashboardScreen({
                         </Text>
                         <View style={styles.placeItemBadge}>
                           <Text style={styles.placeItemBadgeText}>
- ★ {place.rating || 4.8}
+                            ★ {place.rating || 4.8}
                           </Text>
                         </View>
                       </View>
@@ -3873,7 +3874,7 @@ export default function AdminDashboardScreen({
                       {/* Location & GPS Info */}
                       <View style={styles.placeItemMetaRow}>
                         <Text style={styles.placeItemMetaText}>
- {place.address || place.location || 'Local Area'} ({place.distance || '1.2 km'})
+                          {place.address || place.location || 'Local Area'} ({place.distance || '1.2 km'})
                         </Text>
                         <Text
                           style={[
@@ -3913,7 +3914,7 @@ export default function AdminDashboardScreen({
                         onPress={() => handleOpenEditPlaceModal(selectedPlaceCategory, place)}
                         activeOpacity={0.8}
                       >
- <Text style={styles.placeItemEditBtnText}> Edit</Text>
+                        <Text style={styles.placeItemEditBtnText}> Edit</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -3921,7 +3922,7 @@ export default function AdminDashboardScreen({
                         onPress={() => handleTestDirections(place)}
                         activeOpacity={0.8}
                       >
- <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                           <LucideIcon name="compass" size={13} color="#F2EFE8" />
                           <Text style={styles.placeItemDirBtnText}>Test Directions</Text>
                         </View>
@@ -3932,7 +3933,7 @@ export default function AdminDashboardScreen({
                         onPress={() => handleDeletePlace(selectedPlaceCategory, place.id, place.title)}
                         activeOpacity={0.8}
                       >
- <Text style={styles.placeItemDeleteBtnText}> Delete</Text>
+                        <Text style={styles.placeItemDeleteBtnText}> Delete</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -3961,7 +3962,7 @@ export default function AdminDashboardScreen({
             <View style={styles.modalHeader}>
               <View>
                 <Text style={styles.modalHeaderTitle}>
- {editingPlaceId ? ' Edit Place Details' : '+ Add New Place to Active Hotel'}
+                  {editingPlaceId ? ' Edit Place Details' : '+ Add New Place to Active Hotel'}
                 </Text>
                 <Text style={styles.modalHeaderSub}>
                   {editingPlaceId
@@ -3973,7 +3974,7 @@ export default function AdminDashboardScreen({
                 style={styles.modalCloseBtn}
                 onPress={() => setPlaceModalVisible(false)}
               >
- <LucideIcon name="x" size={16} color="#A5A39D" />
+                <LucideIcon name="x" size={16} color="#A5A39D" />
               </TouchableOpacity>
             </View>
 
@@ -3985,15 +3986,15 @@ export default function AdminDashboardScreen({
               <Text style={styles.formLabel}>Target Category *</Text>
               <View style={styles.availSelectorRow}>
                 {[
- { key: 'touristPlaces', label: 'Tourist Places', icon: '' },
- { key: 'shopping', label: 'Shopping', icon: '' },
- { key: 'transportation', label: 'Transit', icon: '' },
- { key: 'hospitals', label: 'Hospitals', icon: '' },
- { key: 'pharmacies', label: 'Pharmacies', icon: '' },
- { key: 'gyms', label: 'Gyms', icon: '' },
- { key: 'pools', label: 'Swimming Pools', icon: '' },
- { key: 'takeaways', label: 'Takeaways', icon: '' },
- { key: 'dining', label: 'Dining', icon: '' },
+                  { key: 'touristPlaces', label: 'Tourist Places', icon: '' },
+                  { key: 'shopping', label: 'Shopping', icon: '' },
+                  { key: 'transportation', label: 'Transit', icon: '' },
+                  { key: 'hospitals', label: 'Hospitals', icon: '' },
+                  { key: 'pharmacies', label: 'Pharmacies', icon: '' },
+                  { key: 'gyms', label: 'Gyms', icon: '' },
+                  { key: 'pools', label: 'Swimming Pools', icon: '' },
+                  { key: 'takeaways', label: 'Takeaways', icon: '' },
+                  { key: 'dining', label: 'Dining', icon: '' },
                   ...((currentActiveHotel?.customCategories || []).map((c) => ({
                     key: c.key || c.id,
                     label: c.name || c.label || c.key,
@@ -4128,7 +4129,7 @@ export default function AdminDashboardScreen({
                 <Text style={styles.formLabel}>Faculty 5 Data Points Specification:</Text>
                 <TextInput
                   style={[styles.formInput, { marginBottom: 6 }]}
- placeholder="Data 1 (e.g. ★ 4.9 Guest Rating)"
+                  placeholder="Data 1 (e.g. ★ 4.9 Guest Rating)"
                   placeholderTextColor="#807E78"
                   value={newPlaceForm.data1}
                   onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, data1: text })}
@@ -4176,7 +4177,7 @@ export default function AdminDashboardScreen({
                 onPress={handleSaveNewPlace}
               >
                 <Text style={styles.modalSaveText}>
- {editingPlaceId ? ' Save Place Changes' : ' Add Place & Generate 10-Digit ID'}
+                  {editingPlaceId ? ' Save Place Changes' : ' Add Place & Generate 10-Digit ID'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -4201,7 +4202,7 @@ export default function AdminDashboardScreen({
           <View style={[styles.modalContainer, { maxWidth: 450 }]}>
             <View style={styles.modalHeader}>
               <View>
- <Text style={styles.modalHeaderTitle}> Add Custom Category</Text>
+                <Text style={styles.modalHeaderTitle}> Add Custom Category</Text>
                 <Text style={styles.modalHeaderSub}>
                   Create bespoke tracks (e.g. Art Galleries, Temples, Beaches, Nightlife)
                 </Text>
@@ -4210,7 +4211,7 @@ export default function AdminDashboardScreen({
                 style={styles.modalCloseBtn}
                 onPress={() => setCustomCatModalVisible(false)}
               >
- <LucideIcon name="x" size={16} color="#A5A39D" />
+                <LucideIcon name="x" size={16} color="#A5A39D" />
               </TouchableOpacity>
             </View>
 
@@ -4241,7 +4242,7 @@ export default function AdminDashboardScreen({
               <Text style={styles.formLabel}>Category Icon (Emoji)</Text>
               <TextInput
                 style={styles.formInput}
- placeholder="e.g. sparkles"
+                placeholder="e.g. sparkles"
                 placeholderTextColor="#807E78"
                 value={customCatIcon}
                 onChangeText={setCustomCatIcon}
@@ -4277,16 +4278,16 @@ export default function AdminDashboardScreen({
       modalCategory === 'hotels'
         ? 'Hotel Property'
         : modalCategory === 'restaurants'
-        ? 'Restaurant & Dining'
-        : modalCategory === 'gyms'
-        ? 'Gym & Wellness'
-        : (modalCategory === 'pools' || modalCategory === 'swimming_pools')
-        ? 'Swimming Pool'
-        : modalCategory === 'takeaway'
-        ? 'Takeaway Partner'
-        : (modalCategory === 'delivery' || modalCategory === 'homeDelivery')
-        ? 'Home / Suite Delivery'
-        : 'Hotel Facility & Service';
+          ? 'Restaurant & Dining'
+          : modalCategory === 'gyms'
+            ? 'Gym & Wellness'
+            : (modalCategory === 'pools' || modalCategory === 'swimming_pools')
+              ? 'Swimming Pool'
+              : modalCategory === 'takeaway'
+                ? 'Takeaway Partner'
+                : (modalCategory === 'delivery' || modalCategory === 'homeDelivery')
+                  ? 'Home / Suite Delivery'
+                  : 'Hotel Facility & Service';
 
     return (
       <Modal
@@ -4301,7 +4302,7 @@ export default function AdminDashboardScreen({
             <View style={styles.modalHeader}>
               <View>
                 <Text style={styles.modalHeaderTitle}>
- {isEdit ? ` Edit ${catLabel}` : `+ Add New ${catLabel}`}
+                  {isEdit ? ` Edit ${catLabel}` : `+ Add New ${catLabel}`}
                 </Text>
                 <Text style={styles.modalHeaderSub}>
                   Persists to MongoDB & updates Guest Portal immediately ({modalCategory})
@@ -4311,7 +4312,7 @@ export default function AdminDashboardScreen({
                 style={styles.modalCloseBtn}
                 onPress={() => setItemModalVisible(false)}
               >
- <LucideIcon name="x" size={16} color="#A5A39D" />
+                <LucideIcon name="x" size={16} color="#A5A39D" />
               </TouchableOpacity>
             </View>
 
@@ -4321,13 +4322,13 @@ export default function AdminDashboardScreen({
                 <Text style={styles.formCategoryPickerLabel}>SELECT COMPONENT CATEGORY:</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryChipsScroll}>
                   {[
- { key: 'restaurants', label: ' Dining', defaultPrice: '₹₹₹₹' },
- { key: 'gyms', label: ' Gym & Fitness', defaultPrice: '₹1,500 / day pass' },
- { key: 'pools', label: ' Swimming Pool', defaultPrice: 'Resident Access Available' },
- { key: 'facilities', label: ' Facility / Service', defaultPrice: 'Complimentary' },
- { key: 'takeaway', label: ' Takeaway', defaultPrice: 'Min ₹400' },
- { key: 'delivery', label: ' Room Delivery', defaultPrice: 'Free Suite Delivery' },
- { key: 'hotels', label: ' Hotel Property', defaultPrice: '₹8,500 / night' },
+                    { key: 'restaurants', label: ' Dining', defaultPrice: '₹₹₹₹' },
+                    { key: 'gyms', label: ' Gym & Fitness', defaultPrice: '₹1,500 / day pass' },
+                    { key: 'pools', label: ' Swimming Pool', defaultPrice: 'Resident Access Available' },
+                    { key: 'facilities', label: ' Facility / Service', defaultPrice: 'Complimentary' },
+                    { key: 'takeaway', label: ' Takeaway', defaultPrice: 'Min ₹400' },
+                    { key: 'delivery', label: ' Room Delivery', defaultPrice: 'Free Suite Delivery' },
+                    { key: 'hotels', label: ' Hotel Property', defaultPrice: '₹8,500 / night' },
                   ].map((cat) => {
                     const isSelected = modalCategory === cat.key;
                     return (
@@ -4416,16 +4417,16 @@ export default function AdminDashboardScreen({
                     {modalCategory === 'hotels'
                       ? 'Price / Night'
                       : modalCategory === 'restaurants'
-                      ? 'Price Range / Cost for Two'
-                      : modalCategory === 'gyms'
-                      ? 'Day Pass / Membership Rate'
-                      : (modalCategory === 'pools' || modalCategory === 'swimming_pools')
-                      ? 'Pool Pass Rate / Access Fee'
-                      : modalCategory === 'takeaway'
-                      ? 'Min Order Value'
-                      : (modalCategory === 'delivery' || modalCategory === 'homeDelivery')
-                      ? 'Delivery Fee'
-                      : 'Service Fee / Access (e.g. Complimentary)'}
+                        ? 'Price Range / Cost for Two'
+                        : modalCategory === 'gyms'
+                          ? 'Day Pass / Membership Rate'
+                          : (modalCategory === 'pools' || modalCategory === 'swimming_pools')
+                            ? 'Pool Pass Rate / Access Fee'
+                            : modalCategory === 'takeaway'
+                              ? 'Min Order Value'
+                              : (modalCategory === 'delivery' || modalCategory === 'homeDelivery')
+                                ? 'Delivery Fee'
+                                : 'Service Fee / Access (e.g. Complimentary)'}
                   </Text>
                   <TextInput
                     style={styles.formInput}
@@ -4467,7 +4468,7 @@ export default function AdminDashboardScreen({
                   ]}
                   onPress={() => setFormFields({ ...formFields, availability: 'Available' })}
                 >
- <Text style={styles.availPillText}> Available</Text>
+                  <Text style={styles.availPillText}> Available</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -4477,7 +4478,7 @@ export default function AdminDashboardScreen({
                   ]}
                   onPress={() => setFormFields({ ...formFields, availability: 'Not Available' })}
                 >
- <Text style={styles.availPillText}> Not Available</Text>
+                  <Text style={styles.availPillText}> Not Available</Text>
                 </TouchableOpacity>
               </View>
 
@@ -4503,7 +4504,7 @@ export default function AdminDashboardScreen({
                       }
                     >
                       <Text style={styles.checkboxIcon}>
- <LucideIcon name={formFields.takeawayEnabled ? "check-circle" : "circle"} size={16} color={formFields.takeawayEnabled ? "#C5A46D" : "#807E78"} />
+                        <LucideIcon name={formFields.takeawayEnabled ? "check-circle" : "circle"} size={16} color={formFields.takeawayEnabled ? "#C5A46D" : "#807E78"} />
                       </Text>
                       <Text style={styles.checkboxLabel}>Enable Takeaway Pickup</Text>
                     </TouchableOpacity>
@@ -4518,7 +4519,7 @@ export default function AdminDashboardScreen({
                       }
                     >
                       <Text style={styles.checkboxIcon}>
- <LucideIcon name={formFields.homeDeliveryEnabled ? "check-circle" : "circle"} size={16} color={formFields.homeDeliveryEnabled ? "#C5A46D" : "#807E78"} />
+                        <LucideIcon name={formFields.homeDeliveryEnabled ? "check-circle" : "circle"} size={16} color={formFields.homeDeliveryEnabled ? "#C5A46D" : "#807E78"} />
                       </Text>
                       <Text style={styles.checkboxLabel}>Enable Room Delivery</Text>
                     </TouchableOpacity>
@@ -4573,10 +4574,10 @@ export default function AdminDashboardScreen({
                             const cur = formFields.paymentMethods;
                             const next = isChecked
                               ? cur.filter(
-                                  (m) =>
-                                    !m.toLowerCase().includes(opt.toLowerCase()) &&
-                                    !opt.toLowerCase().includes(m.toLowerCase())
-                                )
+                                (m) =>
+                                  !m.toLowerCase().includes(opt.toLowerCase()) &&
+                                  !opt.toLowerCase().includes(m.toLowerCase())
+                              )
                               : [...cur, opt];
                             setFormFields({ ...formFields, paymentMethods: next });
                           }}
@@ -4587,7 +4588,7 @@ export default function AdminDashboardScreen({
                               isChecked && styles.optCheckboxChecked,
                             ]}
                           >
- <LucideIcon name={isChecked ? "check-circle" : "circle"} size={16} color={isChecked ? "#C5A46D" : "#807E78"} />
+                            <LucideIcon name={isChecked ? "check-circle" : "circle"} size={16} color={isChecked ? "#C5A46D" : "#807E78"} />
                           </Text>
                           <Text
                             style={[
@@ -4652,7 +4653,7 @@ export default function AdminDashboardScreen({
             <View style={styles.headerActiveHotelPill}>
               <View style={styles.headerActiveDot} />
               <Text style={styles.headerActiveHotelText} numberOfLines={1}>
- {currentActiveHotel.name} ({currentActiveHotel.city || 'Active'})
+                {currentActiveHotel.name} ({currentActiveHotel.city || 'Active'})
               </Text>
             </View>
           )}
