@@ -263,13 +263,14 @@ export default function AdminDashboardScreen({
         toUpload.forEach(async (file) => {
           const unique10DigitId = generate10DigitId();
           const cleanName = (file.name || 'Property Image').replace(/\.[^/.]+$/, '');
-          const curHotelId = currentActiveHotel?.id || 'default-hotel';
+          const curHotelId = currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id || 'general';
 
-          const addUploadedImage = (finalUrl) => {
+          const addUploadedImage = (finalUrl, backendId = null) => {
             setHotelImages((prev) => {
               if (prev.length >= 8) return prev;
               const newSlot = {
                 id: unique10DigitId,
+                backendId,
                 url: finalUrl,
                 name: file.name,
                 caption: cleanName,
@@ -299,25 +300,15 @@ export default function AdminDashboardScreen({
           };
 
           try {
-            showToast(`Generating secure upload link for ${file.name}...`, 'info');
-            const presignedRes = await apiService.getPresignedUrl(curHotelId, file.name, file.type);
-            
-            if (presignedRes.success && presignedRes.data) {
-              const { uploadUrl, fileUrl } = presignedRes.data;
-              
-              showToast(`Uploading ${file.name} to secure storage...`, 'info');
-              const uploadRes = await apiService.uploadFileToS3(uploadUrl, file);
-              
-              if (uploadRes.success) {
-                addUploadedImage(fileUrl);
-              } else {
-                throw new Error(uploadRes.error || 'Upload failed');
-              }
+            showToast(`Uploading "${file.name}"...`, 'info');
+            const uploadRes = await apiService.uploadHotelPicture(curHotelId, file);
+            if (uploadRes.success && uploadRes.url) {
+              addUploadedImage(uploadRes.url, uploadRes.id);
             } else {
-              throw new Error(presignedRes.error || 'Failed to get upload URL');
+              throw new Error(uploadRes.error || 'Upload failed');
             }
           } catch (err) {
-            console.warn('S3 Upload Error, falling back to local base64:', err);
+            console.warn('Backend Upload Error, falling back to local file reader:', err);
             const reader = new FileReader();
             reader.onload = (event) => {
               const rawDataUrl = event?.target?.result;
@@ -328,6 +319,54 @@ export default function AdminDashboardScreen({
             reader.readAsDataURL(file);
           }
         });
+      };
+      input.click();
+    } else {
+      showToast('File upload is supported on web browsers.', 'info');
+    }
+  };
+
+  // Helper: Upload photo from device for components (gyms, cafes/dining, pools, facilities, etc.)
+  const handleTriggerComponentPhotoUpload = (onSuccess) => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.style.position = 'fixed';
+      input.style.top = '-9999px';
+      input.style.left = '-9999px';
+      input.style.opacity = '0';
+      document.body.appendChild(input);
+
+      input.onchange = async (e) => {
+        const file = e.target.files?.[0];
+        setTimeout(() => {
+          if (document.body.contains(input)) document.body.removeChild(input);
+        }, 1000);
+        if (!file) return;
+
+        showToast(`Uploading "${file.name}"...`, 'info');
+        const curHotelId = currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id || 'general';
+        try {
+          const res = await apiService.uploadHotelPicture(curHotelId, file);
+          if (res.success && res.url) {
+            onSuccess(res.url);
+            showToast(`Uploaded "${file.name}"!`, 'success');
+          } else {
+            throw new Error(res.error || 'Upload failed');
+          }
+        } catch (err) {
+          console.warn('Backend upload fallback to FileReader:', err);
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const raw = event?.target?.result;
+            if (raw) {
+              onSuccess(raw);
+              showToast(`Loaded "${file.name}"!`, 'success');
+            }
+          };
+          reader.readAsDataURL(file);
+        }
       };
       input.click();
     } else {
@@ -381,6 +420,11 @@ export default function AdminDashboardScreen({
   // 3. Remove Picture Slot
   const handleRemoveImage = (indexToRemove) => {
     const target = hotelImages[indexToRemove];
+    if (target?.backendId || (target?.url && target.url.includes('/uploads/'))) {
+      apiService.deleteHotelPicture(target.backendId || target.url).catch((e) => {
+        console.warn('Backend picture delete error:', e);
+      });
+    }
     setHotelImages((prev) => {
       const updated = prev.filter((_, idx) => idx !== indexToRemove);
       const cur = activeHotelService.getActiveHotel();
@@ -4061,14 +4105,52 @@ export default function AdminDashboardScreen({
                 </View>
               </View>
 
-              <Text style={styles.formLabel}>Image Web Link (URL)</Text>
-              <TextInput
-                style={styles.formInput}
-                placeholder="https://images.unsplash.com/photo-..."
-                placeholderTextColor="#807E78"
-                value={newPlaceForm.imageLink}
-                onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, imageLink: text })}
-              />
+              {/* Image / Photo Management */}
+              <View style={{ marginBottom: 14 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <Text style={styles.formLabel}>Place Photo</Text>
+                  <TouchableOpacity
+                    style={styles.uploadMiniBtn}
+                    onPress={() => handleTriggerComponentPhotoUpload((url) => setNewPlaceForm((prev) => ({ ...prev, imageLink: url })))}
+                    activeOpacity={0.8}
+                  >
+                    <LucideIcon name="camera" size={13} color="#101114" />
+                    <Text style={styles.uploadMiniBtnText}>Upload Photo (From Device)</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {newPlaceForm.imageLink ? (
+                  <View style={styles.itemPhotoPreviewWrapper}>
+                    <Image source={{ uri: newPlaceForm.imageLink }} style={styles.itemPhotoPreviewThumb} />
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={styles.itemPhotoPreviewLabel} numberOfLines={1}>{newPlaceForm.imageLink}</Text>
+                      <TouchableOpacity
+                        style={styles.deletePhotoBtn}
+                        onPress={() => {
+                          const urlToDelete = newPlaceForm.imageLink;
+                          if (urlToDelete && urlToDelete.includes('/uploads/')) {
+                            apiService.deleteHotelPicture(urlToDelete).catch((e) => console.warn(e));
+                          }
+                          setNewPlaceForm((prev) => ({ ...prev, imageLink: '' }));
+                          showToast('Photo removed', 'info');
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <LucideIcon name="trash" size={12} color="#D9534F" />
+                        <Text style={styles.deletePhotoBtnText}>Delete Photo</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : null}
+
+                <TextInput
+                  style={[styles.formInput, { marginTop: 4 }]}
+                  placeholder="Or paste image web link (https://...)"
+                  placeholderTextColor="#807E78"
+                  value={newPlaceForm.imageLink}
+                  onChangeText={(text) => setNewPlaceForm({ ...newPlaceForm, imageLink: text })}
+                />
+              </View>
 
               <Text style={styles.formLabel}>Website / Portal URL</Text>
               <TextInput
@@ -4403,15 +4485,52 @@ export default function AdminDashboardScreen({
                 </View>
               </View>
 
-              {/* Image Link */}
-              <Text style={styles.formLabel}>Image Web Link (URL)</Text>
-              <TextInput
-                style={styles.formInput}
-                placeholder="https://images.unsplash.com/photo-..."
-                placeholderTextColor="#807E78"
-                value={formFields.imageLink}
-                onChangeText={(text) => setFormFields({ ...formFields, imageLink: text })}
-              />
+              {/* Image / Photo Management */}
+              <View style={{ marginBottom: 14 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <Text style={styles.formLabel}>Component Photo</Text>
+                  <TouchableOpacity
+                    style={styles.uploadMiniBtn}
+                    onPress={() => handleTriggerComponentPhotoUpload((url) => setFormFields((prev) => ({ ...prev, imageLink: url })))}
+                    activeOpacity={0.8}
+                  >
+                    <LucideIcon name="camera" size={13} color="#101114" />
+                    <Text style={styles.uploadMiniBtnText}>Upload Photo (From Device)</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {formFields.imageLink ? (
+                  <View style={styles.itemPhotoPreviewWrapper}>
+                    <Image source={{ uri: formFields.imageLink }} style={styles.itemPhotoPreviewThumb} />
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={styles.itemPhotoPreviewLabel} numberOfLines={1}>{formFields.imageLink}</Text>
+                      <TouchableOpacity
+                        style={styles.deletePhotoBtn}
+                        onPress={() => {
+                          const urlToDelete = formFields.imageLink;
+                          if (urlToDelete && urlToDelete.includes('/uploads/')) {
+                            apiService.deleteHotelPicture(urlToDelete).catch((e) => console.warn(e));
+                          }
+                          setFormFields((prev) => ({ ...prev, imageLink: '' }));
+                          showToast('Photo removed', 'info');
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <LucideIcon name="trash" size={12} color="#D9534F" />
+                        <Text style={styles.deletePhotoBtnText}>Delete Photo</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : null}
+
+                <TextInput
+                  style={[styles.formInput, { marginTop: 4 }]}
+                  placeholder="Or paste image web link (https://...)"
+                  placeholderTextColor="#807E78"
+                  value={formFields.imageLink}
+                  onChangeText={(text) => setFormFields({ ...formFields, imageLink: text })}
+                />
+              </View>
 
               {/* Availability Selector */}
               <Text style={styles.formLabel}>Operational Status</Text>
@@ -6460,6 +6579,67 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 0.3,
+  },
+  uploadMiniBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    backgroundColor: '#C5A46D',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#D8BD8A',
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  uploadMiniBtnText: {
+    color: '#101114',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  itemPhotoPreviewWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#15161A',
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2A2B31',
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  itemPhotoPreviewThumb: {
+    width: 64,
+    height: 48,
+    borderRadius: 6,
+    backgroundColor: '#25262B',
+  },
+  itemPhotoPreviewLabel: {
+    color: '#A5A39D',
+    fontSize: 10,
+    marginBottom: 4,
+  },
+  deletePhotoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    backgroundColor: 'rgba(217, 83, 79, 0.15)',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(217, 83, 79, 0.4)',
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  deletePhotoBtnText: {
+    color: '#D9534F',
+    fontSize: 10,
+    fontWeight: '700',
   },
   pictureSlotsGrid: {
     flexDirection: 'row',

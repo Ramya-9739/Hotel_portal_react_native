@@ -937,6 +937,55 @@ class ApiService {
     }
   }
 
+  async uploadHotelPicture(hotelPropertyId, file) {
+    try {
+      const formData = new FormData();
+      formData.append('picture', file);
+      formData.append('hotelPropertyId', hotelPropertyId || 'general');
+
+      const headers = {};
+      const token = this.authToken || (typeof authService !== 'undefined' ? authService.getToken() : null);
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${BASE_URL}/api/hotel-pictures`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      const json = await response.json();
+      if (response.ok && (json.success || json.status === 'success')) {
+        const item = json.data;
+        return {
+          success: true,
+          data: item,
+          url: item.hotelPicture,
+          id: item._id,
+        };
+      }
+      return { success: false, error: json.error || json.message || 'Upload failed' };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  async deleteHotelPicture(idOrUrl) {
+    try {
+      const headers = this.getHeaders();
+      const targetUrl = `${BASE_URL}/api/hotel-pictures/${encodeURIComponent(idOrUrl)}`;
+      const response = await fetch(targetUrl, {
+        method: 'DELETE',
+        headers,
+      });
+      const json = await response.json();
+      return { success: response.ok, data: json.data };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
   async resetAllData() {
     console.log('[REST API] Reset called');
     return { success: true };

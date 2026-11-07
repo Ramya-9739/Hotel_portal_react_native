@@ -648,15 +648,8 @@ export default function HomeScreen({
       {/* 1. ORIGINAL GUEST PORTAL HEADER (Centered Location/Weather + 🌐 EN) */}
       {/* =================================================================== */}
       <View style={styles.appHeader}>
-        {/* Left: Spacer to keep center balanced */}
-        <TouchableOpacity
-          style={styles.adminNavBtn}
-          onPress={() => onOpenAdminUI && onOpenAdminUI()}
-          activeOpacity={0.8}
-          accessibilityLabel="Open Hotel Management Console"
-        >
-          <Text style={styles.adminNavBtnText}>⚙ Admin</Text>
-        </TouchableOpacity>
+        {/* Left: Balanced spacer for atmospheric status bar */}
+        <View style={{ width: 60 }} />
 
         {/* Center: Atmospheric status indicator */}
         <View style={styles.headerAtmosphereWrapper}>

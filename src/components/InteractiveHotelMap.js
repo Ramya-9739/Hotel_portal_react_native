@@ -167,57 +167,16 @@ export default function InteractiveHotelMap({
             cursor: pointer !important;
           }
           .custom-red-pin {
-            font-size: 26px;
-            text-align: center;
-            line-height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             filter: drop-shadow(0 3px 6px rgba(0,0,0,0.65));
             cursor: pointer !important;
-          }
-          .leaflet-popup-content-wrapper {
-            background: #16181F;
-            color: #F8F6F0;
-            border: 1px solid rgba(226, 192, 130, 0.4);
-            border-radius: 8px;
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 11px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
-            padding: 2px;
-          }
-          .leaflet-popup-tip {
-            background: #16181F;
           }
           .leaflet-control-zoom a {
             background: #16181F !important;
             color: #E2C082 !important;
             border-color: rgba(226, 192, 130, 0.25) !important;
-          }
-          .popup-btn-row {
-            display: flex;
-            gap: 6px;
-            margin-top: 8px;
-          }
-          .gmaps-btn {
-            display: inline-block;
-            background: #E2C082;
-            color: #0F1014;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: 700;
-            font-size: 10px;
-            text-decoration: none;
-            cursor: pointer;
-            border: none;
-          }
-          .gmaps-btn:hover {
-            background: #F1D9A7;
-          }
-          .gmaps-btn-dir {
-            background: #1E2333;
-            color: #E2C082;
-            border: 1px solid rgba(226, 192, 130, 0.4);
-          }
-          .gmaps-btn-dir:hover {
-            background: #283045;
           }
         </style>
       </head>
@@ -243,28 +202,16 @@ export default function InteractiveHotelMap({
 
           var pinIcon = L.divIcon({
             className: 'custom-red-pin',
-            html: '📍',
-            iconSize: [28, 28],
-            iconAnchor: [14, 26],
-            popupAnchor: [0, -26]
+            html: '<svg width="30" height="30" viewBox="0 0 24 24" fill="#C5A46D" stroke="#101114" stroke-width="1.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3" fill="#101114"/></svg>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 28]
           });
 
           var marker = L.marker([hotelLat, hotelLng], {
             icon: pinIcon,
-            draggable: false
+            draggable: false,
+            title: hotelTitle + ' - Click to open in Google Maps'
           }).addTo(map);
-
-          var safeAddress = ${JSON.stringify(safeHotelAddress)};
-          var popupContent = '<div style="padding:4px 2px;">' +
-            '<b>' + hotelTitle + '</b><br>' +
-            '<span style="color:#CBD5E1;font-size:10px;">' + safeAddress + '</span>' +
-            '<div class="popup-btn-row">' +
-              '<button class="gmaps-btn" onclick="launchGoogleMaps(' + hotelLat + ',' + hotelLng + ')">📍 View Map ↗</button>' +
-              '<button class="gmaps-btn gmaps-btn-dir" onclick="launchDirections()">🧭 Directions ↗</button>' +
-            '</div>' +
-          '</div>';
-
-          marker.bindPopup(popupContent).openPopup();
 
           function launchGoogleMaps(lat, lng) {
             var targetUrl = viewMapsUrl;
@@ -288,20 +235,20 @@ export default function InteractiveHotelMap({
             } catch (e) {}
           }
 
-          // Clicking map or marker opens Google Maps
+          // Clicking anywhere on the map or the marker directly launches Google Maps!
           map.on('click', function(e) {
-            launchGoogleMaps(e.latlng.lat, e.latlng.lng);
+            launchGoogleMaps(hotelLat, hotelLng);
           });
 
           marker.on('click', function(e) {
-            marker.openPopup();
+            L.DomEvent.stopPropagation(e);
+            launchGoogleMaps(hotelLat, hotelLng);
           });
 
           window.addEventListener('message', function(e) {
             if (e.data && e.data.type === 'RESET_PIN') {
               marker.setLatLng([e.data.lat, e.data.lng]);
               map.setView([e.data.lat, e.data.lng], 14);
-              marker.bindPopup(popupContent).openPopup();
             }
           });
         </script>

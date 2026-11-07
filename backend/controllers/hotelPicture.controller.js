@@ -30,15 +30,19 @@ const create = async (req, res) => {
     const { hotelPropertyId } = req.body;
     if (!req.file) return sendError(res, "No file uploaded", 400);
 
+    const targetHotelId = hotelPropertyId || "general";
     const hotelPicture = await uploadToS3(
-      hotelPropertyId,
+      targetHotelId,
       "pictures",
       `${Date.now()}-${req.file.originalname}`,
       req.file.buffer,
       req.file.mimetype
     );
 
-    const item = await HotelPicture.create({ hotelPropertyId, hotelPicture });
+    const item = await HotelPicture.create({
+      hotelPropertyId: targetHotelId,
+      hotelPicture,
+    });
     sendSuccess(res, item, 201);
   } catch (err) {
     sendError(res, err.message, 400);
@@ -47,11 +51,23 @@ const create = async (req, res) => {
 
 const remove = async (req, res) => {
   try {
-    const item = await HotelPicture.findByIdAndDelete(req.params.id);
-    if (!item) return sendError(res, "Not found", 404);
-    if (item.hotelPicture) {
-      await deleteFromS3(item.hotelPicture);
+    const idOrUrl = decodeURIComponent(req.params.id);
+    let item = null;
+
+    if (idOrUrl.match(/^[0-9a-fA-F]{24}$/)) {
+      item = await HotelPicture.findByIdAndDelete(idOrUrl);
+    } else {
+      item = await HotelPicture.findOneAndDelete({
+        hotelPicture: { $regex: idOrUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') },
+      });
     }
+
+    if (item && item.hotelPicture) {
+      await deleteFromS3(item.hotelPicture);
+    } else if (idOrUrl.includes("/uploads/")) {
+      await deleteFromS3(idOrUrl);
+    }
+
     sendSuccess(res, { deleted: true });
   } catch (err) {
     sendError(res, err.message);
