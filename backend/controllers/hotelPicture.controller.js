@@ -1,4 +1,6 @@
+const mongoose = require("mongoose");
 const HotelPicture = require("../models/hotelPicture.model");
+const HotelProperty = require("../models/hotelProperty.model");
 const { uploadToS3, generatePresignedUrl, deleteFromS3 } = require("../utils/s3Helper");
 const { sendSuccess, sendError } = require("../utils/responseHelper");
 
@@ -27,10 +29,29 @@ const getById = async (req, res) => {
 // POST /hotel-pictures  (multipart/form-data, field name: "picture")
 const create = async (req, res) => {
   try {
+    const caller = req.hotelAdmin || {};
+    const isSuperAdmin = String(caller.role || "").toLowerCase() === "superadmin";
+
     const { hotelPropertyId } = req.body;
     if (!req.file) return sendError(res, "No file uploaded", 400);
 
     const targetHotelId = hotelPropertyId || "general";
+
+    if (!isSuperAdmin && hotelPropertyId && hotelPropertyId !== "general") {
+      const targetHotel = await HotelProperty.findOne({
+        $or: [
+          { hotelPropertyId: String(hotelPropertyId) },
+          ...(mongoose.isValidObjectId(hotelPropertyId) ? [{ _id: hotelPropertyId }] : [])
+        ]
+      });
+      if (!targetHotel) {
+        return sendError(res, "Hotel property not found", 404);
+      }
+      if (targetHotel.hotelAdminId !== caller.hotelAdminId) {
+        return sendError(res, "Forbidden: You are not authorized to upload pictures for this hotel property", 403);
+      }
+    }
+
     const hotelPicture = await uploadToS3(
       targetHotelId,
       "pictures",
@@ -51,15 +72,34 @@ const create = async (req, res) => {
 
 const remove = async (req, res) => {
   try {
+    const caller = req.hotelAdmin || {};
+    const isSuperAdmin = String(caller.role || "").toLowerCase() === "superadmin";
+
     const idOrUrl = decodeURIComponent(req.params.id);
     let item = null;
 
     if (idOrUrl.match(/^[0-9a-fA-F]{24}$/)) {
-      item = await HotelPicture.findByIdAndDelete(idOrUrl);
+      item = await HotelPicture.findById(idOrUrl);
     } else {
-      item = await HotelPicture.findOneAndDelete({
+      item = await HotelPicture.findOne({
         hotelPicture: { $regex: idOrUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') },
       });
+    }
+
+    if (item && item.hotelPropertyId && item.hotelPropertyId !== "general" && !isSuperAdmin) {
+      const targetHotel = await HotelProperty.findOne({
+        $or: [
+          { hotelPropertyId: String(item.hotelPropertyId) },
+          ...(mongoose.isValidObjectId(item.hotelPropertyId) ? [{ _id: item.hotelPropertyId }] : [])
+        ]
+      });
+      if (targetHotel && targetHotel.hotelAdminId !== caller.hotelAdminId) {
+        return sendError(res, "Forbidden: You are not authorized to delete pictures for this hotel property", 403);
+      }
+    }
+
+    if (item) {
+      await HotelPicture.findByIdAndDelete(item._id);
     }
 
     if (item && item.hotelPicture) {
@@ -76,10 +116,29 @@ const remove = async (req, res) => {
 
 const getPresignedUrl = async (req, res) => {
   try {
+    const caller = req.hotelAdmin || {};
+    const isSuperAdmin = String(caller.role || "").toLowerCase() === "superadmin";
+
     const { hotelPropertyId, fileName, mimeType } = req.body;
     if (!hotelPropertyId || !fileName || !mimeType) {
       return sendError(res, "hotelPropertyId, fileName, and mimeType are required", 400);
     }
+
+    if (!isSuperAdmin && hotelPropertyId !== "general") {
+      const targetHotel = await HotelProperty.findOne({
+        $or: [
+          { hotelPropertyId: String(hotelPropertyId) },
+          ...(mongoose.isValidObjectId(hotelPropertyId) ? [{ _id: hotelPropertyId }] : [])
+        ]
+      });
+      if (!targetHotel) {
+        return sendError(res, "Hotel property not found", 404);
+      }
+      if (targetHotel.hotelAdminId !== caller.hotelAdminId) {
+        return sendError(res, "Forbidden: You are not authorized to request presigned upload URLs for this hotel property", 403);
+      }
+    }
+
     const data = await generatePresignedUrl(
       hotelPropertyId,
       "pictures",

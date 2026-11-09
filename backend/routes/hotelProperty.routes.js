@@ -12,15 +12,15 @@ router.get("/pending", authMiddleware, requireSuperAdmin, ctrl.getPending);
 router.patch("/:id/approve", authMiddleware, requireSuperAdmin, ctrl.approve);
 router.patch("/:id/reject", authMiddleware, requireSuperAdmin, ctrl.reject);
 
-// 3. Hotel Directory, Search & External Discovery
-router.get("/search", ctrl.search);
-router.get("/discover", ctrl.discover);
-router.get("/place-details/:placeId", ctrl.getPlaceDetails);
+// 3. External Discovery (Requires Admin auth; photo stream remains public for img tags)
+router.get("/discover", authMiddleware, ctrl.discover);
+router.get("/place-details/:placeId", authMiddleware, ctrl.getPlaceDetails);
 router.get("/place-photo", ctrl.getPlacePhoto);
-router.get("/", ctrl.getAll);
-router.get("/:id", ctrl.getById);
 
-// 4. Hotel Owner & Super Admin Management Routes (with ownership enforcement)
+// 4. Protected Private Hotel Management Routes (Strict Ownership & Multi-Tenant Scoping)
+router.get("/search", authMiddleware, ctrl.search);
+router.get("/", authMiddleware, ctrl.getAll);
+router.get("/:id", authMiddleware, ctrl.getById);
 router.post("/", authMiddleware, ctrl.create);
 router.put("/:id", authMiddleware, ctrl.update);
 router.delete("/:id", authMiddleware, ctrl.remove);

@@ -6,7 +6,6 @@ const authMiddleware = (req, res, next) => {
   if (!token) return sendError(res, "No token provided", 401);
 
   try {
-    // ---- DUMMY: attaches decoded payload; adjust claims to your login controller ----
     req.hotelAdmin = jwt.verify(token, process.env.JWT_SECRET);
     next();
   } catch (err) {
@@ -14,4 +13,19 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
+const optionalAuthMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.replace("Bearer ", "");
+    try {
+      req.hotelAdmin = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      // Invalid or expired token: continue as unauthenticated guest
+    }
+  }
+  next();
+};
+
 module.exports = authMiddleware;
+module.exports.authMiddleware = authMiddleware;
+module.exports.optionalAuthMiddleware = optionalAuthMiddleware;

@@ -112,7 +112,10 @@ const getPending = async (req, res) => {
 // GET /api/hotel-properties/search?q=...&status=...&hotelAdminId=...&limit=8
 const search = async (req, res) => {
   try {
-    const { q, query, status, hotelAdminId, limit = 8 } = req.query;
+    const caller = req.hotelAdmin || {};
+    const isSuperAdmin = String(caller.role || "").toLowerCase() === "superadmin";
+
+    const { q, query, status, limit = 8 } = req.query;
     const searchParam = (q || query || "").trim();
 
     // Do not return suggestions if query is less than 2 characters
@@ -121,8 +124,20 @@ const search = async (req, res) => {
     }
 
     const baseFilter = {};
+
+    // Multi-tenant isolation: clientadmin can only search within their own hotels
+    if (!isSuperAdmin) {
+      if (!caller.hotelAdminId) {
+        return sendError(res, "Forbidden: No hotelAdminId associated with session", 403);
+      }
+      baseFilter.hotelAdminId = caller.hotelAdminId;
+    } else {
+      if (req.query.hotelAdminId) {
+        baseFilter.hotelAdminId = req.query.hotelAdminId;
+      }
+    }
+
     if (status) baseFilter.status = status;
-    if (hotelAdminId) baseFilter.hotelAdminId = hotelAdminId;
 
     const maxLimit = Math.min(Math.max(parseInt(limit, 10) || 8, 1), 50);
 
@@ -214,12 +229,28 @@ const search = async (req, res) => {
   }
 };
 
-// GET /api/hotel-properties?hotelAdminId=xxx&status=xxx&search=xxx
+// GET /api/hotel-properties?status=xxx&search=xxx
 const getAll = async (req, res) => {
   try {
-    const { hotelAdminId, status, search: searchQ, q } = req.query;
+    const caller = req.hotelAdmin || {};
+    const isSuperAdmin = String(caller.role || "").toLowerCase() === "superadmin";
+
+    const { status, search: searchQ, q } = req.query;
     const filter = {};
-    if (hotelAdminId) filter.hotelAdminId = hotelAdminId;
+
+    // Multi-tenant isolation: clientadmin can only list their own hotels
+    if (!isSuperAdmin) {
+      if (!caller.hotelAdminId) {
+        return sendError(res, "Forbidden: No hotelAdminId associated with session", 403);
+      }
+      filter.hotelAdminId = caller.hotelAdminId;
+    } else {
+      // Super Admin may optionally filter by hotelAdminId if provided in query
+      if (req.query.hotelAdminId) {
+        filter.hotelAdminId = req.query.hotelAdminId;
+      }
+    }
+
     if (status) filter.status = status;
 
     const searchTerm = (searchQ || q || "").trim();
@@ -247,6 +278,17 @@ const getById = async (req, res) => {
     const { id } = req.params;
     const item = await findHotelById(id);
     if (!item) return sendError(res, "Not found", 404);
+
+    const caller = req.hotelAdmin || {};
+    const isSuperAdmin = String(caller.role || "").toLowerCase() === "superadmin";
+
+    // Multi-tenant isolation: clientadmin can only view their own hotel details
+    if (!isSuperAdmin) {
+      if (!caller.hotelAdminId || item.hotelAdminId !== caller.hotelAdminId) {
+        return sendError(res, "Forbidden: You are not authorized to access this hotel property", 403);
+      }
+    }
+
     sendSuccess(res, item);
   } catch (err) {
     sendError(res, err.message);

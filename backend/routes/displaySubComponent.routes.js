@@ -2,11 +2,11 @@ const express = require("express");
 const router = express.Router();
 const ctrl = require("../controllers/displaySubComponent.controller");
 const upload = require("../middleware/upload.middleware");
-const authMiddleware = require("../middleware/auth.middleware");
+const { authMiddleware, optionalAuthMiddleware } = require("../middleware/auth.middleware");
 
-// Public endpoints for guest showcase
-router.get("/", ctrl.getAll);
-router.get("/:id", ctrl.getById);
+// Endpoints with optional auth: authenticated owners receive scoped sub-components; guests receive approved hotel sub-components
+router.get("/", optionalAuthMiddleware, ctrl.getAll);
+router.get("/:id", optionalAuthMiddleware, ctrl.getById);
 
 // Protected endpoints requiring authenticated admin
 router.post("/", authMiddleware, upload.single("image"), ctrl.create);
