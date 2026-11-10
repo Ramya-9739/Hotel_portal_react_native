@@ -868,11 +868,28 @@ class ApiService {
     }
   }
 
-  async fetchSummary() {
+  async fetchHotelById(id) {
+    try {
+      const url = `${BASE_URL}/api/hotel-properties/${encodeURIComponent(id)}`;
+      console.log(`[REST API] GET ${url}`);
+      const res = await fetch(url, { headers: this.getHeaders() });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(`[HTTP ${res.status}] GET ${url} failed: ${json.error || res.statusText}`);
+      }
+      const item = this.mapHotelPropertyToFrontend(json.data);
+      return { success: true, data: item };
+    } catch (err) {
+      console.error(`[REST API Error] fetchHotelById failed:`, err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  async fetchSummary(hotelPropertyId = null) {
     try {
       const [hotelsRes, compRes] = await Promise.all([
         this.fetchHotels(),
-        this.fetchDisplayComponents(),
+        this.fetchDisplayComponents(hotelPropertyId ? { hotelPropertyId } : {}),
       ]);
 
       const hotels = hotelsRes.data || [];

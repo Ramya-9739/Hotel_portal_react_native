@@ -40,7 +40,7 @@ const isFuzzyMatch = (query, target) => {
 
   return qWords.every((qw) =>
     tWords.some((tw) => {
-      if (tw.includes(qw) || qw.includes(tw)) return true;
+      if (tw.includes(qw) || (tw.length >= 3 && qw.includes(tw))) return true;
       const maxDist = qw.length <= 4 ? 1 : 2;
       return levenshtein(qw, tw) <= maxDist;
     })

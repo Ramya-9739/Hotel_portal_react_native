@@ -165,6 +165,10 @@ export default function AdminDashboardScreen({
     propActiveHotel || activeHotelService.getActiveHotel() || null
   );
 
+  // Multi-Hotel Switcher State (Phase 2)
+  const [hotelSwitcherOpen, setHotelSwitcherOpen] = useState(false);
+  const [hotelSwitcherFilter, setHotelSwitcherFilter] = useState('');
+
   const [hotelConfigForm, setHotelConfigForm] = useState(() => {
     const init = propActiveHotel || activeHotelService.getActiveHotel();
     return {
@@ -1052,26 +1056,127 @@ export default function AdminDashboardScreen({
     };
   }, []);
 
+  const filteredSwitcherHotels = useMemo(() => {
+    if (!hotelSwitcherFilter.trim()) return hotels;
+    const q = hotelSwitcherFilter.trim().toLowerCase();
+    return hotels.filter(
+      (h) =>
+        (h.name || h.title || '').toLowerCase().includes(q) ||
+        (h.city || '').toLowerCase().includes(q) ||
+        (h.address || '').toLowerCase().includes(q) ||
+        (h.hotelPropertyId || h.id || '').toLowerCase().includes(q)
+    );
+  }, [hotels, hotelSwitcherFilter]);
+
+  const handleSwitchHotel = async (targetHotel) => {
+    if (!targetHotel) return;
+    try {
+      setIsLoading(true);
+      setHotelSwitcherOpen(false);
+
+      const verified = hotels.find(
+        (h) => String(h.hotelPropertyId || h.id) === String(targetHotel.hotelPropertyId || targetHotel.id)
+      ) || targetHotel;
+
+      setCurrentActiveHotel(verified);
+      activeHotelService.setActiveHotel(verified, true);
+      if (onSetActiveHotel) onSetActiveHotel(verified);
+
+      await activeHotelService.syncComponentsFromBackend(verified);
+
+      setHotelConfigForm({
+        name: verified.name || verified.title || '',
+        city: verified.city || verified.location || '',
+        address: verified.address || '',
+        latitude: verified.latitude != null ? String(verified.latitude) : '',
+        longitude: verified.longitude != null ? String(verified.longitude) : '',
+        imageLink: verified.imageLink || (verified.images && verified.images[0]) || '',
+        subtitle: verified.subtitle || '',
+        pricePerNight: verified.pricePerNight || '₹18,500 / night',
+        rating: verified.rating ? String(verified.rating) : '4.9',
+      });
+
+      if (verified.imageObjects && Array.isArray(verified.imageObjects) && verified.imageObjects.length > 0) {
+        setHotelImages(verified.imageObjects.slice(0, 8));
+      } else if (verified.images && Array.isArray(verified.images) && verified.images.length > 0) {
+        setHotelImages(
+          verified.images.slice(0, 8).map((img, idx) => ({
+            id: (typeof img === 'object' && img && img.id) || generate10DigitId(),
+            url: typeof img === 'object' && img && img.url ? img.url : img,
+            caption: (typeof img === 'object' && img && img.caption) || 'Property Photo ' + (idx + 1),
+          }))
+        );
+      } else if (verified.imageLink) {
+        setHotelImages([{ id: generate10DigitId(), url: verified.imageLink, caption: 'Hotel Exterior' }]);
+      } else {
+        setHotelImages([]);
+      }
+
+      await loadAllAdminData(verified.hotelPropertyId || verified.id);
+
+      logActivity(`Switched active hotel context to: "${verified.title || verified.name}"`, 'hotel');
+      showToast(`Active property switched to "${verified.title || verified.name}"`, 'success');
+    } catch (err) {
+      console.error('[AdminDashboard] Switch error:', err);
+      showToast('Error switching hotel: ' + err.message, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const loadAllAdminData = async (targetHotelId = null) => {
     setIsLoading(true);
     try {
-      const activeId = targetHotelId || currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id;
+      // 1. Fetch authenticated owner's hotels from backend
+      const hRes = await apiService.fetchHotels();
+      let verifiedHotels = [];
+      let activeTarget = null;
 
-      // 1. Summary
-      const sumRes = await apiService.fetchSummary();
-      if (sumRes && sumRes.data) {
-        setSummary(sumRes.data);
+      if (hRes && Array.isArray(hRes.data)) {
+        verifiedHotels = hRes.data;
+        setHotels(verifiedHotels);
+
+        if (targetHotelId) {
+          activeTarget = verifiedHotels.find(
+            (h) => String(h.hotelPropertyId || h.id) === String(targetHotelId)
+          );
+        } else if (currentActiveHotel) {
+          const curId = String(currentActiveHotel.hotelPropertyId || currentActiveHotel.id);
+          activeTarget = verifiedHotels.find(
+            (h) => String(h.hotelPropertyId || h.id) === curId
+          );
+        }
+
+        // Safe fallback if active hotel does not exist or does not belong to owner
+        if (!activeTarget && verifiedHotels.length > 0) {
+          activeTarget = verifiedHotels[0];
+        }
+
+        if (activeTarget) {
+          setCurrentActiveHotel(activeTarget);
+          activeHotelService.setActiveHotel(activeTarget, true);
+          if (onSetActiveHotel) onSetActiveHotel(activeTarget);
+        } else if (verifiedHotels.length === 0) {
+          setCurrentActiveHotel(null);
+          activeHotelService.setActiveHotel(null, true);
+          if (onSetActiveHotel) onSetActiveHotel(null);
+        }
+
+        const curPay = verifiedHotels.find((h) => h.id === selectedHotelForPayments?.id) || activeTarget || verifiedHotels[0];
+        if (curPay) {
+          setSelectedHotelForPayments(curPay);
+          setHotelPaymentMethods(curPay.paymentMethods || []);
+        }
       }
 
-      // 2. Hotels
-      const hRes = await apiService.fetchHotels();
-      if (hRes && Array.isArray(hRes.data)) {
-        setHotels(hRes.data);
-        const cur = hRes.data.find((h) => h.id === selectedHotelForPayments?.id) || hRes.data[0];
-        if (cur) {
-          setSelectedHotelForPayments(cur);
-          setHotelPaymentMethods(cur.paymentMethods || []);
-        }
+      const activeId = activeTarget
+        ? (activeTarget.hotelPropertyId || activeTarget.id)
+        : (targetHotelId || currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id);
+
+      // 2. Summary scoped to active hotel
+      const sumRes = await apiService.fetchSummary(activeId);
+      if (sumRes && sumRes.data) {
+        setSummary(sumRes.data);
       }
 
       // 3. Restaurants
@@ -2300,13 +2405,17 @@ export default function AdminDashboardScreen({
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.profileActionBtn}
-                onPress={() => setActiveTab('hotels')}
+                style={styles.profileSwitchActionBtn}
+                onPress={() => setHotelSwitcherOpen(true)}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Switch active hotel property"
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <LucideIcon name="building-2" size={13} color="#F2EFE8" />
-                  <Text style={styles.profileActionBtnText}>Switch Hotel</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <LucideIcon name="arrow-left-right" size={13} color="#C5A46D" />
+                  <Text style={styles.profileSwitchActionBtnText}>
+                    Switch Property ({hotels.length})
+                  </Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -2881,25 +2990,13 @@ export default function AdminDashboardScreen({
                           styles.activateHotelDirectBtn,
                           isActiveHotel && styles.activateHotelDirectBtnCurrent,
                         ]}
-                        onPress={() => {
-                          const saved = activeHotelService.saveAndActivateHotel(h);
-                          setCurrentActiveHotel(saved);
-                          if (onSetActiveHotel) onSetActiveHotel(saved);
-                          loadAllAdminData(h.hotelPropertyId || h.id);
-                          logActivity(`Switched active hotel to: "${h.title || h.name}"`, 'hotel');
-                          showToast(`"${h.title || h.name}" is now the Active Hotel!`, 'success');
-                          if (onLaunchGuestWebsite) {
-                            onLaunchGuestWebsite(saved);
-                          } else if (onBackToGuestPortal) {
-                            onBackToGuestPortal();
-                          }
-                        }}
+                        onPress={() => handleSwitchHotel(h)}
                         activeOpacity={0.8}
                       >
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                          <LucideIcon name="award" size={13} color={isActiveHotel ? "#101114" : "#C5A46D"} />
+                          <LucideIcon name={isActiveHotel ? "check" : "arrow-left-right"} size={13} color={isActiveHotel ? "#101114" : "#C5A46D"} />
                           <Text style={styles.activateHotelDirectBtnText}>
-                            {isActiveHotel ? 'Active Property (Launch)' : 'Set Active & Launch'}
+                            {isActiveHotel ? 'Currently Active Context' : 'Switch Active Context'}
                           </Text>
                         </View>
                       </TouchableOpacity>
@@ -4629,9 +4726,198 @@ export default function AdminDashboardScreen({
                   <ActivityIndicator color="#101114" size="small" />
                 ) : (
                   <Text style={styles.modalSaveText}>
-                    isEdit ? 'Update & Save' : 'Save Component'
+                    {isEdit ? 'Update & Save' : 'Save Component'}
                   </Text>
                 )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  const renderHotelSwitcherModal = () => {
+    return (
+      <Modal
+        visible={hotelSwitcherOpen}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setHotelSwitcherOpen(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.hotelSwitcherCard}>
+            {/* Modal Header */}
+            <View style={styles.hotelSwitcherHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={styles.hotelSwitcherHeaderIconWrap}>
+                  <LucideIcon name="building-2" size={18} color="#C5A46D" />
+                </View>
+                <View>
+                  <Text style={styles.hotelSwitcherModalTitle}>SWITCH PROPERTY CONTEXT</Text>
+                  <Text style={styles.hotelSwitcherModalSub}>
+                    Manage properties assigned to your account ({hotels.length} {hotels.length === 1 ? 'property' : 'properties'})
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.modalCloseBtn}
+                onPress={() => setHotelSwitcherOpen(false)}
+                activeOpacity={0.8}
+              >
+                <LucideIcon name="x" size={16} color="#A5A39D" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Quick Filter Input if Owner has 3+ Hotels */}
+            {hotels.length > 2 && (
+              <View style={styles.hotelSwitcherSearchWrap}>
+                <LucideIcon name="search" size={14} color="#A5A39D" />
+                <TextInput
+                  style={styles.hotelSwitcherSearchInput}
+                  placeholder="Filter by hotel name, city, or ID..."
+                  placeholderTextColor="#807E78"
+                  value={hotelSwitcherFilter}
+                  onChangeText={setHotelSwitcherFilter}
+                />
+                {hotelSwitcherFilter ? (
+                  <TouchableOpacity onPress={() => setHotelSwitcherFilter('')}>
+                    <LucideIcon name="x" size={14} color="#A5A39D" />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            )}
+
+            {/* Hotel List */}
+            <ScrollView style={styles.hotelSwitcherList} contentContainerStyle={{ gap: 10, paddingVertical: 12 }}>
+              {hotels.length === 0 ? (
+                <View style={styles.hotelSwitcherEmptyCard}>
+                  <LucideIcon name="building-2" size={38} color="#C5A46D" />
+                  <Text style={styles.hotelSwitcherEmptyTitle}>No Properties Found</Text>
+                  <Text style={styles.hotelSwitcherEmptyText}>
+                    You do not currently have any properties assigned to this owner account. You can register a new property via the Hotel & Location Config tab.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.hotelSwitcherRegisterBtn}
+                    onPress={() => {
+                      setHotelSwitcherOpen(false);
+                      setActiveTab('hotel_config');
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <LucideIcon name="plus" size={14} color="#101114" />
+                      <Text style={styles.hotelSwitcherRegisterBtnText}>Register New Property</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                filteredSwitcherHotels.map((h) => {
+                  const isCurrent =
+                    String(h.hotelPropertyId || h.id) ===
+                    String(currentActiveHotel?.hotelPropertyId || currentActiveHotel?.id);
+                  const hotelImg =
+                    h.imageLink ||
+                    (Array.isArray(h.images) && (typeof h.images[0] === 'object' ? h.images[0]?.url : h.images[0])) ||
+                    null;
+
+                  return (
+                    <TouchableOpacity
+                      key={`switcher-hotel-${h.hotelPropertyId || h.id}`}
+                      style={[
+                        styles.hotelSwitcherItemCard,
+                        isCurrent && styles.hotelSwitcherItemCardActive,
+                      ]}
+                      onPress={() => handleSwitchHotel(h)}
+                      activeOpacity={0.85}
+                    >
+                      {/* Thumbnail */}
+                      <View style={styles.hotelSwitcherThumbWrap}>
+                        {hotelImg ? (
+                          <Image source={{ uri: hotelImg }} style={styles.hotelSwitcherThumb} resizeMode="cover" />
+                        ) : (
+                          <View style={styles.hotelSwitcherThumbPlaceholder}>
+                            <LucideIcon name="hotel" size={20} color="#C5A46D" />
+                          </View>
+                        )}
+                      </View>
+
+                      {/* Info */}
+                      <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <Text style={[styles.hotelSwitcherItemName, isCurrent && styles.hotelSwitcherItemNameActive]} numberOfLines={1}>
+                            {h.name || h.title || 'Untitled Property'}
+                          </Text>
+                          <View style={[
+                            styles.statusBadgePill,
+                            h.status === 'approved'
+                              ? styles.statusBadgeApproved
+                              : h.status === 'rejected'
+                                ? styles.statusBadgeRejected
+                                : styles.statusBadgePending,
+                          ]}>
+                            <Text style={styles.statusBadgePillText}>
+                              {(h.status || 'PENDING').toUpperCase()}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                          <LucideIcon name="map-pin" size={12} color="#A5A39D" />
+                          <Text style={styles.hotelSwitcherItemCity} numberOfLines={1}>
+                            {h.address || h.city || h.location || 'Location unconfigured'}
+                          </Text>
+                        </View>
+
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2, flexWrap: 'wrap' }}>
+                          <Text style={styles.hotelSwitcherItemMeta}>
+                            ID: {h.hotelPropertyId || h.id || 'N/A'}
+                          </Text>
+                          <Text style={styles.hotelSwitcherItemMetaDivider}>•</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                            <LucideIcon name="star" size={11} color="#C5A46D" />
+                            <Text style={styles.hotelSwitcherItemMeta}>{h.rating || '4.8'}</Text>
+                          </View>
+                          {h.pricePerNight ? (
+                            <>
+                              <Text style={styles.hotelSwitcherItemMetaDivider}>•</Text>
+                              <Text style={styles.hotelSwitcherItemMeta}>{h.pricePerNight}</Text>
+                            </>
+                          ) : null}
+                        </View>
+                      </View>
+
+                      {/* Right Action */}
+                      <View style={{ alignItems: 'flex-end', justifyContent: 'center', flexShrink: 0 }}>
+                        {isCurrent ? (
+                          <View style={styles.hotelSwitcherCurrentBadge}>
+                            <LucideIcon name="check" size={13} color="#101114" />
+                            <Text style={styles.hotelSwitcherCurrentBadgeText}>ACTIVE</Text>
+                          </View>
+                        ) : (
+                          <View style={styles.hotelSwitcherSelectBtn}>
+                            <LucideIcon name="arrow-left-right" size={12} color="#C5A46D" />
+                            <Text style={styles.hotelSwitcherSelectBtnText}>Switch</Text>
+                          </View>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </ScrollView>
+
+            {/* Modal Footer */}
+            <View style={styles.hotelSwitcherFooter}>
+              <Text style={styles.hotelSwitcherFooterInfo}>
+                {hotels.length} {hotels.length === 1 ? 'property' : 'properties'} registered under this account
+              </Text>
+              <TouchableOpacity
+                style={styles.hotelSwitcherCloseBtn}
+                onPress={() => setHotelSwitcherOpen(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.hotelSwitcherCloseBtnText}>Close</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -4652,14 +4938,40 @@ export default function AdminDashboardScreen({
               Property & Amenities Management • Live MongoDB ({connectedDbName})
             </Text>
           </View>
-          {currentActiveHotel && (
-            <View style={styles.headerActiveHotelPill}>
-              <View style={styles.headerActiveDot} />
-              <Text style={styles.headerActiveHotelText} numberOfLines={1}>
-                {currentActiveHotel.name} ({currentActiveHotel.city || 'Active'})
-              </Text>
+
+          {/* Professional Multi-Hotel Switcher Trigger */}
+          <TouchableOpacity
+            style={styles.headerHotelSwitcherBtn}
+            onPress={() => setHotelSwitcherOpen(true)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Switch active hotel property"
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={[
+                styles.headerActiveDot,
+                currentActiveHotel?.status === 'approved'
+                  ? styles.headerActiveDotApproved
+                  : currentActiveHotel?.status === 'rejected'
+                    ? styles.headerActiveDotRejected
+                    : styles.headerActiveDotPending,
+              ]} />
+              <View style={{ maxWidth: 210 }}>
+                <Text style={styles.headerHotelSwitcherName} numberOfLines={1}>
+                  {currentActiveHotel ? (currentActiveHotel.name || currentActiveHotel.title) : 'Select Property'}
+                </Text>
+                <Text style={styles.headerHotelSwitcherSub} numberOfLines={1}>
+                  {currentActiveHotel
+                    ? `${currentActiveHotel.city || 'Active'} • ID: ${currentActiveHotel.hotelPropertyId || currentActiveHotel.id || 'N/A'}`
+                    : `${hotels.length} available`}
+                </Text>
+              </View>
+              <View style={styles.headerSwitcherCountPill}>
+                <Text style={styles.headerSwitcherCountText}>{hotels.length} {hotels.length === 1 ? 'Hotel' : 'Hotels'}</Text>
+              </View>
+              <LucideIcon name="chevron-down" size={13} color="#C5A46D" />
             </View>
-          )}
+          </TouchableOpacity>
         </View>
 
         <View style={styles.adminHeaderRight}>
@@ -4779,6 +5091,7 @@ export default function AdminDashboardScreen({
       {itemModalVisible && renderItemModal()}
       {placeModalVisible && renderPlaceModal()}
       {customCatModalVisible && renderCustomCategoryModal()}
+      {hotelSwitcherOpen && renderHotelSwitcherModal()}
     </View>
   );
 }
@@ -7185,11 +7498,58 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     gap: 6,
   },
+  headerHotelSwitcherBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(197, 164, 109, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(197, 164, 109, 0.3)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginLeft: 14,
+    ...Platform.select({
+      web: { cursor: 'pointer', transition: 'all 0.15s ease' },
+    }),
+  },
+  headerHotelSwitcherName: {
+    color: '#F2EFE8',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  headerHotelSwitcherSub: {
+    color: '#A5A39D',
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  headerSwitcherCountPill: {
+    backgroundColor: '#25262B',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: '#36373E',
+  },
+  headerSwitcherCountText: {
+    color: '#C5A46D',
+    fontSize: 10,
+    fontWeight: '700',
+  },
   headerActiveDot: {
     width: 7,
     height: 7,
     borderRadius: 4,
     backgroundColor: '#4E9F76',
+  },
+  headerActiveDotApproved: {
+    backgroundColor: '#4E9F76',
+  },
+  headerActiveDotPending: {
+    backgroundColor: '#E5A93C',
+  },
+  headerActiveDotRejected: {
+    backgroundColor: '#D9534F',
   },
   headerActiveHotelText: {
     color: '#C5A46D',
@@ -7366,6 +7726,242 @@ const styles = StyleSheet.create({
   profileActionBtnText: {
     color: '#F2EFE8',
     fontSize: 12,
+    fontWeight: '700',
+  },
+  profileSwitchActionBtn: {
+    backgroundColor: 'rgba(197, 164, 109, 0.12)',
+    borderWidth: 1,
+    borderColor: '#C5A46D',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  profileSwitchActionBtnText: {
+    color: '#C5A46D',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  // Switcher Modal Styles
+  hotelSwitcherCard: {
+    backgroundColor: '#1C1D21',
+    borderWidth: 1,
+    borderColor: 'rgba(197, 164, 109, 0.35)',
+    borderRadius: 14,
+    width: '92%',
+    maxWidth: 680,
+    maxHeight: '85%',
+    overflow: 'hidden',
+  },
+  hotelSwitcherHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A2B31',
+    backgroundColor: '#15161A',
+  },
+  hotelSwitcherHeaderIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: 'rgba(197, 164, 109, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(197, 164, 109, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hotelSwitcherModalTitle: {
+    color: '#F2EFE8',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  hotelSwitcherModalSub: {
+    color: '#A5A39D',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  hotelSwitcherSearchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#15161A',
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A2B31',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  hotelSwitcherSearchInput: {
+    flex: 1,
+    color: '#F2EFE8',
+    fontSize: 12.5,
+    outlineStyle: 'none',
+  },
+  hotelSwitcherList: {
+    paddingHorizontal: 16,
+    maxHeight: 460,
+  },
+  hotelSwitcherItemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#15161A',
+    borderWidth: 1,
+    borderColor: '#2A2B31',
+    borderRadius: 10,
+    padding: 12,
+    gap: 12,
+    ...Platform.select({
+      web: { cursor: 'pointer', transition: 'all 0.15s ease' },
+    }),
+  },
+  hotelSwitcherItemCardActive: {
+    backgroundColor: '#25262B',
+    borderColor: '#C5A46D',
+  },
+  hotelSwitcherThumbWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#101114',
+    borderWidth: 1,
+    borderColor: '#2A2B31',
+    flexShrink: 0,
+  },
+  hotelSwitcherThumb: {
+    width: '100%',
+    height: '100%',
+  },
+  hotelSwitcherThumbPlaceholder: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hotelSwitcherItemName: {
+    color: '#F2EFE8',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  hotelSwitcherItemNameActive: {
+    color: '#D8BD8A',
+  },
+  hotelSwitcherItemCity: {
+    color: '#A5A39D',
+    fontSize: 11,
+  },
+  hotelSwitcherItemMeta: {
+    color: '#807E78',
+    fontSize: 10.5,
+    fontWeight: '600',
+  },
+  hotelSwitcherItemMetaDivider: {
+    color: '#36373E',
+    fontSize: 10,
+  },
+  hotelSwitcherCurrentBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#C5A46D',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  hotelSwitcherCurrentBadgeText: {
+    color: '#101114',
+    fontSize: 10.5,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  hotelSwitcherSelectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(197, 164, 109, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(197, 164, 109, 0.35)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  hotelSwitcherSelectBtnText: {
+    color: '#C5A46D',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  hotelSwitcherEmptyCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  hotelSwitcherEmptyTitle: {
+    color: '#F2EFE8',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  hotelSwitcherEmptyText: {
+    color: '#A5A39D',
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+    maxWidth: 380,
+  },
+  hotelSwitcherRegisterBtn: {
+    backgroundColor: '#C5A46D',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    marginTop: 8,
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  hotelSwitcherRegisterBtnText: {
+    color: '#101114',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  hotelSwitcherFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#2A2B31',
+    backgroundColor: '#15161A',
+  },
+  hotelSwitcherFooterInfo: {
+    color: '#807E78',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  hotelSwitcherCloseBtn: {
+    backgroundColor: '#25262B',
+    borderWidth: 1,
+    borderColor: '#2A2B31',
+    borderRadius: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  hotelSwitcherCloseBtnText: {
+    color: '#F2EFE8',
+    fontSize: 11.5,
     fontWeight: '700',
   },
 

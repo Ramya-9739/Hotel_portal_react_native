@@ -513,7 +513,7 @@ class ActiveHotelService {
     return this.activeHotel;
   }
 
-  setActiveHotel(hotel) {
+  setActiveHotel(hotel, allowNonApproved = false) {
     if (!hotel) {
       this.activeHotel = null;
       if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
@@ -522,8 +522,8 @@ class ActiveHotelService {
       this.notify();
       return null;
     }
-    // Only approved hotels can be activated for the public guest portal
-    if (hotel.status && hotel.status !== 'approved') {
+    // Only approved hotels can be activated for the public guest portal unless explicitly allowed for admin context
+    if (!allowNonApproved && hotel.status && hotel.status !== 'approved') {
       console.log(`[ActiveHotelService] Hotel status is "${hotel.status}", not activating for public guests.`);
       return hotel;
     }
@@ -543,7 +543,7 @@ class ActiveHotelService {
    * Saves and activates a hotel selected by the Admin.
    * The hotel data comes from real place search — no defaults, no presets.
    */
-  saveAndActivateHotel(hotelData) {
+  saveAndActivateHotel(hotelData, allowNonApproved = true) {
     const id = hotelData.id || ('hotel-' + Date.now());
     const lat = parseFloat(hotelData.latitude != null ? hotelData.latitude : hotelData.lat);
     const lng = parseFloat(hotelData.longitude != null ? hotelData.longitude : hotelData.lng);
@@ -864,8 +864,8 @@ class ActiveHotelService {
       apiService.createHotel(newHotel).catch(() => { });
     }).catch(() => { });
 
-    if (newHotel.status === 'approved') {
-      return this.setActiveHotel(newHotel);
+    if (newHotel.status === 'approved' || allowNonApproved) {
+      return this.setActiveHotel(newHotel, allowNonApproved);
     }
     return newHotel;
   }
