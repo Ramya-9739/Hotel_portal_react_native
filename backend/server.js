@@ -11,6 +11,7 @@ const hotelAdminRoutes = require("./routes/hotelAdmin.routes");
 const hotelPropertyRoutes = require("./routes/hotelProperty.routes");
 const hotelPictureRoutes = require("./routes/hotelPicture.routes");
 const subComponentHeaderRoutes = require("./routes/subComponentHeader.routes");
+const touristDestinationRoutes = require("./routes/touristDestination.routes");
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use("/api/hotel-admins", hotelAdminRoutes);
 app.use("/api/hotel-properties", hotelPropertyRoutes);
 app.use("/api/hotel-pictures", hotelPictureRoutes);
 app.use("/api/sub-component-headers", subComponentHeaderRoutes);
+app.use("/api/tourist-destinations", touristDestinationRoutes);
 
 app.get("/health", (req, res) => {
   const dbName = mongoose.connection?.name || "hotelApiDb";

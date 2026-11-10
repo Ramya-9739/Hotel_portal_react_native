@@ -30,6 +30,7 @@ import AttractionTransitModal from '../components/AttractionTransitModal';
 import BookingModal from '../components/BookingModal';
 import RouteDetailsModal from '../components/RouteDetailsModal';
 import UniversalCategoryTableList from '../components/UniversalCategoryTableList';
+import IndiaTouristDirectoryModal from '../components/IndiaTouristDirectoryModal';
 
 import { syncService } from '../services/syncService';
 import { apiService } from '../services/apiService';
@@ -116,6 +117,22 @@ export default function HomeScreen({
 
   // Raw Live Display Components from MongoDB
   const [rawComponents, setRawComponents] = useState([]);
+
+  // Centralized India-Wide Global Tourist Destinations
+  const [globalDestinations, setGlobalDestinations] = useState([]);
+  const [indiaDirectoryModalVisible, setIndiaDirectoryModalVisible] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    apiService.fetchPublicDestinations().then((res) => {
+      if (isMounted && res.success && Array.isArray(res.data)) {
+        setGlobalDestinations(res.data);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Automatically ensure nearby places are hydrated from activeHotelService
   useEffect(() => {
@@ -256,6 +273,61 @@ export default function HomeScreen({
     data4: comp.data4 || '',
     data5: comp.data5 || '',
   });
+
+  // Combined Tourist Attractions: Preserves hotel-specific nearby places 100%,
+  // additively includes matching active global destinations for the hotel city/state with deduplication
+  const combinedTouristPlaces = useMemo(() => {
+    const hotelNearby = (activeHotel && activeHotel.nearby && Array.isArray(activeHotel.nearby.touristPlaces))
+      ? activeHotel.nearby.touristPlaces
+      : [];
+
+    const seen = new Set();
+    const merged = [];
+
+    // 1. Hotel-specific nearby places always preserved as primary
+    hotelNearby.forEach((p) => {
+      const key = (p.name || p.title || '').trim().toLowerCase();
+      if (key) seen.add(key);
+      merged.push(p);
+    });
+
+    // 2. Add active global destinations matching hotel city or state if not duplicate
+    const hotelCity = (activeHotel?.city || '').trim().toLowerCase();
+    const hotelState = (activeHotel?.state || '').trim().toLowerCase();
+
+    globalDestinations.forEach((g) => {
+      if (g.isActive === false) return;
+      const gCity = (g.city || '').trim().toLowerCase();
+      const gState = (g.state || '').trim().toLowerCase();
+      const matchesLocation = (hotelCity && gCity === hotelCity) || (hotelState && gState === hotelState);
+      if (!matchesLocation) return;
+
+      const key = (g.name || '').trim().toLowerCase();
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        merged.push({
+          id: g.destinationId || g._id,
+          _id: g.destinationId || g._id,
+          name: g.name,
+          title: g.name,
+          subtitle: `${g.category || 'Attraction'} • ${g.city}, ${g.state}`,
+          desc: g.description,
+          rating: g.rating || 4.8,
+          address: g.address || `${g.city}, ${g.state}`,
+          location: g.address || `${g.city}, ${g.state}`,
+          latitude: g.latitude,
+          longitude: g.longitude,
+          timings: g.timings || 'Open Daily',
+          price: g.entryFee || 'Verified',
+          image: g.imageLink,
+          imageLink: g.imageLink,
+          isGlobal: true,
+        });
+      }
+    });
+
+    return merged;
+  }, [activeHotel?.nearby?.touristPlaces, activeHotel?.city, activeHotel?.state, globalDestinations]);
 
   const hotelGyms = useMemo(() => {
     const rawList = rawComponents.filter((c) => c.category === 'gyms').map((c) => mapCompToGuestItem(c, 'GYM & WELLNESS', 'Wellness & Gyms'));
@@ -694,14 +766,15 @@ export default function HomeScreen({
           <HorizontalComponentList
             title="TOP TOURIST PLACES & ATTRACTIONS"
             subtitle={activeHotel?.city ? `Curated royal heritage, palaces, gardens and private guided excursions near ${activeHotel.name || activeHotel.city}` : "Curated royal heritage, palaces, gardens and private guided excursions"}
-            actionLabel="Explore Curations →"
-            items={activeHotel?.nearby?.touristPlaces || []}
+            actionLabel="All India Directory ↗"
+            items={combinedTouristPlaces}
             emptyMessage="No tourist places found near this hotel."
             selectedId={selectedComponent?.id}
-                        hotel={activeHotel}
+            hotel={activeHotel}
             onSelectComponent={handleOpenDetail}
             onViewDetails={handleOpenDetail}
             onScanPress={handleOpenScan}
+            onPressAction={() => setIndiaDirectoryModalVisible(true)}
           />
 
           {/* 2. MIDDLE ROW: Left (Shopping) | Center 44% (Hotel & Map) | Right (Transportation Only) */}
@@ -827,13 +900,15 @@ export default function HomeScreen({
           <HorizontalComponentList
             title="TOP TOURIST PLACES & ATTRACTIONS"
             subtitle={`Real heritage & attractions near ${activeHotel.name}`}
-            items={activeHotel?.nearby?.touristPlaces || []}
+            actionLabel="All India Directory ↗"
+            items={combinedTouristPlaces}
             emptyMessage="No tourist places found near this hotel."
             selectedId={selectedComponent?.id}
-              hotel={activeHotel}
+            hotel={activeHotel}
             onSelectComponent={handleOpenDetail}
             onViewDetails={handleOpenDetail}
             onScanPress={handleOpenScan}
+            onPressAction={() => setIndiaDirectoryModalVisible(true)}
           />
 
           {/* 2. CENTER: HOTEL SPOTLIGHT */}
@@ -1030,6 +1105,17 @@ export default function HomeScreen({
         onBook={(item) => {
           setRouteModalVisible(false);
           handleOpenBooking(item);
+        }}
+      />
+
+      <IndiaTouristDirectoryModal
+        visible={indiaDirectoryModalVisible}
+        destinations={globalDestinations}
+        hotel={activeHotel}
+        onClose={() => setIndiaDirectoryModalVisible(false)}
+        onSelectDestination={(dest) => {
+          setIndiaDirectoryModalVisible(false);
+          handleOpenDetail(dest);
         }}
       />
     </View>

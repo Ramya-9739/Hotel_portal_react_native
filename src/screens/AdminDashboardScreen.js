@@ -42,6 +42,7 @@ const ADMIN_TABS = [
   { id: 'hotel_config', label: 'Hotel & Location Config', icon: 'settings', section: 'PROPERTY & DISCOVERY' },
   { id: 'hotels', label: 'Hotels Directory', icon: 'building-2', section: 'PROPERTY & DISCOVERY' },
   { id: 'places_manager', label: 'Nearby Places & Categories', icon: 'compass', section: 'PROPERTY & DISCOVERY' },
+  { id: 'global_destinations', label: 'Global Tourist Directory (India)', icon: 'map-pin', section: 'PROPERTY & DISCOVERY' },
   { id: 'restaurants', label: 'Restaurants & Dining', icon: 'utensils', section: 'GUEST AMENITIES' },
   { id: 'gyms', label: 'Gyms & Wellness', icon: 'dumbbell', section: 'GUEST AMENITIES' },
   { id: 'pools', label: 'Swimming Pools', icon: 'waves', section: 'GUEST AMENITIES' },
@@ -206,6 +207,27 @@ export default function AdminDashboardScreen({
 
   const [newImageUrlInput, setNewImageUrlInput] = useState('');
   const [newImageCaptionInput, setNewImageCaptionInput] = useState('');
+
+  // Centralized Global Tourist Destinations (India) - Read-only for Hotel Admin
+  const [adminGlobalDestinations, setAdminGlobalDestinations] = useState([]);
+  const [isLoadingGlobalDest, setIsLoadingGlobalDest] = useState(false);
+  const [adminGlobalDestSearch, setAdminGlobalDestSearch] = useState('');
+  const [adminGlobalDestState, setAdminGlobalDestState] = useState('all');
+  const [adminGlobalDestCategory, setAdminGlobalDestCategory] = useState('all');
+
+  const loadAdminGlobalDestinations = async () => {
+    setIsLoadingGlobalDest(true);
+    try {
+      const res = await apiService.fetchAdminDestinations();
+      if (res.success && Array.isArray(res.data)) {
+        setAdminGlobalDestinations(res.data);
+      }
+    } catch (err) {
+      console.warn('[AdminDashboard] Failed to load global destinations:', err);
+    } finally {
+      setIsLoadingGlobalDest(false);
+    }
+  };
 
   // Places & Custom Categories Manager State
   const [selectedPlaceCategory, setSelectedPlaceCategory] = useState('touristPlaces');
@@ -1220,6 +1242,9 @@ export default function AdminDashboardScreen({
       if (bRes && bRes.data) {
         setBookings(bRes.data);
       }
+
+      // 8. Global Tourist Destinations (India) - Read-only Platform Directory
+      await loadAdminGlobalDestinations();
     } catch (err) {
       console.warn('[AdminDashboard] Load error:', err);
     } finally {
@@ -4046,6 +4071,291 @@ export default function AdminDashboardScreen({
   };
 
   // ===========================================================================
+  // RENDER TAB: GLOBAL TOURIST DESTINATIONS DIRECTORY (INDIA) - READ ONLY
+  // ===========================================================================
+  const renderGlobalDestinationsTab = () => {
+    const states = ['all', ...Array.from(new Set(adminGlobalDestinations.map((d) => d.state).filter(Boolean))).sort()];
+    const categories = [
+      'all',
+      'Heritage & Palaces',
+      'Monuments & Forts',
+      'Nature & Wildlife',
+      'Spiritual & Pilgrimage',
+      'Cultural & Arts',
+      'Museums & Galleries',
+      'Parks & Gardens',
+    ];
+
+    const filtered = adminGlobalDestinations.filter((d) => {
+      if (adminGlobalDestState !== 'all' && (d.state || '').toLowerCase() !== adminGlobalDestState.toLowerCase()) {
+        return false;
+      }
+      if (adminGlobalDestCategory !== 'all' && (d.category || '').toLowerCase() !== adminGlobalDestCategory.toLowerCase()) {
+        return false;
+      }
+      if (adminGlobalDestSearch.trim()) {
+        const q = adminGlobalDestSearch.trim().toLowerCase();
+        const name = (d.name || '').toLowerCase();
+        const city = (d.city || '').toLowerCase();
+        const state = (d.state || '').toLowerCase();
+        const addr = (d.address || '').toLowerCase();
+        const desc = (d.description || '').toLowerCase();
+        return name.includes(q) || city.includes(q) || state.includes(q) || addr.includes(q) || desc.includes(q);
+      }
+      return true;
+    });
+
+    const handleOpenMap = (dest) => {
+      let url = '';
+      if (dest.latitude != null && dest.longitude != null) {
+        url = `https://www.google.com/maps/search/?api=1&query=${dest.latitude},${dest.longitude}`;
+      } else {
+        const q = encodeURIComponent(`${dest.name}, ${dest.city || ''}, ${dest.state || ''}, India`);
+        url = `https://www.google.com/maps/search/?api=1&query=${q}`;
+      }
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        Linking.openURL(url).catch(() => {});
+      }
+    };
+
+    return (
+      <View style={styles.tabContentContainer}>
+        {/* Header Banner */}
+        <View style={styles.tabHeaderBanner}>
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <Text style={styles.tabHeaderTitle}>
+                GLOBAL TOURIST DESTINATIONS DIRECTORY (INDIA)
+              </Text>
+              <View style={[styles.statusBadgeApproved, { backgroundColor: 'rgba(197, 164, 109, 0.15)', borderColor: '#C5A46D' }]}>
+                <Text style={[styles.statusBadgeTextApproved, { color: '#C5A46D' }]}>
+                  READ-ONLY ACCESS • SUPER ADMIN CONTROLLED
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.tabHeaderSubtitle}>
+              Centralized platform catalog of verified attractions across India. Independent of hotel context.
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.refreshDataBtn}
+            onPress={loadAdminGlobalDestinations}
+            activeOpacity={0.8}
+          >
+            <LucideIcon name="refresh-cw" size={13} color="#C5A46D" />
+            <Text style={styles.refreshDataBtnText}> Refresh Directory</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Informational Callout */}
+        <View
+          style={{
+            backgroundColor: 'rgba(197, 164, 109, 0.08)',
+            borderLeftWidth: 3,
+            borderLeftColor: '#C5A46D',
+            padding: 12,
+            borderRadius: 6,
+            marginBottom: 16,
+          }}
+        >
+          <Text style={{ color: '#F2EFE8', fontSize: 12, fontWeight: '700', marginBottom: 2 }}>
+            Centralized Platform Governance Notice
+          </Text>
+          <Text style={{ color: '#94A3B8', fontSize: 11, lineHeight: 16 }}>
+            Destination records in this directory are curated and managed centrally by the Platform Super Admin. Hotel Administrators have full read-only visibility across all destinations in India. To manage nearby points of interest specific to your selected hotel property, use the &quot;Nearby Places &amp; Categories&quot; tab.
+          </Text>
+        </View>
+
+        {/* Controls Bar */}
+        <View style={[styles.filterBar, { marginBottom: 12, gap: 10 }]}>
+          <View style={[styles.searchBoxContainer, { flex: 1 }]}>
+            <LucideIcon name="search" size={14} color="#807E78" />
+            <TextInput
+              style={styles.searchBoxInput}
+              placeholder="Search destinations across India by name, city, state, or address..."
+              placeholderTextColor="#807E78"
+              value={adminGlobalDestSearch}
+              onChangeText={setAdminGlobalDestSearch}
+            />
+            {adminGlobalDestSearch.length > 0 && (
+              <TouchableOpacity onPress={() => setAdminGlobalDestSearch('')} style={{ padding: 4 }}>
+                <LucideIcon name="x" size={12} color="#807E78" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* State Filter Pills */}
+        <View style={{ marginBottom: 10 }}>
+          <Text style={{ color: '#807E78', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, marginBottom: 5 }}>
+            FILTER BY INDIAN STATE:
+          </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+            {states.map((st) => (
+              <TouchableOpacity
+                key={st}
+                style={[
+                  styles.categoryFilterBtn,
+                  adminGlobalDestState.toLowerCase() === st.toLowerCase() && styles.categoryFilterBtnActive,
+                  { paddingHorizontal: 10, paddingVertical: 5 },
+                ]}
+                onPress={() => setAdminGlobalDestState(st)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.categoryFilterBtnText,
+                    adminGlobalDestState.toLowerCase() === st.toLowerCase() && styles.categoryFilterBtnTextActive,
+                    { fontSize: 11 },
+                  ]}
+                >
+                  {st === 'all' ? 'All Indian States' : st}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Category Filter Pills */}
+        <View style={{ marginBottom: 16 }}>
+          <Text style={{ color: '#807E78', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, marginBottom: 5 }}>
+            FILTER BY CATEGORY:
+          </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                style={[
+                  styles.categoryFilterBtn,
+                  adminGlobalDestCategory.toLowerCase() === cat.toLowerCase() && styles.categoryFilterBtnActive,
+                  { paddingHorizontal: 10, paddingVertical: 5 },
+                ]}
+                onPress={() => setAdminGlobalDestCategory(cat)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.categoryFilterBtnText,
+                    adminGlobalDestCategory.toLowerCase() === cat.toLowerCase() && styles.categoryFilterBtnTextActive,
+                    { fontSize: 11 },
+                  ]}
+                >
+                  {cat === 'all' ? 'All Categories' : cat}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Directory Grid */}
+        {isLoadingGlobalDest ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#C5A46D" />
+            <Text style={styles.loadingText}>Loading centralized destinations...</Text>
+          </View>
+        ) : filtered.length === 0 ? (
+          <View style={styles.emptyStateContainer}>
+            <LucideIcon name="map-pin" size={40} color="#807E78" />
+            <Text style={styles.emptyStateTitle}>No Destinations Match Current Filter</Text>
+            <Text style={styles.emptyStateSubtitle}>
+              Try clearing your search query or selecting &quot;All Indian States&quot;.
+            </Text>
+          </View>
+        ) : (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
+            {filtered.map((d) => (
+              <View
+                key={d.destinationId || d._id}
+                style={{
+                  width: 'calc(50% - 7px)',
+                  backgroundColor: '#191B20',
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: 'rgba(197, 164, 109, 0.2)',
+                  overflow: 'hidden',
+                  marginBottom: 10,
+                }}
+              >
+                <Image
+                  source={{
+                    uri:
+                      d.imageLink ||
+                      'https://images.unsplash.com/photo-1599661046289-e31897846e41?w=600&q=80',
+                  }}
+                  style={{ width: '100%', height: 130, backgroundColor: '#2A2B31' }}
+                />
+                <View style={{ padding: 12, gap: 6 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: '#F2EFE8', fontSize: 13, fontWeight: '800' }} numberOfLines={1}>
+                      {d.name}
+                    </Text>
+                    <View style={{ backgroundColor: 'rgba(78, 159, 118, 0.15)', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                      <Text style={{ color: '#4E9F76', fontSize: 9.5, fontWeight: '700' }}>ACTIVE</Text>
+                    </View>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <LucideIcon name="map-pin" size={11} color="#C5A46D" />
+                    <Text style={{ color: '#A5A39D', fontSize: 10.5 }}>
+                      {d.city ? `${d.city}, ${d.state}` : d.state}
+                    </Text>
+                    <Text style={{ color: '#2A2B31' }}>•</Text>
+                    <Text style={{ color: '#C5A46D', fontSize: 10.5, fontWeight: '700' }}>
+                      {d.category || 'Attraction'}
+                    </Text>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <Text style={{ color: '#94A3B8', fontSize: 10.5 }}>🕒 {d.timings || 'Open Daily'}</Text>
+                    <Text style={{ color: '#807E78', fontSize: 9.5 }}>•</Text>
+                    <Text style={{ color: '#94A3B8', fontSize: 10.5 }}>🎟 {d.entryFee || 'Verified'}</Text>
+                  </View>
+
+                  {Boolean(d.description) && (
+                    <Text style={{ color: '#807E78', fontSize: 10.5, lineHeight: 15 }} numberOfLines={2}>
+                      {d.description}
+                    </Text>
+                  )}
+
+                  {Boolean(d.address) && (
+                    <Text style={{ color: '#807E78', fontSize: 9.5 }} numberOfLines={1}>
+                      📍 {d.address}
+                    </Text>
+                  )}
+
+                  <TouchableOpacity
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'rgba(197, 164, 109, 0.15)',
+                      borderWidth: 1,
+                      borderColor: 'rgba(197, 164, 109, 0.4)',
+                      borderRadius: 6,
+                      paddingVertical: 6,
+                      marginTop: 4,
+                      gap: 4,
+                    }}
+                    onPress={() => handleOpenMap(d)}
+                    activeOpacity={0.8}
+                  >
+                    <LucideIcon name="map-pin" size={11} color="#C5A46D" />
+                    <Text style={{ color: '#C5A46D', fontSize: 10.5, fontWeight: '700' }}>
+                      View in Google Maps ↗
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  // ===========================================================================
   // ADD PLACE POPUP MODAL (WITH 10-DIGIT ID & FACULTY 5 DATA POINTS)
   // ===========================================================================
   const renderPlaceModal = () => {
@@ -5074,6 +5384,7 @@ export default function AdminDashboardScreen({
         >
           {activeTab === 'hotel_config' && renderHotelConfigTab()}
           {activeTab === 'places_manager' && renderPlacesManagerTab()}
+          {activeTab === 'global_destinations' && renderGlobalDestinationsTab()}
           {activeTab === 'overview' && renderOverviewTab()}
           {activeTab === 'hotels' && renderHotelsTab()}
           {activeTab === 'restaurants' && renderRestaurantsTab()}

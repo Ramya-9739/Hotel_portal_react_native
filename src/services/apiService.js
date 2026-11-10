@@ -1006,6 +1006,134 @@ class ApiService {
     }
   }
 
+  // ===========================================================================
+  // GLOBAL TOURIST DESTINATIONS (Super Admin Controlled)
+  // ===========================================================================
+
+  async fetchPublicDestinations({ state, city, category, search } = {}) {
+    try {
+      const params = [];
+      if (state) params.push(`state=${encodeURIComponent(state)}`);
+      if (city) params.push(`city=${encodeURIComponent(city)}`);
+      if (category) params.push(`category=${encodeURIComponent(category)}`);
+      if (search) params.push(`search=${encodeURIComponent(search)}`);
+
+      let targetUrl = `${BASE_URL}/api/tourist-destinations/public`;
+      if (params.length > 0) targetUrl += `?${params.join('&')}`;
+
+      const response = await fetch(targetUrl, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(json.error || json.message || 'Failed to fetch public destinations');
+      }
+      return { success: true, data: json.data || [] };
+    } catch (err) {
+      console.error('[REST API Error] fetchPublicDestinations failed:', err.message);
+      return { success: false, error: err.message, data: [] };
+    }
+  }
+
+  async fetchAdminDestinations({ state, city, category, isActive, search } = {}) {
+    try {
+      const params = [];
+      if (state) params.push(`state=${encodeURIComponent(state)}`);
+      if (city) params.push(`city=${encodeURIComponent(city)}`);
+      if (category) params.push(`category=${encodeURIComponent(category)}`);
+      if (isActive !== undefined && isActive !== null) params.push(`isActive=${isActive}`);
+      if (search) params.push(`search=${encodeURIComponent(search)}`);
+
+      let targetUrl = `${BASE_URL}/api/tourist-destinations/admin`;
+      if (params.length > 0) targetUrl += `?${params.join('&')}`;
+
+      const response = await fetch(targetUrl, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(json.error || json.message || 'Failed to fetch admin destinations');
+      }
+      return { success: true, data: json.data || [] };
+    } catch (err) {
+      console.error('[REST API Error] fetchAdminDestinations failed:', err.message);
+      return { success: false, error: err.message, data: [] };
+    }
+  }
+
+  async createDestination(payload) {
+    try {
+      const targetUrl = `${BASE_URL}/api/tourist-destinations`;
+      const response = await fetch(targetUrl, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(payload),
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        return { success: false, error: json.error || json.message || 'Creation failed' };
+      }
+      return { success: true, data: json.data };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  async updateDestination(id, payload) {
+    try {
+      const targetUrl = `${BASE_URL}/api/tourist-destinations/${encodeURIComponent(id)}`;
+      const response = await fetch(targetUrl, {
+        method: 'PUT',
+        headers: this.getHeaders(),
+        body: JSON.stringify(payload),
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        return { success: false, error: json.error || json.message || 'Update failed' };
+      }
+      return { success: true, data: json.data };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  async toggleDestinationStatus(id, isActive) {
+    try {
+      const targetUrl = `${BASE_URL}/api/tourist-destinations/${encodeURIComponent(id)}/status`;
+      const response = await fetch(targetUrl, {
+        method: 'PATCH',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ isActive }),
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        return { success: false, error: json.error || json.message || 'Status toggle failed' };
+      }
+      return { success: true, data: json.data };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  async deleteDestination(id) {
+    try {
+      const targetUrl = `${BASE_URL}/api/tourist-destinations/${encodeURIComponent(id)}`;
+      const response = await fetch(targetUrl, {
+        method: 'DELETE',
+        headers: this.getHeaders(),
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        return { success: false, error: json.error || json.message || 'Deletion failed' };
+      }
+      return { success: true, data: json.data };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
   async resetAllData() {
     console.log('[REST API] Reset called');
     return { success: true };

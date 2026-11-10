@@ -30,6 +30,7 @@ export default function HorizontalComponentList({
   defaultSort = 'default',
   hotel = null,
   onDirections = null,
+  onPressAction = null,
 }) {
   const scrollRef = useRef(null);
   const { width } = useWindowDimensions();
@@ -160,11 +161,16 @@ export default function HorizontalComponentList({
         {/* Right side: Compact Scroll Bar Icons (◀ and ▶) without taking vertical space */}
         <View style={styles.headerRightControls}>
           {actionLabel ? (
-            <View style={styles.actionButton}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={onPressAction}
+              disabled={!onPressAction}
+              activeOpacity={0.8}
+            >
               <Text style={styles.actionLabelText}>
                 {actionLabel}
               </Text>
-            </View>
+            </TouchableOpacity>
           ) : null}
 
           {/* Sleek Scroll Bar Icons */}

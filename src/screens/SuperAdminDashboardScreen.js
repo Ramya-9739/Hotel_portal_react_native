@@ -36,6 +36,7 @@ const SUPER_ADMIN_TABS = [
   { id: 'overview', label: 'Platform Overview', icon: 'layout-dashboard' },
   { id: 'approvals', label: 'Hotel Approval Queue', icon: 'clock' },
   { id: 'hotels', label: 'All Hotel Properties', icon: 'building-2' },
+  { id: 'destinations', label: 'Global Destinations', icon: 'map-pin' },
   { id: 'admins', label: 'Admins & Owners', icon: 'users' },
   { id: 'logs', label: 'Platform Audit Logs', icon: 'file-text' },
   { id: 'security', label: 'Security & Health', icon: 'shield-check' },
@@ -138,9 +139,195 @@ export default function SuperAdminDashboardScreen({
     }
   };
 
+  // Global Destinations State (Super Admin Controlled)
+  const [destinations, setDestinations] = useState([]);
+  const [isLoadingDestinations, setIsLoadingDestinations] = useState(false);
+  const [destSearchQuery, setDestSearchQuery] = useState('');
+  const [destFilterState, setDestFilterState] = useState('all');
+  const [destFilterCategory, setDestFilterCategory] = useState('all');
+  const [destFilterStatus, setDestFilterStatus] = useState('all'); // 'all' | 'active' | 'inactive'
+  const [destinationModalVisible, setDestinationModalVisible] = useState(false);
+  const [destModalMode, setDestModalMode] = useState('create'); // 'create' | 'edit'
+  const [editingDestId, setEditingDestId] = useState(null);
+  const [isSavingDest, setIsSavingDest] = useState(false);
+  const [destForm, setDestForm] = useState({
+    name: '',
+    state: 'Karnataka',
+    city: 'Bengaluru',
+    category: 'Heritage & Palaces',
+    description: '',
+    address: '',
+    latitude: '',
+    longitude: '',
+    timings: '9:00 AM - 5:30 PM',
+    entryFee: 'Verified on entry',
+    imageLink: '',
+    isActive: true,
+  });
+
+  const loadDestinations = async () => {
+    setIsLoadingDestinations(true);
+    try {
+      const res = await apiService.fetchAdminDestinations();
+      if (res.success && Array.isArray(res.data)) {
+        setDestinations(res.data);
+      }
+    } catch (err) {
+      console.warn('[SuperAdmin] Failed to load destinations:', err);
+    } finally {
+      setIsLoadingDestinations(false);
+    }
+  };
+
+  const handleOpenCreateDestModal = () => {
+    setDestModalMode('create');
+    setEditingDestId(null);
+    setDestForm({
+      name: '',
+      state: 'Karnataka',
+      city: 'Bengaluru',
+      category: 'Heritage & Palaces',
+      description: '',
+      address: '',
+      latitude: '',
+      longitude: '',
+      timings: '9:00 AM - 5:30 PM',
+      entryFee: 'Verified on entry',
+      imageLink: '',
+      isActive: true,
+    });
+    setDestinationModalVisible(true);
+  };
+
+  const handleOpenEditDestModal = (dest) => {
+    setDestModalMode('edit');
+    setEditingDestId(dest.destinationId || dest._id);
+    setDestForm({
+      name: dest.name || '',
+      state: dest.state || '',
+      city: dest.city || '',
+      category: dest.category || 'Heritage & Palaces',
+      description: dest.description || '',
+      address: dest.address || '',
+      latitude: dest.latitude != null ? String(dest.latitude) : '',
+      longitude: dest.longitude != null ? String(dest.longitude) : '',
+      timings: dest.timings || 'Open Daily',
+      entryFee: dest.entryFee || '',
+      imageLink: dest.imageLink || '',
+      isActive: dest.isActive !== false,
+    });
+    setDestinationModalVisible(true);
+  };
+
+  const handleSaveDestination = async () => {
+    if (!destForm.name.trim()) {
+      showToast('Destination name is required', 'error');
+      return;
+    }
+    if (!destForm.state.trim()) {
+      showToast('Indian state is required', 'error');
+      return;
+    }
+    if (!destForm.city.trim()) {
+      showToast('City is required', 'error');
+      return;
+    }
+
+    // Strict Base64 rejection
+    if (destForm.imageLink && destForm.imageLink.startsWith('data:image/')) {
+      showToast('Base64 images are not supported in MongoDB. Please use an image URL.', 'error');
+      return;
+    }
+
+    setIsSavingDest(true);
+    try {
+      const payload = {
+        name: destForm.name.trim(),
+        state: destForm.state.trim(),
+        city: destForm.city.trim(),
+        category: destForm.category.trim(),
+        description: destForm.description.trim(),
+        address: destForm.address.trim(),
+        latitude: destForm.latitude ? parseFloat(destForm.latitude) : null,
+        longitude: destForm.longitude ? parseFloat(destForm.longitude) : null,
+        timings: destForm.timings.trim(),
+        entryFee: destForm.entryFee.trim(),
+        imageLink: destForm.imageLink.trim(),
+        isActive: destForm.isActive,
+      };
+
+      if (destModalMode === 'create') {
+        const res = await apiService.createDestination(payload);
+        if (res.success) {
+          showToast(`Destination "${payload.name}" created successfully!`, 'success');
+          logAuditEvent('CREATE_DESTINATION', `Added global destination "${payload.name}" in ${payload.city}, ${payload.state}`, 'create');
+          setDestinationModalVisible(false);
+          loadDestinations();
+        } else {
+          showToast(res.error || 'Failed to create destination', 'error');
+        }
+      } else {
+        const res = await apiService.updateDestination(editingDestId, payload);
+        if (res.success) {
+          showToast(`Destination "${payload.name}" updated successfully!`, 'success');
+          logAuditEvent('UPDATE_DESTINATION', `Updated global destination "${payload.name}"`, 'update');
+          setDestinationModalVisible(false);
+          loadDestinations();
+        } else {
+          showToast(res.error || 'Failed to update destination', 'error');
+        }
+      }
+    } catch (err) {
+      showToast(err.message || 'Error saving destination', 'error');
+    } finally {
+      setIsSavingDest(false);
+    }
+  };
+
+  const handleToggleDestStatus = async (dest) => {
+    const id = dest.destinationId || dest._id;
+    const newStatus = !dest.isActive;
+    try {
+      const res = await apiService.toggleDestinationStatus(id, newStatus);
+      if (res.success) {
+        showToast(`Destination "${dest.name}" is now ${newStatus ? 'ACTIVE' : 'INACTIVE'}`, 'success');
+        logAuditEvent('TOGGLE_DEST_STATUS', `Set "${dest.name}" status to ${newStatus ? 'ACTIVE' : 'INACTIVE'}`, newStatus ? 'approve' : 'reject');
+        setDestinations((prev) =>
+          prev.map((d) => ((d.destinationId === id || d._id === id) ? { ...d, isActive: newStatus } : d))
+        );
+      } else {
+        showToast(res.error || 'Failed to update status', 'error');
+      }
+    } catch (err) {
+      showToast(err.message || 'Error toggling status', 'error');
+    }
+  };
+
+  const handleDeleteDestination = async (dest) => {
+    const id = dest.destinationId || dest._id;
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      if (!window.confirm(`Are you sure you want to delete "${dest.name}" from the global directory?`)) {
+        return;
+      }
+    }
+    try {
+      const res = await apiService.deleteDestination(id);
+      if (res.success) {
+        showToast(`Destination "${dest.name}" deleted from global directory`, 'info');
+        logAuditEvent('DELETE_DESTINATION', `Deleted global destination "${dest.name}"`, 'delete');
+        setDestinations((prev) => prev.filter((d) => d.destinationId !== id && d._id !== id));
+      } else {
+        showToast(res.error || 'Failed to delete destination', 'error');
+      }
+    } catch (err) {
+      showToast(err.message || 'Error deleting destination', 'error');
+    }
+  };
+
   useEffect(() => {
     loadHotels();
     loadAdmins();
+    loadDestinations();
   }, []);
 
   // Handle hotel approval
@@ -314,6 +501,47 @@ export default function SuperAdminDashboardScreen({
     return uname.includes(q) || email.includes(q) || role.includes(q);
   });
 
+  // Filtered dataset for Global Destinations
+  const filteredDestinations = destinations.filter((d) => {
+    if (destFilterStatus === 'active' && !d.isActive) return false;
+    if (destFilterStatus === 'inactive' && d.isActive) return false;
+
+    if (destFilterState !== 'all' && (d.state || '').toLowerCase() !== destFilterState.toLowerCase()) {
+      return false;
+    }
+
+    if (destFilterCategory !== 'all' && (d.category || '').toLowerCase() !== destFilterCategory.toLowerCase()) {
+      return false;
+    }
+
+    if (destSearchQuery.trim()) {
+      const q = destSearchQuery.trim().toLowerCase();
+      const name = (d.name || '').toLowerCase();
+      const city = (d.city || '').toLowerCase();
+      const state = (d.state || '').toLowerCase();
+      const addr = (d.address || '').toLowerCase();
+      const desc = (d.description || '').toLowerCase();
+      return name.includes(q) || city.includes(q) || state.includes(q) || addr.includes(q) || desc.includes(q);
+    }
+
+    return true;
+  });
+
+  const activeDestCount = destinations.filter((d) => d.isActive).length;
+  const inactiveDestCount = destinations.filter((d) => !d.isActive).length;
+  const destStatesList = ['all', ...Array.from(new Set(destinations.map((d) => d.state).filter(Boolean))).sort()];
+  const destCategoriesList = [
+    'all',
+    'Heritage & Palaces',
+    'Monuments & Forts',
+    'Nature & Wildlife',
+    'Spiritual & Pilgrimage',
+    'Cultural & Arts',
+    'Museums & Galleries',
+    'Parks & Gardens',
+    'Beaches & Coastal',
+  ];
+
   // ===========================================================================
   // RENDER TAB: PLATFORM OVERVIEW
   // ===========================================================================
@@ -426,6 +654,21 @@ export default function SuperAdminDashboardScreen({
           <Text style={[styles.metricCardValue, { color: '#C5A46D' }]}>{admins.length}</Text>
           <Text style={styles.metricCardSub}>
             {admins.filter((a) => a.role === 'superadmin').length} Super • {admins.filter((a) => a.role === 'clientadmin').length} Owners
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.metricCard, { borderLeftColor: '#C5A46D' }]}
+          onPress={() => setActiveTab('destinations')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.metricCardHeader}>
+            <Text style={styles.metricCardLabel}>GLOBAL DESTINATIONS</Text>
+            <LucideIcon name="map-pin" size={18} color="#C5A46D" />
+          </View>
+          <Text style={[styles.metricCardValue, { color: '#C5A46D' }]}>{destinations.length}</Text>
+          <Text style={styles.metricCardSub}>
+            {activeDestCount} Active • {inactiveDestCount} Staged Across India
           </Text>
         </TouchableOpacity>
       </View>
@@ -944,6 +1187,291 @@ export default function SuperAdminDashboardScreen({
   );
 
   // ===========================================================================
+  // RENDER TAB: GLOBAL TOURIST DESTINATIONS DIRECTORY (Super Admin Controlled)
+  // ===========================================================================
+  const renderDestinationsTab = () => (
+    <View style={styles.tabContentInner}>
+      {/* Header */}
+      <View style={styles.sectionHeaderBar}>
+        <View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <Text style={styles.sectionHeaderTitle}>
+              GLOBAL TOURIST DESTINATIONS DIRECTORY ({destinations.length})
+            </Text>
+            <View style={styles.badgePendingCount}>
+              <Text style={styles.badgePendingCountText}>
+                {activeDestCount} Active • {inactiveDestCount} Inactive • {Math.max(0, destStatesList.length - 1)} Indian States
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.sectionHeaderSubtitle}>
+            Centralized platform-wide tourist catalog across India controlled exclusively by Super Admin.
+          </Text>
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <TouchableOpacity
+            style={styles.createAdminBtn}
+            onPress={handleOpenCreateDestModal}
+            activeOpacity={0.85}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <LucideIcon name="plus" size={14} color="#101114" />
+              <Text style={styles.createAdminBtnText}>Add Destination</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.refreshBtn}
+            onPress={loadDestinations}
+            activeOpacity={0.8}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <LucideIcon name="refresh-cw" size={13} color="#F2EFE8" />
+              <Text style={styles.refreshBtnText}>Refresh</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Controls & Filter Bar */}
+      <View style={styles.controlsBar}>
+        {/* Status Tabs */}
+        <View style={styles.statusTabsRow}>
+          {[
+            { id: 'all', label: `All (${destinations.length})` },
+            { id: 'active', label: `Active (${activeDestCount})` },
+            { id: 'inactive', label: `Inactive (${inactiveDestCount})` },
+          ].map((tab) => (
+            <TouchableOpacity
+              key={tab.id}
+              style={[styles.statusTabBtn, destFilterStatus === tab.id && styles.statusTabBtnActive]}
+              onPress={() => setDestFilterStatus(tab.id)}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.statusTabBtnText,
+                  destFilterStatus === tab.id && styles.statusTabBtnTextActive,
+                ]}
+              >
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Search Input */}
+        <View style={styles.searchWrap}>
+          <Text style={styles.searchIcon}>⌕</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search destinations by name, city, state, or address..."
+            placeholderTextColor="#807E78"
+            value={destSearchQuery}
+            onChangeText={setDestSearchQuery}
+          />
+          {destSearchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setDestSearchQuery('')} style={{ padding: 4 }}>
+              <LucideIcon name="x" size={13} color="#A5A39D" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* State Filter Pills */}
+      <View style={{ marginBottom: 10 }}>
+        <Text style={{ color: '#807E78', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, marginBottom: 5 }}>
+          FILTER BY INDIAN STATE:
+        </Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+          {destStatesList.map((st) => (
+            <TouchableOpacity
+              key={st}
+              style={[
+                styles.statusTabBtn,
+                destFilterState.toLowerCase() === st.toLowerCase() && styles.statusTabBtnActive,
+                { paddingHorizontal: 10, paddingVertical: 5 },
+              ]}
+              onPress={() => setDestFilterState(st)}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.statusTabBtnText,
+                  destFilterState.toLowerCase() === st.toLowerCase() && styles.statusTabBtnTextActive,
+                  { fontSize: 11 },
+                ]}
+              >
+                {st === 'all' ? 'All Indian States' : st}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Category Filter Pills */}
+      <View style={{ marginBottom: 14 }}>
+        <Text style={{ color: '#807E78', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, marginBottom: 5 }}>
+          FILTER BY CATEGORY:
+        </Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+          {destCategoriesList.map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              style={[
+                styles.statusTabBtn,
+                destFilterCategory.toLowerCase() === cat.toLowerCase() && styles.statusTabBtnActive,
+                { paddingHorizontal: 10, paddingVertical: 5 },
+              ]}
+              onPress={() => setDestFilterCategory(cat)}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.statusTabBtnText,
+                  destFilterCategory.toLowerCase() === cat.toLowerCase() && styles.statusTabBtnTextActive,
+                  { fontSize: 11 },
+                ]}
+              >
+                {cat === 'all' ? 'All Categories' : cat}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Destinations Grid */}
+      <View style={styles.hotelsGrid}>
+        {isLoadingDestinations ? (
+          <View style={styles.stateBox}>
+            <ActivityIndicator size="large" color="#C5A46D" />
+            <Text style={styles.stateText}>Loading global tourist destinations...</Text>
+          </View>
+        ) : filteredDestinations.length === 0 ? (
+          <View style={styles.stateBox}>
+            <LucideIcon name="map-pin" size={32} color="#A5A39D" style={{ marginBottom: 8 }} />
+            <Text style={styles.emptyTitle}>No Destinations Match Current Filters</Text>
+            <Text style={styles.emptySubtitle}>
+              Try selecting &quot;All States&quot;, clearing search filters, or click &quot;Add Destination&quot; above to create a new one.
+            </Text>
+          </View>
+        ) : (
+          filteredDestinations.map((d) => {
+            const isLive = d.isActive !== false;
+            return (
+              <View key={d.destinationId || d._id} style={styles.hotelGridCard}>
+                <Image
+                  source={{
+                    uri:
+                      d.imageLink ||
+                      'https://images.unsplash.com/photo-1599661046289-e31897846e41?w=600&q=80',
+                  }}
+                  style={styles.hotelGridCardThumb}
+                />
+                <View style={styles.hotelGridCardBody}>
+                  {/* Title & Status */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <Text style={styles.hotelGridCardTitle} numberOfLines={1}>
+                      {d.name}
+                    </Text>
+                    <View
+                      style={[
+                        styles.statusPill,
+                        isLive ? styles.statusApproved : styles.statusRejected,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusPillText,
+                          isLive ? { color: '#4E9F76' } : { color: '#807E78' },
+                        ]}
+                      >
+                        {isLive ? 'ACTIVE' : 'INACTIVE'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Location & Category Badges */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 3, flexWrap: 'wrap' }}>
+                    <LucideIcon name="map-pin" size={12} color="#C5A46D" />
+                    <Text style={styles.hotelGridCardLocation}>
+                      {d.city ? `${d.city}, ${d.state}` : d.state}
+                    </Text>
+                    <Text style={{ color: '#2A2B31' }}>•</Text>
+                    <Text style={[styles.hotelGridCardLocation, { color: '#C5A46D', fontWeight: '700' }]}>
+                      {d.category || 'Heritage'}
+                    </Text>
+                  </View>
+
+                  {/* Timings & Entry */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 2 }}>
+                    <Text style={styles.hotelGridCardPrice}>{d.timings || 'Open Daily'}</Text>
+                    <Text style={{ color: '#807E78', fontSize: 10 }}>•</Text>
+                    <Text style={[styles.hotelGridCardPrice, { color: '#A5A39D' }]}>{d.entryFee || 'Verified'}</Text>
+                  </View>
+
+                  {/* Coordinates if present */}
+                  {d.latitude != null && d.longitude != null && (
+                    <Text style={styles.hotelGridCardOwner}>
+                      GPS: {Number(d.latitude).toFixed(4)}°N, {Number(d.longitude).toFixed(4)}°E
+                    </Text>
+                  )}
+
+                  {/* Description preview */}
+                  {Boolean(d.description) && (
+                    <Text style={{ color: '#807E78', fontSize: 11, marginVertical: 4, lineHeight: 15 }} numberOfLines={2}>
+                      {d.description}
+                    </Text>
+                  )}
+
+                  {/* Actions */}
+                  <View style={styles.hotelGridCardActions}>
+                    <TouchableOpacity
+                      style={styles.gridBtnView}
+                      onPress={() => handleOpenEditDestModal(d)}
+                      activeOpacity={0.8}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <LucideIcon name="edit" size={12} color="#C5A46D" />
+                        <Text style={styles.gridBtnViewText}>Edit</Text>
+                      </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={isLive ? styles.gridBtnReject : styles.gridBtnAccept}
+                      onPress={() => handleToggleDestStatus(d)}
+                      activeOpacity={0.8}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <LucideIcon name={isLive ? 'x' : 'check'} size={12} color={isLive ? '#D9534F' : '#101114'} />
+                        <Text style={isLive ? styles.gridBtnRejectText : styles.gridBtnAcceptText}>
+                          {isLive ? 'Deactivate' : 'Activate'}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.gridBtnReject, { backgroundColor: 'transparent', borderColor: '#8C2424', borderWidth: 1 }]}
+                      onPress={() => handleDeleteDestination(d)}
+                      activeOpacity={0.8}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <LucideIcon name="trash-2" size={12} color="#D9534F" />
+                        <Text style={styles.gridBtnRejectText}>Delete</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            );
+          })
+        )}
+      </View>
+    </View>
+  );
+
+  // ===========================================================================
   // RENDER TAB: ADMINISTRATOR & OWNER MANAGEMENT
   // ===========================================================================
   const renderAdminsTab = () => (
@@ -1340,6 +1868,7 @@ export default function SuperAdminDashboardScreen({
           {activeTab === 'overview' && renderOverviewTab()}
           {activeTab === 'approvals' && renderApprovalsTab()}
           {activeTab === 'hotels' && renderHotelsTab()}
+          {activeTab === 'destinations' && renderDestinationsTab()}
           {activeTab === 'admins' && renderAdminsTab()}
           {activeTab === 'logs' && renderLogsTab()}
           {activeTab === 'security' && renderSecurityTab()}
@@ -1718,6 +2247,260 @@ export default function SuperAdminDashboardScreen({
                   onPress={handleCreateAdmin}
                 >
                   <Text style={styles.modalSaveAdminBtnText}>Create Account</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* =================================================================== */}
+      {/* 4. ADD / EDIT GLOBAL TOURIST DESTINATION MODAL                      */}
+      {/* =================================================================== */}
+      {destinationModalVisible && (
+        <Modal
+          visible={destinationModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setDestinationModalVisible(false)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={[styles.modalCard, { width: isDesktop ? 620 : '95%', maxHeight: '90%' }]}>
+              {/* Modal Header */}
+              <View style={styles.modalHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <LucideIcon name="map-pin" size={18} color="#C5A46D" />
+                  <View>
+                    <Text style={styles.modalTitle}>
+                      {destModalMode === 'create' ? 'ADD GLOBAL TOURIST DESTINATION' : 'EDIT GLOBAL DESTINATION'}
+                    </Text>
+                    <Text style={styles.modalSubtitle}>
+                      {destModalMode === 'create'
+                        ? 'Provision a centralized, Super Admin managed attraction across India'
+                        : `Editing destination ID: ${editingDestId}`}
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={styles.modalCloseBtn}
+                  onPress={() => setDestinationModalVisible(false)}
+                >
+                  <LucideIcon name="x" size={16} color="#A5A39D" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Modal Body */}
+              <ScrollView style={{ padding: 20, maxHeight: 480 }} showsVerticalScrollIndicator={true}>
+                {/* Destination Name */}
+                <Text style={styles.formFieldLabel}>DESTINATION NAME *</Text>
+                <TextInput
+                  style={styles.formTextInput}
+                  placeholder="e.g., Mysore Palace, Qutub Minar, Gateway of India"
+                  placeholderTextColor="#807E78"
+                  value={destForm.name}
+                  onChangeText={(v) => setDestForm((p) => ({ ...p, name: v }))}
+                />
+
+                {/* State & City */}
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.formFieldLabel}>INDIAN STATE *</Text>
+                    <TextInput
+                      style={styles.formTextInput}
+                      placeholder="e.g., Karnataka, Rajasthan, Delhi"
+                      placeholderTextColor="#807E78"
+                      value={destForm.state}
+                      onChangeText={(v) => setDestForm((p) => ({ ...p, state: v }))}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.formFieldLabel}>CITY / REGION *</Text>
+                    <TextInput
+                      style={styles.formTextInput}
+                      placeholder="e.g., Mysuru, Jaipur, New Delhi"
+                      placeholderTextColor="#807E78"
+                      value={destForm.city}
+                      onChangeText={(v) => setDestForm((p) => ({ ...p, city: v }))}
+                    />
+                  </View>
+                </View>
+
+                {/* Category */}
+                <Text style={styles.formFieldLabel}>DESTINATION CATEGORY *</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 6 }}>
+                  {[
+                    'Heritage & Palaces',
+                    'Monuments & Forts',
+                    'Nature & Wildlife',
+                    'Spiritual & Pilgrimage',
+                    'Cultural & Arts',
+                    'Museums & Galleries',
+                    'Parks & Gardens',
+                    'Beaches & Coastal',
+                  ].map((cat) => (
+                    <TouchableOpacity
+                      key={cat}
+                      style={[
+                        styles.statusTabBtn,
+                        destForm.category === cat && styles.statusTabBtnActive,
+                        { marginRight: 6, paddingVertical: 5 },
+                      ]}
+                      onPress={() => setDestForm((p) => ({ ...p, category: cat }))}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.statusTabBtnText,
+                          destForm.category === cat && styles.statusTabBtnTextActive,
+                          { fontSize: 11 },
+                        ]}
+                      >
+                        {cat}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                {/* Description */}
+                <Text style={styles.formFieldLabel}>EDITORIAL DESCRIPTION</Text>
+                <TextInput
+                  style={[styles.formTextInput, { minHeight: 65, textAlignVertical: 'top' }]}
+                  placeholder="Verified historical context, architecture, royal significance, or visitor guidance..."
+                  placeholderTextColor="#807E78"
+                  multiline
+                  value={destForm.description}
+                  onChangeText={(v) => setDestForm((p) => ({ ...p, description: v }))}
+                />
+
+                {/* Full Address */}
+                <Text style={styles.formFieldLabel}>PHYSICAL ADDRESS / LANDMARK</Text>
+                <TextInput
+                  style={styles.formTextInput}
+                  placeholder="e.g., Sayyaji Rao Road, Agrahara, Chamrajpura, Mysuru"
+                  placeholderTextColor="#807E78"
+                  value={destForm.address}
+                  onChangeText={(v) => setDestForm((p) => ({ ...p, address: v }))}
+                />
+
+                {/* Coordinates */}
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.formFieldLabel}>LATITUDE (-90 to 90)</Text>
+                    <TextInput
+                      style={styles.formTextInput}
+                      placeholder="e.g., 12.3052"
+                      placeholderTextColor="#807E78"
+                      value={destForm.latitude}
+                      onChangeText={(v) => setDestForm((p) => ({ ...p, latitude: v }))}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.formFieldLabel}>LONGITUDE (-180 to 180)</Text>
+                    <TextInput
+                      style={styles.formTextInput}
+                      placeholder="e.g., 76.6552"
+                      placeholderTextColor="#807E78"
+                      value={destForm.longitude}
+                      onChangeText={(v) => setDestForm((p) => ({ ...p, longitude: v }))}
+                    />
+                  </View>
+                </View>
+
+                {/* Timings & Entry Fee */}
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.formFieldLabel}>OPENING TIMINGS</Text>
+                    <TextInput
+                      style={styles.formTextInput}
+                      placeholder="e.g., 10:00 AM - 5:30 PM Daily"
+                      placeholderTextColor="#807E78"
+                      value={destForm.timings}
+                      onChangeText={(v) => setDestForm((p) => ({ ...p, timings: v }))}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.formFieldLabel}>ENTRY FEE (VERIFIED ONLY)</Text>
+                    <TextInput
+                      style={styles.formTextInput}
+                      placeholder="e.g., ₹100 for Indian Nationals"
+                      placeholderTextColor="#807E78"
+                      value={destForm.entryFee}
+                      onChangeText={(v) => setDestForm((p) => ({ ...p, entryFee: v }))}
+                    />
+                  </View>
+                </View>
+
+                {/* Image Link (Strictly URL, NO Base64) */}
+                <Text style={styles.formFieldLabel}>
+                  IMAGE LINK (HTTPS URL ONLY • NO BASE64)
+                </Text>
+                <TextInput
+                  style={styles.formTextInput}
+                  placeholder="https://images.unsplash.com/... or hosted asset URL"
+                  placeholderTextColor="#807E78"
+                  value={destForm.imageLink}
+                  onChangeText={(v) => setDestForm((p) => ({ ...p, imageLink: v }))}
+                  autoCapitalize="none"
+                />
+                <Text style={{ color: '#807E78', fontSize: 10, marginTop: 4 }}>
+                  Strict protection: Base64 image payloads are strictly rejected by the server to protect database health.
+                </Text>
+
+                {/* Active Status */}
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 10,
+                    marginTop: 14,
+                    padding: 10,
+                    backgroundColor: '#1C1D21',
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: '#2A2B31',
+                  }}
+                  onPress={() => setDestForm((p) => ({ ...p, isActive: !p.isActive }))}
+                  activeOpacity={0.8}
+                >
+                  <LucideIcon
+                    name={destForm.isActive ? 'check-circle' : 'circle'}
+                    size={18}
+                    color={destForm.isActive ? '#4E9F76' : '#807E78'}
+                  />
+                  <View>
+                    <Text style={{ color: '#F2EFE8', fontSize: 12, fontWeight: '700' }}>
+                      Publish Immediately to Public Guest Directory
+                    </Text>
+                    <Text style={{ color: '#807E78', fontSize: 10 }}>
+                      {destForm.isActive
+                        ? 'Status is ACTIVE: visible to all guests in the Guest Portal.'
+                        : 'Status is INACTIVE: staged in Super Admin console only.'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </ScrollView>
+
+              {/* Modal Footer */}
+              <View style={styles.modalFooter}>
+                <TouchableOpacity
+                  style={styles.modalFooterDismissBtn}
+                  onPress={() => setDestinationModalVisible(false)}
+                >
+                  <Text style={styles.modalFooterDismissText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalSaveAdminBtn, isSavingDest && { opacity: 0.6 }]}
+                  onPress={handleSaveDestination}
+                  disabled={isSavingDest}
+                >
+                  <Text style={styles.modalSaveAdminBtnText}>
+                    {isSavingDest
+                      ? 'Saving Destination...'
+                      : destModalMode === 'create'
+                      ? 'Create Destination'
+                      : 'Save Changes'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
