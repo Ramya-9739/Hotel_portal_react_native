@@ -36,7 +36,11 @@ export default function AdminLoginScreen({
   // Role: 'superadmin' | 'clientadmin'
   const [selectedRole, setSelectedRole] = useState(() => {
     if (initialRole === 'superadmin') return 'superadmin';
-    if (typeof window !== 'undefined' && window.location.hash.toLowerCase().includes('super-admin')) {
+    if (
+      typeof window !== 'undefined' &&
+      (window.location.hash.toLowerCase().includes('super-admin') ||
+        window.location.hash.toLowerCase().includes('superadmin'))
+    ) {
       return 'superadmin';
     }
     return 'clientadmin';

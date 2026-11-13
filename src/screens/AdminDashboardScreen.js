@@ -148,6 +148,9 @@ export default function AdminDashboardScreen({
 }) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 960;
+  const isTablet = width >= 640 && width < 960;
+  const isSidebarVisibleOnScreen = width >= 640;
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const [activeTab, setActiveTab] = useState('hotel_config');
   const [toastMessage, setToastMessage] = useState(null);
@@ -5285,6 +5288,19 @@ export default function AdminDashboardScreen({
         </View>
 
         <View style={styles.adminHeaderRight}>
+          {onOpenSuperAdmin && (
+            <TouchableOpacity
+              style={styles.superAdminNavBtn}
+              onPress={onOpenSuperAdmin}
+              activeOpacity={0.8}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <LucideIcon name="shield-check" size={14} color="#C5A46D" />
+                <Text style={styles.superAdminNavBtnText}>✦ Super Admin Console</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             style={styles.addComponentHeaderBtn}
             onPress={() => handleOpenCreateModal('restaurants')}
@@ -5337,44 +5353,108 @@ export default function AdminDashboardScreen({
       )}
 
       {/* Main Admin Workspace: Sidebar Tabs + Content */}
-      <View style={[styles.bodyLayout, !isDesktop && styles.bodyLayoutMobile]}>
-        {/* Navigation Tabs Bar / Sidebar */}
-        <View style={[styles.tabsBar, !isDesktop && styles.tabsBarMobile]}>
-          <ScrollView
-            horizontal={!isDesktop}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tabsScrollContent}
-          >
-            {ADMIN_TABS.map((tab, idx) => {
-              const isActive = activeTab === tab.id;
-              const prevTab = idx > 0 ? ADMIN_TABS[idx - 1] : null;
-              const showSectionHeader = isDesktop && (!prevTab || prevTab.section !== tab.section);
+      <View style={[styles.bodyLayout, !isSidebarVisibleOnScreen && styles.bodyLayoutMobile]}>
+        {/* Navigation Sidebar (Desktop & Tablet: Permanent Vertical Sidebar) */}
+        {isSidebarVisibleOnScreen ? (
+          <View style={[styles.tabsBar, isTablet && styles.tabsBarTablet]}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.tabsScrollContent}
+            >
+              {ADMIN_TABS.map((tab, idx) => {
+                const isActive = activeTab === tab.id;
+                const prevTab = idx > 0 ? ADMIN_TABS[idx - 1] : null;
+                const showSectionHeader = !prevTab || prevTab.section !== tab.section;
 
-              return (
-                <React.Fragment key={tab.id}>
-                  {showSectionHeader && (
-                    <View style={styles.tabSectionHeader}>
-                      <Text style={styles.tabSectionHeaderText}>{tab.section}</Text>
-                    </View>
-                  )}
-                  <TouchableOpacity
-                    style={[styles.tabButton, isActive && styles.tabButtonActive]}
-                    onPress={() => {
-                      setActiveTab(tab.id);
-                      setComponentSearchQuery('');
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <LucideIcon name={tab.icon} size={17} color={isActive ? "#C5A46D" : "#A5A39D"} />
-                    <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
-                      {tab.label}
-                    </Text>
-                  </TouchableOpacity>
-                </React.Fragment>
-              );
-            })}
-          </ScrollView>
-        </View>
+                return (
+                  <React.Fragment key={tab.id}>
+                    {showSectionHeader && (
+                      <View style={styles.tabSectionHeader}>
+                        <Text style={styles.tabSectionHeaderText}>{tab.section}</Text>
+                      </View>
+                    )}
+                    <TouchableOpacity
+                      style={[styles.tabButton, isActive && styles.tabButtonActive]}
+                      onPress={() => {
+                        setActiveTab(tab.id);
+                        setComponentSearchQuery('');
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <LucideIcon name={tab.icon} size={17} color={isActive ? "#C5A46D" : "#A5A39D"} />
+                      <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                        {tab.label}
+                      </Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                );
+              })}
+            </ScrollView>
+          </View>
+        ) : (
+          /* Mobile Navigation Header & Collapsible Drawer */
+          <View style={styles.mobileNavContainer}>
+            <TouchableOpacity
+              style={styles.mobileNavPillRow}
+              onPress={() => setMobileSidebarOpen((prev) => !prev)}
+              activeOpacity={0.85}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <LucideIcon name="menu" size={16} color="#C5A46D" />
+                <Text style={styles.mobileNavPillLabel}>
+                  {ADMIN_TABS.find((t) => t.id === activeTab)?.label || 'Navigation'}
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.mobileNavPillHint}>
+                  {mobileSidebarOpen ? 'Close Menu ▲' : 'Open Sidebar ▼'}
+                </Text>
+                <LucideIcon name={mobileSidebarOpen ? "chevron-up" : "chevron-down"} size={14} color="#C5A46D" />
+              </View>
+            </TouchableOpacity>
+
+            {/* Mobile Vertical Sidebar Content */}
+            {mobileSidebarOpen && (
+              <View style={styles.mobileSidebarDrawer}>
+                <ScrollView
+                  style={{ maxHeight: 380 }}
+                  showsVerticalScrollIndicator={true}
+                  contentContainerStyle={styles.tabsScrollContent}
+                >
+                  {ADMIN_TABS.map((tab, idx) => {
+                    const isActive = activeTab === tab.id;
+                    const prevTab = idx > 0 ? ADMIN_TABS[idx - 1] : null;
+                    const showSectionHeader = !prevTab || prevTab.section !== tab.section;
+
+                    return (
+                      <React.Fragment key={tab.id}>
+                        {showSectionHeader && (
+                          <View style={styles.tabSectionHeader}>
+                            <Text style={styles.tabSectionHeaderText}>{tab.section}</Text>
+                          </View>
+                        )}
+                        <TouchableOpacity
+                          style={[styles.tabButton, isActive && styles.tabButtonActive]}
+                          onPress={() => {
+                            setActiveTab(tab.id);
+                            setComponentSearchQuery('');
+                            setMobileSidebarOpen(false);
+                          }}
+                          activeOpacity={0.8}
+                        >
+                          <LucideIcon name={tab.icon} size={17} color={isActive ? "#C5A46D" : "#A5A39D"} />
+                          <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                            {tab.label}
+                          </Text>
+                        </TouchableOpacity>
+                      </React.Fragment>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Tab Content Display */}
         <ScrollView
@@ -5514,21 +5594,26 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Layout
+  // Layout: Sidebar + Main Content Area
   bodyLayout: {
     flex: 1,
     flexDirection: 'row',
+    minHeight: 0,
   },
   bodyLayoutMobile: {
     flexDirection: 'column',
   },
   tabsBar: {
-    width: 220,
-    backgroundColor: 'rgba(10, 15, 28, 0.95)',
+    width: 240,
+    backgroundColor: '#15161A',
     borderRightWidth: 1,
     borderRightColor: '#2A2B31',
     paddingVertical: 12,
     paddingHorizontal: 8,
+  },
+  tabsBarTablet: {
+    width: 210,
+    paddingHorizontal: 6,
   },
   tabsBarMobile: {
     width: '100%',
@@ -5539,6 +5624,79 @@ const styles = StyleSheet.create({
   },
   tabsScrollContent: {
     gap: 4,
+  },
+
+  // Super Admin Navigation Button in Header
+  superAdminNavBtn: {
+    backgroundColor: 'rgba(197, 164, 109, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(197, 164, 109, 0.4)',
+    borderRadius: 8,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  superAdminNavBtnText: {
+    color: '#C5A46D',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  // Mobile Sidebar Toggle and Drawer Styles
+  mobileSidebarHeaderToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: 'rgba(197, 164, 109, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(197, 164, 109, 0.35)',
+    borderRadius: 7,
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  mobileSidebarHeaderToggleText: {
+    color: '#C5A46D',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  mobileNavContainer: {
+    width: '100%',
+    backgroundColor: '#15161A',
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A2B31',
+  },
+  mobileNavPillRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: '#1C1D21',
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  mobileNavPillLabel: {
+    color: '#F2EFE8',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  mobileNavPillHint: {
+    color: '#C5A46D',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  mobileSidebarDrawer: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#2A2B31',
+    backgroundColor: '#15161A',
   },
   tabButton: {
     flexDirection: 'row',

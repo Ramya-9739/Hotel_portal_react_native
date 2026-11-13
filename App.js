@@ -36,18 +36,23 @@ export default function App() {
   const [currentHotel, setCurrentHotel] = useState(() => activeHotelService.getActiveHotel());
   const [currentView, setCurrentView] = useState(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      const hash = window.location.hash || '';
-      const pathname = window.location.pathname || '';
-      if (hash.toLowerCase().includes('super-admin') || pathname.toLowerCase().includes('super-admin')) {
+      const hash = (window.location.hash || '').toLowerCase();
+      const pathname = (window.location.pathname || '').toLowerCase();
+      if (
+        hash.includes('super-admin') ||
+        hash.includes('superadmin') ||
+        pathname.includes('super-admin') ||
+        pathname.includes('superadmin')
+      ) {
         return 'super-admin';
       }
-      if (hash.toLowerCase().includes('guest') || hash.toLowerCase().includes('home')) {
+      if (hash.includes('guest') || hash.includes('home')) {
         return 'guest';
       }
-      if (hash.toLowerCase().includes('hospital')) return 'hospitals';
-      if (hash.toLowerCase().includes('pharmac')) return 'pharmacies';
-      if (hash.toLowerCase().includes('gym')) return 'gyms';
-      if (hash.toLowerCase().includes('admin')) return 'admin';
+      if (hash.includes('hospital')) return 'hospitals';
+      if (hash.includes('pharmac')) return 'pharmacies';
+      if (hash.includes('gym')) return 'gyms';
+      if (hash.includes('admin')) return 'admin';
     }
     return 'guest';
   });
@@ -80,7 +85,9 @@ export default function App() {
 
         if (
           hash.toLowerCase().includes('super-admin') ||
-          pathname.toLowerCase().includes('super-admin')
+          hash.toLowerCase().includes('superadmin') ||
+          pathname.toLowerCase().includes('super-admin') ||
+          pathname.toLowerCase().includes('superadmin')
         ) {
           setCurrentView('super-admin');
         } else if (

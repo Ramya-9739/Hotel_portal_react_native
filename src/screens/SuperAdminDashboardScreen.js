@@ -49,6 +49,9 @@ export default function SuperAdminDashboardScreen({
 }) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 960;
+  const isTablet = width >= 640 && width < 960;
+  const isSidebarVisibleOnScreen = width >= 640;
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Active navigation tab
   const [activeTab, setActiveTab] = useState('overview');
@@ -1825,43 +1828,107 @@ export default function SuperAdminDashboardScreen({
       </View>
 
       {/* Main Layout: Sidebar Navigation + Content Area */}
-      <View style={[styles.bodyLayout, !isDesktop && styles.bodyLayoutMobile]}>
-        {/* Sidebar */}
-        <View style={[styles.sidebar, !isDesktop && styles.sidebarMobile]}>
-          <ScrollView
-            horizontal={!isDesktop}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.sidebarScrollContent}
-          >
-            <View style={styles.sidebarSectionHeader}>
-              <Text style={styles.sidebarSectionLabel}>GOVERNANCE & PLATFORM</Text>
-            </View>
+      <View style={[styles.bodyLayout, !isSidebarVisibleOnScreen && styles.bodyLayoutMobile]}>
+        {/* Sidebar (Desktop & Tablet: Permanent Vertical Sidebar) */}
+        {isSidebarVisibleOnScreen ? (
+          <View style={[styles.sidebar, isTablet && styles.sidebarTablet]}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.sidebarScrollContent}
+            >
+              <View style={styles.sidebarSectionHeader}>
+                <Text style={styles.sidebarSectionLabel}>GOVERNANCE & PLATFORM</Text>
+              </View>
 
-            {SUPER_ADMIN_TABS.map((tab) => {
-              const isActive = activeTab === tab.id;
-              const hasBadge = tab.id === 'approvals' && pendingCount > 0;
+              {SUPER_ADMIN_TABS.map((tab) => {
+                const isActive = activeTab === tab.id;
+                const hasBadge = tab.id === 'approvals' && pendingCount > 0;
 
-              return (
-                <TouchableOpacity
-                  key={tab.id}
-                  style={[styles.sidebarTabBtn, isActive && styles.sidebarTabBtnActive]}
-                  onPress={() => setActiveTab(tab.id)}
-                  activeOpacity={0.8}
+                return (
+                  <TouchableOpacity
+                    key={tab.id}
+                    style={[styles.sidebarTabBtn, isActive && styles.sidebarTabBtnActive]}
+                    onPress={() => setActiveTab(tab.id)}
+                    activeOpacity={0.8}
+                  >
+                    <LucideIcon name={tab.icon} size={17} color={isActive ? "#C5A46D" : "#A5A39D"} />
+                    <Text style={[styles.sidebarTabLabel, isActive && styles.sidebarTabLabelActive]}>
+                      {tab.label}
+                    </Text>
+                    {hasBadge ? (
+                      <View style={styles.sidebarBadge}>
+                        <Text style={styles.sidebarBadgeText}>{pendingCount}</Text>
+                      </View>
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        ) : (
+          /* Mobile Navigation Header & Collapsible Drawer */
+          <View style={styles.mobileNavContainer}>
+            <TouchableOpacity
+              style={styles.mobileNavPillRow}
+              onPress={() => setMobileSidebarOpen((prev) => !prev)}
+              activeOpacity={0.85}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <LucideIcon name="menu" size={16} color="#C5A46D" />
+                <Text style={styles.mobileNavPillLabel}>
+                  {SUPER_ADMIN_TABS.find((t) => t.id === activeTab)?.label || 'Navigation'}
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.mobileNavPillHint}>
+                  {mobileSidebarOpen ? 'Close Menu ▲' : 'Open Sidebar ▼'}
+                </Text>
+                <LucideIcon name={mobileSidebarOpen ? "chevron-up" : "chevron-down"} size={14} color="#C5A46D" />
+              </View>
+            </TouchableOpacity>
+
+            {/* Mobile Vertical Sidebar Content */}
+            {mobileSidebarOpen && (
+              <View style={styles.mobileSidebarDrawer}>
+                <ScrollView
+                  style={{ maxHeight: 380 }}
+                  showsVerticalScrollIndicator={true}
+                  contentContainerStyle={styles.sidebarScrollContent}
                 >
-                  <LucideIcon name={tab.icon} size={17} color={isActive ? "#C5A46D" : "#A5A39D"} />
-                  <Text style={[styles.sidebarTabLabel, isActive && styles.sidebarTabLabelActive]}>
-                    {tab.label}
-                  </Text>
-                  {hasBadge ? (
-                    <View style={styles.sidebarBadge}>
-                      <Text style={styles.sidebarBadgeText}>{pendingCount}</Text>
-                    </View>
-                  ) : null}
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
+                  <View style={styles.sidebarSectionHeader}>
+                    <Text style={styles.sidebarSectionLabel}>GOVERNANCE & PLATFORM</Text>
+                  </View>
+                  {SUPER_ADMIN_TABS.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    const hasBadge = tab.id === 'approvals' && pendingCount > 0;
+
+                    return (
+                      <TouchableOpacity
+                        key={tab.id}
+                        style={[styles.sidebarTabBtn, isActive && styles.sidebarTabBtnActive]}
+                        onPress={() => {
+                          setActiveTab(tab.id);
+                          setMobileSidebarOpen(false);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <LucideIcon name={tab.icon} size={17} color={isActive ? "#C5A46D" : "#A5A39D"} />
+                        <Text style={[styles.sidebarTabLabel, isActive && styles.sidebarTabLabelActive]}>
+                          {tab.label}
+                        </Text>
+                        {hasBadge ? (
+                          <View style={styles.sidebarBadge}>
+                            <Text style={styles.sidebarBadgeText}>{pendingCount}</Text>
+                          </View>
+                        ) : null}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Content Pane */}
         <ScrollView style={styles.contentArea} contentContainerStyle={styles.contentAreaInner}>
@@ -2626,11 +2693,48 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderRightColor: '#2A2B31',
   },
+  sidebarTablet: {
+    width: 210,
+  },
   sidebarMobile: {
     width: '100%',
     borderRightWidth: 0,
     borderBottomWidth: 1,
     borderBottomColor: '#2A2B31',
+  },
+  mobileNavContainer: {
+    width: '100%',
+    backgroundColor: '#15161A',
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A2B31',
+  },
+  mobileNavPillRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: '#1C1D21',
+    ...Platform.select({
+      web: { cursor: 'pointer' },
+    }),
+  },
+  mobileNavPillLabel: {
+    color: '#F2EFE8',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  mobileNavPillHint: {
+    color: '#C5A46D',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  mobileSidebarDrawer: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#2A2B31',
+    backgroundColor: '#15161A',
   },
   sidebarScrollContent: {
     paddingVertical: 12,
