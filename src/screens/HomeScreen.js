@@ -46,6 +46,7 @@ export default function HomeScreen({
   onSelectGym,
   onNavigateToHospitals,
   onNavigateToPharmacies,
+  onNavigateToCategory,
 }) {
   const activeHotel = hotel || activeHotelService.getActiveHotel();
   const { width } = useWindowDimensions();
@@ -642,6 +643,140 @@ export default function HomeScreen({
     return tabs;
   }, [allBottomItems.length, hotelCafes.length, hotelRestaurants.length, hotelGyms.length, hotelPools.length, hotelHospitals.length, hotelPharmacies.length, hotelSpa.length, hotelAtms.length, hotelTakeaway.length, hotelDelivery.length, activeHotel?.customCategories, customCategoryItemsMap]);
 
+  // Luxury Component Category Title Buttons (Direct Table Redirection & Distinct Themes)
+  const categoryTitleCards = useMemo(() => [
+    {
+      id: 'cafes',
+      name: 'Cafes & Bistros',
+      tagline: 'Specialty roasts, patisseries & breakfast',
+      icon: '☕',
+      count: hotelCafes.length,
+      primaryColor: '#F59E0B',
+      secondaryColor: '#D97706',
+      badgeBg: 'rgba(245, 158, 11, 0.22)',
+      badgeText: '#FDE68A',
+      borderColor: 'rgba(245, 158, 11, 0.35)',
+    },
+    {
+      id: 'hospitals',
+      name: 'Emergency Hospitals',
+      tagline: '24/7 Trauma desk, ICU & cardiac care',
+      icon: '🏥',
+      count: hotelHospitals.length,
+      primaryColor: '#EF4444',
+      secondaryColor: '#06B6D4',
+      badgeBg: 'rgba(239, 68, 68, 0.22)',
+      badgeText: '#FCA5A5',
+      borderColor: 'rgba(239, 68, 68, 0.35)',
+    },
+    {
+      id: 'pharmacies',
+      name: '24/7 Pharmacies',
+      tagline: 'Licensed chemists, OTC & room delivery',
+      icon: '💊',
+      count: hotelPharmacies.length,
+      primaryColor: '#10B981',
+      secondaryColor: '#34D399',
+      badgeBg: 'rgba(16, 185, 129, 0.22)',
+      badgeText: '#6EE7B7',
+      borderColor: 'rgba(16, 185, 129, 0.35)',
+    },
+    {
+      id: 'gyms',
+      name: 'Wellness & Gyms',
+      tagline: 'Strength training, yoga & day passes',
+      icon: '⚡',
+      count: hotelGyms.length,
+      primaryColor: '#00F0FF',
+      secondaryColor: '#3B82F6',
+      badgeBg: 'rgba(0, 240, 255, 0.22)',
+      badgeText: '#A5F3FC',
+      borderColor: 'rgba(0, 240, 255, 0.35)',
+    },
+    {
+      id: 'restaurants',
+      name: 'Fine Dining & Cuisine',
+      tagline: 'Palace courtyards, thalis & candlelight tables',
+      icon: '🍷',
+      count: hotelRestaurants.length,
+      primaryColor: '#E2C082',
+      secondaryColor: '#BE123C',
+      badgeBg: 'rgba(226, 192, 130, 0.22)',
+      badgeText: '#FDE68A',
+      borderColor: 'rgba(226, 192, 130, 0.35)',
+    },
+    {
+      id: 'pools',
+      name: 'Swimming Pools',
+      tagline: 'Heated infinity basins & cabana service',
+      icon: '🌊',
+      count: hotelPools.length,
+      primaryColor: '#38BDF8',
+      secondaryColor: '#0284C7',
+      badgeBg: 'rgba(56, 189, 248, 0.22)',
+      badgeText: '#BAE6FD',
+      borderColor: 'rgba(56, 189, 248, 0.35)',
+    },
+    {
+      id: 'spa',
+      name: 'Parlour & Spa',
+      tagline: 'Ayurvedic treatments, steam & salon care',
+      icon: '🌿',
+      count: hotelSpa.length,
+      primaryColor: '#C084FC',
+      secondaryColor: '#F472B6',
+      badgeBg: 'rgba(192, 132, 252, 0.22)',
+      badgeText: '#E9D5FF',
+      borderColor: 'rgba(192, 132, 252, 0.35)',
+    },
+    {
+      id: 'takeaway',
+      name: 'Express Takeaway',
+      tagline: 'Curated 10-15 min travel food packaging',
+      icon: '🥡',
+      count: hotelTakeaway.length,
+      primaryColor: '#FB923C',
+      secondaryColor: '#EA580C',
+      badgeBg: 'rgba(251, 146, 60, 0.22)',
+      badgeText: '#FED7AA',
+      borderColor: 'rgba(251, 146, 60, 0.35)',
+    },
+    {
+      id: 'delivery',
+      name: 'Suite Delivery',
+      tagline: 'Late-night gourmet dishes to your suite door',
+      icon: '🛵',
+      count: hotelDelivery.length,
+      primaryColor: '#22C55E',
+      secondaryColor: '#10B981',
+      badgeBg: 'rgba(34, 197, 94, 0.22)',
+      badgeText: '#BBF7D0',
+      borderColor: 'rgba(34, 197, 94, 0.35)',
+    },
+    {
+      id: 'atms',
+      name: '24/7 ATMs & Cash',
+      tagline: 'Guarded cash dispensers for Visa & Mastercard',
+      icon: '🏧',
+      count: hotelAtms.length,
+      primaryColor: '#94A3B8',
+      secondaryColor: '#F59E0B',
+      badgeBg: 'rgba(148, 163, 184, 0.22)',
+      badgeText: '#E2E8F0',
+      borderColor: 'rgba(148, 163, 184, 0.35)',
+    },
+  ], [hotelCafes.length, hotelHospitals.length, hotelPharmacies.length, hotelGyms.length, hotelRestaurants.length, hotelPools.length, hotelSpa.length, hotelTakeaway.length, hotelDelivery.length, hotelAtms.length]);
+
+  const handleCategoryButtonClick = (catId) => {
+    if (onNavigateToCategory) {
+      onNavigateToCategory(catId);
+    } else {
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.location.hash = `#/category/${catId}`;
+      }
+    }
+  };
+
   // URL Hash Listener for direct deep-linking e.g. #/guest/place/:id
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined') return;
@@ -809,84 +944,67 @@ export default function HomeScreen({
             </View>
           </View>
 
-          {/* 3. BOTTOM SECTION: ALL CURATIONS (Horizontal Card Carousel with Filter Tabs) */}
+          {/* 3. BOTTOM SECTION: COMPONENT CATEGORY TITLE BUTTONS */}
           <View style={styles.bottomSectionWrapper}>
-            {/* Header with Title and Filter Tabs */}
+            {/* Header with Title and Info */}
             <View style={styles.bottomSectionHeaderRow}>
               <View style={styles.bottomHeaderLeft}>
-                <Text style={styles.bottomSectionTitle}>
-                  ✦ ALL CURATIONS
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={styles.bottomSectionTitle}>
+                    ✦ GUEST AMENITIES & NEARBY DIRECTORIES
+                  </Text>
+                  <View style={styles.directoryActivePill}>
+                    <Text style={styles.directoryActivePillText}>10 CATEGORIES · THEMED INFORMATION TABLES</Text>
+                  </View>
+                </View>
                 <Text style={styles.bottomSectionSub}>
-                  Bistros, fine restaurants, wellness gyms, pools, hospitals, pharmacies, spa, ATMs & delivery
+                  Click any category title button to open its dedicated information table with operating hours, emergency availability and turn-by-turn routing from {activeHotel?.name || 'your stay'}.
                 </Text>
               </View>
-
-              {bottomCategory === 'hospitals' && onNavigateToHospitals && (
-                <TouchableOpacity
-                  style={styles.dedicatedDirectoryBtn}
-                  onPress={onNavigateToHospitals}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.dedicatedDirectoryBtnText}>
-                    ↗ Dedicated 24/7 Hospital Directory
-                  </Text>
-                </TouchableOpacity>
-              )}
-              {bottomCategory === 'pharmacies' && onNavigateToPharmacies && (
-                <TouchableOpacity
-                  style={styles.dedicatedDirectoryBtn}
-                  onPress={onNavigateToPharmacies}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.dedicatedDirectoryBtnText}>
-                    ↗ Dedicated 24/7 Pharmacy Directory
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              {/* Filter Tabs Row */}
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.bottomFilterTabsRow}
-              >
-                {bottomFilterTabs.map((tab) => {
-                  const isActive = bottomCategory === tab.id;
-                  return (
-                    <TouchableOpacity
-                      key={tab.id}
-                      style={[styles.bottomTabChip, isActive && styles.bottomTabChipActive]}
-                      onPress={() => handleBottomTabChange(tab.id)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={styles.bottomTabIcon}>{tab.icon}</Text>
-                      <Text style={[styles.bottomTabText, isActive && styles.bottomTabTextActive]}>
-                        {tab.label}
-                      </Text>
-                      <View style={[styles.bottomTabCountBadge, isActive && styles.bottomTabCountBadgeActive]}>
-                        <Text style={[styles.bottomTabCountText, isActive && styles.bottomTabCountTextActive]}>
-                          {tab.count}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
             </View>
 
-            {/* Content Display: Pure Card Carousel */}
-            <HorizontalComponentList
-              title=""
-              subtitle=""
-              items={currentBottomItems}
-              selectedId={selectedComponent?.id}
-              hotel={activeHotel}
-              onViewDetails={handleOpenDetail}
-              onSelectComponent={handleOpenDetail}
-              onScanPress={handleOpenScan}
-              showSortControls={false}
-            />
+            {/* Category Title Buttons Grid */}
+            <View style={styles.categoryButtonsGrid}>
+              {categoryTitleCards.map((cat) => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={[
+                    styles.categoryTitleCard,
+                    {
+                      borderLeftColor: cat.primaryColor,
+                      borderLeftWidth: 3.5,
+                      borderColor: cat.borderColor,
+                    },
+                  ]}
+                  onPress={() => handleCategoryButtonClick(cat.id)}
+                  activeOpacity={0.82}
+                >
+                  <View style={styles.categoryCardHeader}>
+                    <View style={[styles.categoryCardIconBox, { backgroundColor: cat.badgeBg, borderColor: cat.borderColor }]}>
+                      <Text style={styles.categoryCardIcon}>{cat.icon}</Text>
+                    </View>
+                    <View style={[styles.categoryCountBadge, { backgroundColor: cat.badgeBg }]}>
+                      <Text style={[styles.categoryCountBadgeText, { color: cat.badgeText }]}>
+                        {cat.count} {cat.count === 1 ? 'Place' : 'Places'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.categoryCardTitle}>{cat.name}</Text>
+                  <Text style={styles.categoryCardTagline} numberOfLines={2}>
+                    {cat.tagline}
+                  </Text>
+
+                  <View style={styles.categoryCardActionRow}>
+                    <View style={[styles.categoryActionPill, { borderColor: cat.borderColor }]}>
+                      <Text style={[styles.categoryActionPillText, { color: cat.primaryColor }]}>
+                        Explore Table ↗
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         </View>
       ) : (
@@ -976,83 +1094,66 @@ export default function HomeScreen({
             )}
           </View>
 
-          {/* 3. BOTTOM SECTION: ALL CURATIONS (Horizontal Card Carousel) */}
+          {/* 3. BOTTOM SECTION: COMPONENT CATEGORY TITLE BUTTONS */}
           <View style={styles.bottomSectionWrapper}>
             <View style={styles.bottomSectionHeaderRow}>
               <View style={styles.bottomHeaderLeft}>
-                <Text style={styles.bottomSectionTitle}>
-                  ✦ ALL CURATIONS
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={styles.bottomSectionTitle}>
+                    ✦ GUEST AMENITIES & NEARBY DIRECTORIES
+                  </Text>
+                  <View style={styles.directoryActivePill}>
+                    <Text style={styles.directoryActivePillText}>10 CATEGORIES · THEMED INFORMATION TABLES</Text>
+                  </View>
+                </View>
                 <Text style={styles.bottomSectionSub}>
-                  Bistros, fine restaurants, wellness gyms, pools, hospitals, pharmacies, spa, ATMs & delivery
+                  Click any category title button to open its dedicated information table with operating hours, emergency availability and turn-by-turn routing from {activeHotel?.name || 'your stay'}.
                 </Text>
               </View>
-
-              {bottomCategory === 'hospitals' && onNavigateToHospitals && (
-                <TouchableOpacity
-                  style={styles.dedicatedDirectoryBtn}
-                  onPress={onNavigateToHospitals}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.dedicatedDirectoryBtnText}>
-                    ↗ Dedicated 24/7 Hospital Directory
-                  </Text>
-                </TouchableOpacity>
-              )}
-              {bottomCategory === 'pharmacies' && onNavigateToPharmacies && (
-                <TouchableOpacity
-                  style={styles.dedicatedDirectoryBtn}
-                  onPress={onNavigateToPharmacies}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.dedicatedDirectoryBtnText}>
-                    ↗ Dedicated 24/7 Pharmacy Directory
-                  </Text>
-                </TouchableOpacity>
-              )}
             </View>
 
-            {/* Filter Tabs Row */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.bottomFilterTabsRow}
-            >
-              {bottomFilterTabs.map((tab) => {
-                const isActive = bottomCategory === tab.id;
-                return (
-                  <TouchableOpacity
-                    key={tab.id}
-                    style={[styles.bottomTabChip, isActive && styles.bottomTabChipActive]}
-                    onPress={() => handleBottomTabChange(tab.id)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.bottomTabIcon}>{tab.icon}</Text>
-                    <Text style={[styles.bottomTabText, isActive && styles.bottomTabTextActive]}>
-                      {tab.label}
-                    </Text>
-                    <View style={[styles.bottomTabCountBadge, isActive && styles.bottomTabCountBadgeActive]}>
-                      <Text style={[styles.bottomTabCountText, isActive && styles.bottomTabCountTextActive]}>
-                        {tab.count}
+            {/* Category Title Buttons Grid */}
+            <View style={styles.categoryButtonsGrid}>
+              {categoryTitleCards.map((cat) => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={[
+                    styles.categoryTitleCard,
+                    {
+                      borderLeftColor: cat.primaryColor,
+                      borderLeftWidth: 3.5,
+                      borderColor: cat.borderColor,
+                    },
+                  ]}
+                  onPress={() => handleCategoryButtonClick(cat.id)}
+                  activeOpacity={0.82}
+                >
+                  <View style={styles.categoryCardHeader}>
+                    <View style={[styles.categoryCardIconBox, { backgroundColor: cat.badgeBg, borderColor: cat.borderColor }]}>
+                      <Text style={styles.categoryCardIcon}>{cat.icon}</Text>
+                    </View>
+                    <View style={[styles.categoryCountBadge, { backgroundColor: cat.badgeBg }]}>
+                      <Text style={[styles.categoryCountBadgeText, { color: cat.badgeText }]}>
+                        {cat.count} {cat.count === 1 ? 'Place' : 'Places'}
                       </Text>
                     </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
+                  </View>
 
-            {/* Content Display: Card Carousel */}
-            <HorizontalComponentList
-              title=""
-              subtitle=""
-              items={currentBottomItems}
-              selectedId={selectedComponent?.id}
-              hotel={activeHotel}
-              onViewDetails={handleOpenDetail}
-              onSelectComponent={handleOpenDetail}
-              onScanPress={handleOpenScan}
-              showSortControls={false}
-            />
+                  <Text style={styles.categoryCardTitle}>{cat.name}</Text>
+                  <Text style={styles.categoryCardTagline} numberOfLines={2}>
+                    {cat.tagline}
+                  </Text>
+
+                  <View style={styles.categoryCardActionRow}>
+                    <View style={[styles.categoryActionPill, { borderColor: cat.borderColor }]}>
+                      <Text style={[styles.categoryActionPillText, { color: cat.primaryColor }]}>
+                        Explore Table ↗
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         </ScrollView>
       )}
@@ -1553,8 +1654,105 @@ const styles = StyleSheet.create({
   },
   bottomSectionSub: {
     color: '#94A3B8',
-    fontSize: 9,
-    marginTop: 1,
+    fontSize: 9.5,
+    marginTop: 2,
+    lineHeight: 14,
+  },
+  directoryActivePill: {
+    paddingVertical: 2,
+    paddingHorizontal: 7,
+    borderRadius: 4,
+    backgroundColor: 'rgba(226, 192, 130, 0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(226, 192, 130, 0.3)',
+  },
+  directoryActivePillText: {
+    color: '#E2C082',
+    fontSize: 8.5,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  categoryButtonsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 6,
+    paddingHorizontal: 2,
+  },
+  categoryTitleCard: {
+    flexGrow: 1,
+    flexBasis: 170,
+    backgroundColor: '#13151D',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    justifyContent: 'space-between',
+    ...Platform.select({
+      web: {
+        cursor: 'pointer',
+        transition: 'all 0.18s ease-in-out',
+        userSelect: 'none',
+      },
+    }),
+  },
+  categoryCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  categoryCardIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  categoryCardIcon: {
+    fontSize: 14,
+  },
+  categoryCountBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  categoryCountBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+  },
+  categoryCardTitle: {
+    color: '#F8FAFC',
+    fontSize: 12.5,
+    fontWeight: '800',
+    marginBottom: 2,
+    letterSpacing: 0.2,
+  },
+  categoryCardTagline: {
+    color: '#94A3B8',
+    fontSize: 10,
+    lineHeight: 13,
+    marginBottom: 8,
+  },
+  categoryCardActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginTop: 'auto',
+  },
+  categoryActionPill: {
+    paddingVertical: 3,
+    paddingHorizontal: 7,
+    borderRadius: 5,
+    borderWidth: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+  },
+  categoryActionPillText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
   viewModeToggleRow: {
     flexDirection: 'row',

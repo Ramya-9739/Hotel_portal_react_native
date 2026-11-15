@@ -5288,19 +5288,6 @@ export default function AdminDashboardScreen({
         </View>
 
         <View style={styles.adminHeaderRight}>
-          {onOpenSuperAdmin && (
-            <TouchableOpacity
-              style={styles.superAdminNavBtn}
-              onPress={onOpenSuperAdmin}
-              activeOpacity={0.8}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <LucideIcon name="shield-check" size={14} color="#C5A46D" />
-                <Text style={styles.superAdminNavBtnText}>✦ Super Admin Console</Text>
-              </View>
-            </TouchableOpacity>
-          )}
-
           <TouchableOpacity
             style={styles.addComponentHeaderBtn}
             onPress={() => handleOpenCreateModal('restaurants')}

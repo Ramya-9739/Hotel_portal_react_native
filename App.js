@@ -25,6 +25,7 @@ import GymListScreen from './src/screens/GymListScreen';
 import GymDetailScreen from './src/screens/GymDetailScreen';
 import HospitalListScreen from './src/screens/HospitalListScreen';
 import PharmacyListScreen from './src/screens/PharmacyListScreen';
+import CategoryDirectoryScreen from './src/screens/CategoryDirectoryScreen';
 import AdminDashboardScreen from './src/screens/AdminDashboardScreen';
 import SuperAdminDashboardScreen from './src/screens/SuperAdminDashboardScreen';
 import AdminLoginScreen from './src/screens/AdminLoginScreen';
@@ -38,23 +39,38 @@ export default function App() {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const hash = (window.location.hash || '').toLowerCase();
       const pathname = (window.location.pathname || '').toLowerCase();
-      if (
-        hash.includes('super-admin') ||
-        hash.includes('superadmin') ||
-        pathname.includes('super-admin') ||
-        pathname.includes('superadmin')
-      ) {
+      if (hash.includes('super-admin') || hash.includes('superadmin') || pathname.includes('super-admin') || pathname.includes('superadmin')) {
         return 'super-admin';
       }
       if (hash.includes('guest') || hash.includes('home')) {
         return 'guest';
       }
-      if (hash.includes('hospital')) return 'hospitals';
-      if (hash.includes('pharmac')) return 'pharmacies';
+      if (hash.startsWith('#/category/') || hash.includes('cafe') || hash.includes('restaurant') || hash.includes('pool') || hash.includes('spa') || hash.includes('takeaway') || hash.includes('delivery') || hash.includes('atm')) {
+        return 'category_directory';
+      }
+      if (hash.includes('hospital')) return 'category_directory';
+      if (hash.includes('pharmac')) return 'category_directory';
       if (hash.includes('gym')) return 'gyms';
       if (hash.includes('admin')) return 'admin';
     }
     return 'guest';
+  });
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const hash = (window.location.hash || '').toLowerCase();
+      if (hash.startsWith('#/category/')) return hash.replace('#/category/', '').split('?')[0].trim();
+      if (hash.includes('cafe')) return 'cafes';
+      if (hash.includes('hosp')) return 'hospitals';
+      if (hash.includes('pharm')) return 'pharmacies';
+      if (hash.includes('gym')) return 'gyms';
+      if (hash.includes('restaur')) return 'restaurants';
+      if (hash.includes('pool')) return 'pools';
+      if (hash.includes('spa')) return 'spa';
+      if (hash.includes('takeaway')) return 'takeaway';
+      if (hash.includes('delivery')) return 'delivery';
+      if (hash.includes('atm')) return 'atms';
+    }
+    return 'cafes';
   });
   const [selectedGym, setSelectedGym] = useState(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(authService.isAuthenticated());
@@ -100,16 +116,43 @@ export default function App() {
           hash.toLowerCase().includes('admin')
         ) {
           setCurrentView('admin');
+        } else if (hash.startsWith('#/category/')) {
+          const cat = hash.replace('#/category/', '').split('?')[0].trim().toLowerCase();
+          setSelectedCategory(cat || 'cafes');
+          setCurrentView('category_directory');
+        } else if (hash.includes('cafe') || pathname.includes('cafe')) {
+          setSelectedCategory('cafes');
+          setCurrentView('category_directory');
+        } else if (hash.includes('restaurant') || pathname.includes('restaurant')) {
+          setSelectedCategory('restaurants');
+          setCurrentView('category_directory');
+        } else if (hash.includes('pool') || pathname.includes('pool')) {
+          setSelectedCategory('pools');
+          setCurrentView('category_directory');
+        } else if (hash.includes('spa') || pathname.includes('spa')) {
+          setSelectedCategory('spa');
+          setCurrentView('category_directory');
+        } else if (hash.includes('takeaway') || pathname.includes('takeaway')) {
+          setSelectedCategory('takeaway');
+          setCurrentView('category_directory');
+        } else if (hash.includes('delivery') || pathname.includes('delivery')) {
+          setSelectedCategory('delivery');
+          setCurrentView('category_directory');
+        } else if (hash.includes('atm') || pathname.includes('atm')) {
+          setSelectedCategory('atms');
+          setCurrentView('category_directory');
         } else if (
           hash.toLowerCase().includes('hospital') ||
           pathname.toLowerCase().includes('hospital')
         ) {
-          setCurrentView('hospitals');
+          setSelectedCategory('hospitals');
+          setCurrentView('category_directory');
         } else if (
           hash.toLowerCase().includes('pharmac') ||
           pathname.toLowerCase().includes('pharmac')
         ) {
-          setCurrentView('pharmacies');
+          setSelectedCategory('pharmacies');
+          setCurrentView('category_directory');
         } else if (hash.startsWith('#/gyms/') || hash.startsWith('#/gym/')) {
           // Dedicated Gym Details Route
           const gymId = hash.replace(/^#\/(gyms|gym)\//, '').split('?')[0].trim();
@@ -220,6 +263,15 @@ export default function App() {
       } else {
         window.location.hash = '#/guest';
       }
+    }
+  };
+
+  const navigateToCategory = (catId) => {
+    const targetCat = (catId || 'cafes').toLowerCase();
+    setSelectedCategory(targetCat);
+    setCurrentView('category_directory');
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.location.hash = `#/category/${targetCat}`;
     }
   };
 
@@ -347,7 +399,6 @@ export default function App() {
                 switchToGuest();
               }}
               onBackToGuestPortal={switchToGuest}
-              onOpenSuperAdmin={authService.isSuperAdmin() ? switchToSuperAdmin : null}
               onLogout={() => {
                 authService.logout();
                 setIsAdminLoggedIn(false);
@@ -367,15 +418,26 @@ export default function App() {
               onBackToGuestPortal={switchToGuest}
             />
           )
-        ) : currentView === 'hospitals' ? (
-          <HospitalListScreen
+        ) : currentView === 'category_directory' ? (
+          <CategoryDirectoryScreen
+            category={selectedCategory}
             hotel={currentHotel}
             onBackToHotel={navigateBackToHotel}
+            onSelectCategory={navigateToCategory}
+          />
+        ) : currentView === 'hospitals' ? (
+          <CategoryDirectoryScreen
+            category="hospitals"
+            hotel={currentHotel}
+            onBackToHotel={navigateBackToHotel}
+            onSelectCategory={navigateToCategory}
           />
         ) : currentView === 'pharmacies' ? (
-          <PharmacyListScreen
+          <CategoryDirectoryScreen
+            category="pharmacies"
             hotel={currentHotel}
             onBackToHotel={navigateBackToHotel}
+            onSelectCategory={navigateToCategory}
           />
         ) : currentView === 'gyms' ? (
           <GymListScreen
@@ -399,6 +461,7 @@ export default function App() {
             onNavigateToGyms={navigateToGyms}
             onNavigateToHospitals={navigateToHospitals}
             onNavigateToPharmacies={navigateToPharmacies}
+            onNavigateToCategory={navigateToCategory}
             onSelectGym={navigateToGymDetail}
             onOpenAdminUI={switchToAdmin}
           />

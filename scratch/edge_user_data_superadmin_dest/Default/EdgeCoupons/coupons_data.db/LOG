@@ -1,0 +1,5 @@
+2026/11/13-22:44:03.790 5ba8 Creating DB C:\Users\ramya\Desktop\hotel_portal_react_native\scratch\edge_user_data_superadmin_dest\Default\EdgeCoupons/coupons_data.db since it was missing.
+2026/11/13-22:44:03.802 5ba8 Reusing MANIFEST C:\Users\ramya\Desktop\hotel_portal_react_native\scratch\edge_user_data_superadmin_dest\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/11/13-22:44:06.970 4bc4 Level-0 table #5: started
+2026/11/13-22:44:06.980 4bc4 Level-0 table #5: 683284 bytes OK
+2026/11/13-22:44:06.983 4bc4 Delete type=0 #3
