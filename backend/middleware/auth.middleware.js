@@ -6,7 +6,12 @@ const authMiddleware = (req, res, next) => {
   if (!token) return sendError(res, "No token provided", 401);
 
   try {
-    req.hotelAdmin = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const role = String(decoded.role || "").toLowerCase();
+    if (role !== "superadmin" && role !== "clientadmin") {
+      return sendError(res, "Forbidden: Only authorized administrators can perform this action", 403);
+    }
+    req.hotelAdmin = decoded;
     next();
   } catch (err) {
     return sendError(res, "Invalid or expired token", 401);

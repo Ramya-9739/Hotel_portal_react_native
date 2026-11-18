@@ -31,6 +31,7 @@ import {
 } from 'react-native';
 import { getDirectionsUrl, safeVal } from '../data/hotelsData';
 import { activeHotelService } from '../services/activeHotelService';
+import { authService } from '../services/authService';
 import { getCategoryTheme } from '../theme/categoryThemes';
 
 /**
@@ -364,6 +365,13 @@ export default function UniversalCategoryTableList({
   const isTablet = width >= 720 && width < 1024;
   const theme = customTheme || getCategoryTheme(category);
 
+  // Authorized Admin check: ONLY authenticated superadmin or clientadmin with allowAdminControls
+  const isAuthorizedAdmin = Boolean(
+    allowAdminControls &&
+    authService.isAuthenticated() &&
+    (authService.isSuperAdmin() || authService.getUser()?.role === 'clientadmin')
+  );
+
   // Add/Edit Modal State enforcing the 5-Column Schema
   const [modalVisible, setModalVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -510,7 +518,7 @@ export default function UniversalCategoryTableList({
           </Text>
         </View>
 
-        {allowAdminControls && (
+        {isAuthorizedAdmin && (
           <TouchableOpacity
             style={[styles.toolbarAddBtn, theme?.primaryColor && { backgroundColor: theme.primaryColor }]}
             onPress={handleOpenAddModal}
@@ -569,13 +577,21 @@ export default function UniversalCategoryTableList({
           <Text style={styles.emptySubtitle}>
             All listings are dynamically loaded based on the active hotel's real GPS coordinates.
           </Text>
-          <TouchableOpacity
-            style={[styles.toolbarAddBtn, { marginTop: 14 }, theme?.primaryColor && { backgroundColor: theme.primaryColor }]}
-            onPress={handleOpenAddModal}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.toolbarAddBtnText, theme?.primaryColor && { color: '#0A0B0E', fontWeight: '800' }]}>➕ Add Place to {category.toUpperCase()}</Text>
-          </TouchableOpacity>
+          {isAuthorizedAdmin ? (
+            <TouchableOpacity
+              style={[styles.toolbarAddBtn, { marginTop: 14 }, theme?.primaryColor && { backgroundColor: theme.primaryColor }]}
+              onPress={handleOpenAddModal}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.toolbarAddBtnText, theme?.primaryColor && { color: '#0A0B0E', fontWeight: '800' }]}>➕ Add Place to {category.toUpperCase()}</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.guestReadOnlyBadge}>
+              <Text style={styles.guestReadOnlyBadgeText}>
+                ✦ VERIFIED DIRECTORY • DIRECTORY MANAGED CENTRALLY BY HOTEL CONCIERGE DESK
+              </Text>
+            </View>
+          )}
         </View>
       ) : (
         /* 2. ROWS LIST */
@@ -717,7 +733,7 @@ export default function UniversalCategoryTableList({
                     </View>
                   )}
 
-                  {allowAdminControls && (
+                  {isAuthorizedAdmin && (
                     <TouchableOpacity
                       style={styles.editBtn}
                       onPress={() => handleOpenEditModal(rawItem)}
@@ -747,7 +763,7 @@ export default function UniversalCategoryTableList({
       {/* 3. ADD / EDIT MODAL ENFORCING THE FACULTY 5-COLUMN SCHEMA           */}
       {/* =================================================================== */}
       <Modal
-        visible={modalVisible}
+        visible={isAuthorizedAdmin && modalVisible}
         transparent={true}
         animationType="fade"
         onRequestClose={() => setModalVisible(false)}
@@ -1393,5 +1409,23 @@ const styles = StyleSheet.create({
     color: '#070A12',
     fontSize: 11.5,
     fontWeight: '800',
+  },
+  guestReadOnlyBadge: {
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestReadOnlyBadgeText: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textAlign: 'center',
   },
 });

@@ -966,7 +966,7 @@ export default function HomeScreen({
             {/* Category Title Buttons Grid */}
             <View style={styles.categoryButtonsGrid}>
               {categoryTitleCards.map((cat) => (
-                <TouchableOpacity
+                <View
                   key={cat.id}
                   style={[
                     styles.categoryTitleCard,
@@ -976,8 +976,6 @@ export default function HomeScreen({
                       borderColor: cat.borderColor,
                     },
                   ]}
-                  onPress={() => handleCategoryButtonClick(cat.id)}
-                  activeOpacity={0.82}
                 >
                   <View style={styles.categoryCardHeader}>
                     <View style={[styles.categoryCardIconBox, { backgroundColor: cat.badgeBg, borderColor: cat.borderColor }]}>
@@ -996,13 +994,25 @@ export default function HomeScreen({
                   </Text>
 
                   <View style={styles.categoryCardActionRow}>
-                    <View style={[styles.categoryActionPill, { borderColor: cat.borderColor }]}>
-                      <Text style={[styles.categoryActionPillText, { color: cat.primaryColor }]}>
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel={`Explore ${cat.name} Table`}
+                      style={[
+                        styles.categoryExploreBtn,
+                        {
+                          borderColor: cat.borderColor,
+                          backgroundColor: cat.badgeBg,
+                        },
+                      ]}
+                      onPress={() => handleCategoryButtonClick(cat.id)}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={[styles.categoryExploreBtnText, { color: cat.primaryColor }]}>
                         Explore Table ↗
                       </Text>
-                    </View>
+                    </TouchableOpacity>
                   </View>
-                </TouchableOpacity>
+                </View>
               ))}
             </View>
           </View>
@@ -1115,7 +1125,7 @@ export default function HomeScreen({
             {/* Category Title Buttons Grid */}
             <View style={styles.categoryButtonsGrid}>
               {categoryTitleCards.map((cat) => (
-                <TouchableOpacity
+                <View
                   key={cat.id}
                   style={[
                     styles.categoryTitleCard,
@@ -1125,8 +1135,6 @@ export default function HomeScreen({
                       borderColor: cat.borderColor,
                     },
                   ]}
-                  onPress={() => handleCategoryButtonClick(cat.id)}
-                  activeOpacity={0.82}
                 >
                   <View style={styles.categoryCardHeader}>
                     <View style={[styles.categoryCardIconBox, { backgroundColor: cat.badgeBg, borderColor: cat.borderColor }]}>
@@ -1145,13 +1153,25 @@ export default function HomeScreen({
                   </Text>
 
                   <View style={styles.categoryCardActionRow}>
-                    <View style={[styles.categoryActionPill, { borderColor: cat.borderColor }]}>
-                      <Text style={[styles.categoryActionPillText, { color: cat.primaryColor }]}>
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel={`Explore ${cat.name} Table`}
+                      style={[
+                        styles.categoryExploreBtn,
+                        {
+                          borderColor: cat.borderColor,
+                          backgroundColor: cat.badgeBg,
+                        },
+                      ]}
+                      onPress={() => handleCategoryButtonClick(cat.id)}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={[styles.categoryExploreBtnText, { color: cat.primaryColor }]}>
                         Explore Table ↗
                       </Text>
-                    </View>
+                    </TouchableOpacity>
                   </View>
-                </TouchableOpacity>
+                </View>
               ))}
             </View>
           </View>
@@ -1691,8 +1711,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     ...Platform.select({
       web: {
-        cursor: 'pointer',
-        transition: 'all 0.18s ease-in-out',
+        cursor: 'default',
         userSelect: 'none',
       },
     }),
@@ -1741,6 +1760,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     marginTop: 'auto',
+  },
+  categoryExploreBtn: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      web: {
+        cursor: 'pointer',
+        transition: 'all 0.15s ease-in-out',
+      },
+    }),
+  },
+  categoryExploreBtnText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   categoryActionPill: {
     paddingVertical: 3,
