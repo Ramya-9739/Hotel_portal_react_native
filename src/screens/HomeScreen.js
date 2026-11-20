@@ -224,7 +224,7 @@ export default function HomeScreen({
           (h) => h.hotelPropertyId === curId || h.id === curId || h._id === curId
         );
         currentActive = match || hRes.data[0];
-        if (onHotelChange && (!activeHotel || activeHotel.id !== currentActive.id)) {
+        if (onHotelChange) {
           onHotelChange(currentActive);
         }
       }

@@ -15,12 +15,6 @@
 
 import { Platform } from 'react-native';
 import { searchNearby } from './placeSearchService';
-import sampleAdminData from '../../sample_admin_data.json';
-import {
-  CURATED_BENGALURU_ATTRACTIONS,
-  CURATED_BENGALURU_SHOPPING,
-  CURATED_BENGALURU_TRANSIT,
-} from '../data/curatedLandmarks';
 import {
   extractEntityCoordinates,
   getHotelLocationUrl,
@@ -32,265 +26,48 @@ import {
 const ACTIVE_HOTEL_STORAGE_KEY = '@hotel_portal_active_hotel';
 const CUSTOM_HOTELS_STORAGE_KEY = '@hotel_portal_custom_hotels';
 
-const buildInitialSeedHotel = () => {
-  const sHotel = (sampleAdminData.sampleHotels && sampleAdminData.sampleHotels[0]) || {
-    id: 'hotel-1000000001',
-    hotelPropertyId: '1000000001',
-    name: 'The Grand Horizon Palace & Resort',
-    subtitle: '5-Star Luxury Boutique Stay & Ayurvedic Wellness Sanctuary',
-    address: '42 MG Road, Ashok Nagar, Bengaluru, Karnataka 560001',
-    city: 'Bengaluru',
-    location: 'Ashok Nagar, Bengaluru',
-    latitude: 12.9753,
-    longitude: 77.6062,
-    contactNumber: '+91 98765 43210',
-    pricePerNight: '₹14,500 / night',
-    rating: 4.9,
-  };
-
-  const places = sampleAdminData.samplePlacesByCategory || {};
-
-  const imagesList = (sHotel.images || []).map((img) => (typeof img === 'object' && img?.url ? img.url : img));
-
-  return {
-    ...sHotel,
-    id: sHotel.id || 'hotel-1000000001',
-    name: sHotel.name || 'The Grand Horizon Palace & Resort',
-    title: sHotel.name || 'The Grand Horizon Palace & Resort',
-    subtitle: sHotel.subtitle || '5-Star Luxury Boutique Stay & Ayurvedic Wellness Sanctuary',
-    address: sHotel.address || '42 MG Road, Ashok Nagar, Bengaluru, Karnataka 560001',
-    city: sHotel.city || 'Bengaluru',
-    location: sHotel.city || 'Bengaluru',
-    latitude: sHotel.latitude || 12.9753,
-    longitude: sHotel.longitude || 77.6062,
-    lat: sHotel.latitude || 12.9753,
-    lng: sHotel.longitude || 77.6062,
-    pricePerNight: sHotel.pricePerNight || '₹14,500 / night',
-    rating: sHotel.rating || 4.9,
-    images: imagesList.length > 0 ? imagesList : [
-      'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80',
-      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1200&q=80',
-      'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1200&q=80',
-      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80'
-    ],
-    imageObjects: sHotel.images || [],
-    imageLink: imagesList[0] || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80',
-    nearby: {
-      touristPlaces: (places.touristLandmarks || []).map((p, idx) => ({
-        id: `tourist-${idx + 1}`,
-        title: p.title,
-        subtitle: p.subtitle,
-        rating: p.rating || 4.8,
-        distance: p.distance || '1.5 km',
-        hotelDistance: p.distance || '1.5 km',
-        address: p.address,
-        location: p.address,
-        timings: p.timings,
-        imageLink: p.imageLink,
-        image: p.imageLink,
-        latitude: 12.9753 + (idx === 0 ? 0.02 : -0.01),
-        longitude: 77.6062 + (idx === 0 ? 0.01 : -0.02),
-        data1: p.data1,
-        data2: p.data2,
-        data3: p.data3,
-        data4: p.data4,
-        data5: p.data5,
-      })),
-      shopping: [
-        {
-          id: 'shop-1',
-          title: 'UB City Luxury Collection',
-          subtitle: 'High-End Designer Boutiques & International Brands',
-          rating: 4.9,
-          distance: '0.9 km',
-          hotelDistance: '0.9 km',
-          address: '24 Vittal Mallya Rd, Bengaluru',
-          location: 'Vittal Mallya Rd, Bengaluru',
-          timings: '10:30 AM - 10:00 PM',
-          imageLink: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=800&q=80',
-          latitude: 12.9716,
-          longitude: 77.5959,
-          data1: 'Brands: Rolex, Louis Vuitton, Burberry',
-          data2: 'Valet: Priority Concierge Parking',
-        },
-        {
-          id: 'shop-2',
-          title: 'Mysore Silk Weavers Guild',
-          subtitle: 'Authentic Pure Mulberry Silk Sarees & Stoles',
-          rating: 4.8,
-          distance: '1.4 km',
-          hotelDistance: '1.4 km',
-          address: 'MG Road Arcade, Bengaluru',
-          location: 'MG Road Arcade, Bengaluru',
-          timings: '10:00 AM - 8:30 PM',
-          imageLink: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80',
-          latitude: 12.9740,
-          longitude: 77.6090,
-          data1: 'Silk Mark Certified',
-          data2: 'Hotel Delivery Available',
-        }
-      ],
-      transportation: [
-        {
-          id: 'trans-1',
-          title: 'MG Road Metro Station',
-          subtitle: 'Purple Line Direct Rapid Transit Interchange',
-          distance: '0.3 km',
-          hotelDistance: '3 mins walk',
-          address: 'MG Road, Ashok Nagar, Bengaluru',
-          location: 'MG Road, Ashok Nagar, Bengaluru',
-          timings: '5:00 AM - 11:30 PM',
-          imageLink: 'https://images.unsplash.com/photo-1554672408-730436b60ede?w=800&q=80',
-          latitude: 12.9756,
-          longitude: 77.6068,
-          data1: 'Frequency: Every 4 mins',
-          data2: 'Direct to City Railway & Tech Parks',
-        },
-        {
-          id: 'trans-2',
-          title: 'Kempegowda Airport Express Limousine',
-          subtitle: 'Dedicated 24/7 Hotel Chauffeur & Vayu Vajra Shuttles',
-          distance: '34 km',
-          hotelDistance: '45 mins via Hebbal Express Flyover',
-          address: 'Concierge Valet Desk Pickup',
-          location: 'Hotel Front Lobby',
-          timings: '24/7 On-Demand Service',
-          imageLink: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&q=80',
-          latitude: 13.1986,
-          longitude: 77.7066,
-          data1: 'Pre-book via Hotel Reception',
-          data2: 'Free Wi-Fi & Refreshments in vehicle',
-        }
-      ],
-      hospitals: (places.emergencyServices || []).filter((e) => e.title.includes('Hospital')).map((h, idx) => ({
-        id: `hosp-${idx + 1}`,
-        title: h.title,
-        subtitle: h.subtitle,
-        rating: h.rating || 4.9,
-        distance: h.distance || '2.1 km',
-        hotelDistance: h.distance || '2.1 km',
-        address: h.address,
-        location: h.address,
-        timings: h.timings || '24/7 Emergency Care',
-        hours: h.timings || '24/7 Emergency Care',
-        isEmergency24x7: true,
-        imageLink: h.imageLink,
-        latitude: 12.9600,
-        longitude: 77.6480,
-        data1: h.data1,
-        data2: h.data2,
-        data3: h.data3,
-        data4: h.data4,
-        data5: h.data5,
-      })),
-      pharmacies: (places.emergencyServices || []).filter((e) => e.title.includes('Pharmacy')).map((p, idx) => ({
-        id: `pharm-${idx + 1}`,
-        title: p.title,
-        subtitle: p.subtitle,
-        rating: p.rating || 4.9,
-        distance: p.distance || '0.4 km',
-        hotelDistance: p.distance || '0.4 km',
-        address: p.address,
-        location: p.address,
-        timings: p.timings || 'Open 24/7',
-        hours: p.timings || 'Open 24/7',
-        isOpen24x7: true,
-        imageLink: p.imageLink,
-        latitude: 12.9730,
-        longitude: 77.6040,
-        data1: p.data1,
-        data2: p.data2,
-        data3: p.data3,
-        data4: p.data4,
-        data5: p.data5,
-      })),
-      gyms: (places.gyms || []).map((g, idx) => ({
-        id: `gym-${idx + 1}`,
-        title: g.title,
-        name: g.title,
-        subtitle: g.subtitle,
-        desc: g.subtitle,
-        rating: g.rating || 4.9,
-        distance: g.distance || '0.5 km',
-        hotelDistance: g.distance || '0.5 km',
-        address: g.address,
-        location: g.address,
-        timings: g.timings || '5:30 AM - 10:30 PM',
-        imageLink: g.imageLink,
-        latitude: 12.9745,
-        longitude: 77.6080,
-        data1: g.data1,
-        data2: g.data2,
-        data3: g.data3,
-        data4: g.data4,
-        data5: g.data5,
-      })),
-      takeaways: (places.takeaways || []).map((t, idx) => ({
-        id: `takeaway-${idx + 1}`,
-        title: t.title,
-        name: t.title,
-        subtitle: t.subtitle,
-        desc: t.subtitle,
-        rating: t.rating || 4.8,
-        distance: t.distance || '0.4 km',
-        hotelDistance: t.distance || '0.4 km',
-        address: t.address,
-        location: t.address,
-        timings: t.timings || '11:30 AM - 12:00 AM',
-        imageLink: t.imageLink,
-        latitude: 12.9760,
-        longitude: 77.6050,
-        data1: t.data1,
-        data2: t.data2,
-        data3: t.data3,
-        data4: t.data4,
-        data5: t.data5,
-      })),
-      restaurants: (places.restaurants || []).map((r, idx) => ({
-        id: `rest-${idx + 1}`,
-        title: r.title,
-        name: r.title,
-        subtitle: r.subtitle,
-        desc: r.subtitle,
-        rating: r.rating || 4.9,
-        distance: r.distance || '0.3 km',
-        hotelDistance: r.distance || '0.3 km',
-        address: r.address,
-        location: r.address,
-        timings: r.timings || '12:00 PM - 11:30 PM',
-        imageLink: r.imageLink,
-        latitude: 12.9750,
-        longitude: 77.6070,
-        data1: r.data1,
-        data2: r.data2,
-        data3: r.data3,
-        data4: r.data4,
-        data5: r.data5,
-      })),
-      dining: (places.restaurants || []).map((r, idx) => ({
-        id: `dining-${idx + 1}`,
-        title: r.title,
-        name: r.title,
-        subtitle: r.subtitle,
-        desc: r.subtitle,
-        rating: r.rating || 4.9,
-        distance: r.distance || '0.3 km',
-        hotelDistance: r.distance || '0.3 km',
-        address: r.address,
-        location: r.address,
-        timings: r.timings || '12:00 PM - 11:30 PM',
-        imageLink: r.imageLink,
-        latitude: 12.9750,
-        longitude: 77.6070,
-        data1: r.data1,
-        data2: r.data2,
-        data3: r.data3,
-        data4: r.data4,
-        data5: r.data5,
-      })),
-    }
-  };
-};
+/**
+ * Returns a neutral, unconfigured hotel object with zero hardcoded business records.
+ */
+const buildEmptyHotelState = () => ({
+  id: null,
+  hotelPropertyId: null,
+  hotelAdminId: null,
+  name: '',
+  title: '',
+  subtitle: '',
+  address: '',
+  city: '',
+  location: '',
+  latitude: null,
+  longitude: null,
+  lat: null,
+  lng: null,
+  hotelLatLong: '',
+  contactNumber: '',
+  pricePerNight: '',
+  rating: null,
+  images: [],
+  imageObjects: [],
+  imageLink: '',
+  nearby: {
+    touristPlaces: [],
+    shopping: [],
+    transportation: [],
+    hospitals: [],
+    pharmacies: [],
+    gyms: [],
+    takeaways: [],
+    restaurants: [],
+    dining: [],
+    facilities: [],
+    pools: [],
+    spa: [],
+    atms: [],
+  },
+  status: 'unconfigured',
+  isUnconfigured: true,
+});
 
 class ActiveHotelService {
   constructor() {
@@ -305,39 +82,32 @@ class ActiveHotelService {
       try {
         const storedHotel = window.localStorage.getItem(ACTIVE_HOTEL_STORAGE_KEY);
         if (storedHotel) {
-          this.activeHotel = JSON.parse(storedHotel);
+          const parsed = JSON.parse(storedHotel);
+          // Purge legacy demo seed hotel if present in storage
+          if (parsed && (parsed.id === 'hotel-1000000001' || parsed.name === 'The Grand Horizon Palace & Resort')) {
+            window.localStorage.removeItem(ACTIVE_HOTEL_STORAGE_KEY);
+            this.activeHotel = null;
+          } else {
+            this.activeHotel = parsed;
+          }
         }
         const storedCustom = window.localStorage.getItem(CUSTOM_HOTELS_STORAGE_KEY);
         if (storedCustom) {
-          this.customHotels = JSON.parse(storedCustom);
+          const parsedCustom = JSON.parse(storedCustom);
+          if (Array.isArray(parsedCustom)) {
+            // Filter out any legacy seed hotels
+            const cleanCustom = parsedCustom.filter(
+              (h) => h && h.id !== 'hotel-1000000001' && h.name !== 'The Grand Horizon Palace & Resort'
+            );
+            this.customHotels = cleanCustom;
+          }
         }
       } catch (err) {
         console.warn('[ActiveHotelService] Storage read error:', err);
       }
     }
 
-    // If no active hotel or invalid empty hotel, seed the default luxury hotel from sample_admin_data
-    if (!this.activeHotel || !this.activeHotel.name || !this.activeHotel.id) {
-      const defaultHotel = buildInitialSeedHotel();
-      this.activeHotel = defaultHotel;
-      if (this.customHotels.length === 0) {
-        const allSampleHotels = (sampleAdminData.sampleHotels || []).map((h) => ({
-          ...h,
-          title: h.name,
-          location: h.city,
-          imageLink: (h.images && h.images[0]?.url) || h.images?.[0] || '',
-        }));
-        this.customHotels = allSampleHotels.length > 0 ? allSampleHotels : [defaultHotel];
-      }
-      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
-        try {
-          window.localStorage.setItem(ACTIVE_HOTEL_STORAGE_KEY, JSON.stringify(defaultHotel));
-          window.localStorage.setItem(CUSTOM_HOTELS_STORAGE_KEY, JSON.stringify(this.customHotels));
-        } catch (e) { }
-      }
-    }
-
-    // Also check backend MongoDB
+    // Always fetch approved hotels and active hotel components from backend MongoDB
     this.syncFromBackend();
   }
 
@@ -353,36 +123,50 @@ class ActiveHotelService {
           (h) => h.hotelPropertyId === currentId || h.id === currentId || h._id === currentId
         );
         const selected = match || res.data[0];
-        const seed = buildInitialSeedHotel();
-        const coords = extractEntityCoordinates(selected) || extractEntityCoordinates(this.activeHotel);
-        const resolvedLat = coords.isValid ? coords.lat : (seed.latitude || 12.9753);
-        const resolvedLng = coords.isValid ? coords.lng : (seed.longitude || 77.6062);
+        const coords = extractEntityCoordinates(selected);
+        const resolvedLat = coords.isValid ? coords.lat : null;
+        const resolvedLng = coords.isValid ? coords.lng : null;
+        const dbNearby = selected.nearby || {};
+        const activeNearby = (this.activeHotel?.hotelPropertyId === selected.hotelPropertyId || this.activeHotel?.id === selected.id)
+          ? (this.activeHotel.nearby || {})
+          : {};
+
+        // Deep merge: MongoDB database records are the primary source of truth.
+        // Never allow empty arrays in cached activeNearby to wipe out legitimate database records.
+        const mergedNearby = { ...dbNearby };
+        Object.keys(activeNearby).forEach((cat) => {
+          if (!Array.isArray(mergedNearby[cat]) || mergedNearby[cat].length === 0) {
+            if (Array.isArray(activeNearby[cat]) && activeNearby[cat].length > 0) {
+              mergedNearby[cat] = activeNearby[cat];
+            }
+          }
+        });
+
         const mergedHotel = {
-          ...seed,
-          ...this.activeHotel,
           ...selected,
-          name: selected.name || selected.title || selected.hotelName || this.activeHotel?.name || seed.name,
-          title: selected.title || selected.name || selected.hotelName || this.activeHotel?.title || seed.title,
-          address: selected.address || selected.hotelAddress || this.activeHotel?.address || seed.address,
-          city: selected.city || this.activeHotel?.city || seed.city,
-          location: selected.location || selected.city || this.activeHotel?.location || seed.location,
+          name: selected.name || selected.title || selected.hotelName || '',
+          title: selected.title || selected.name || selected.hotelName || '',
+          address: selected.address || selected.hotelAddress || '',
+          city: selected.city || '',
+          location: selected.location || selected.city || selected.address || '',
           id: selected.id || selected.hotelPropertyId || selected._id,
           hotelPropertyId: selected.hotelPropertyId || selected.id,
           latitude: resolvedLat,
           longitude: resolvedLng,
           lat: resolvedLat,
           lng: resolvedLng,
-          hotelLatLong: `${resolvedLat},${resolvedLng}`,
+          hotelLatLong: (resolvedLat != null && resolvedLng != null) ? `${resolvedLat},${resolvedLng}` : (selected.hotelLatLong || ''),
           googleMapsUrl: getHotelLocationUrl({ ...selected, latitude: resolvedLat, longitude: resolvedLng }),
           directionsUrl: getDirectionsToHotelUrl({ ...selected, latitude: resolvedLat, longitude: resolvedLng }),
-          nearby: {
-            ...seed.nearby,
-            ...(this.activeHotel?.nearby || {}),
-            ...(selected.nearby || {}),
-          },
+          nearby: mergedNearby,
         };
         this.setActiveHotel(mergedHotel);
         await this.syncComponentsFromBackend(mergedHotel);
+      } else {
+        this.customHotels = [];
+        if (!this.activeHotel || this.activeHotel.isUnconfigured) {
+          this.activeHotel = buildEmptyHotelState();
+        }
       }
     } catch (e) {
       console.warn('[ActiveHotelService] syncFromBackend error:', e.message);
@@ -486,22 +270,37 @@ class ActiveHotelService {
         });
       }
 
-      // Safeguard: Ensure hotel nearby arrays are never blank
-      if (!Array.isArray(updatedNearby.touristPlaces) || updatedNearby.touristPlaces.length === 0) {
-        updatedNearby.touristPlaces = (target.nearby?.touristPlaces && target.nearby.touristPlaces.length > 0)
-          ? target.nearby.touristPlaces
-          : CURATED_BENGALURU_ATTRACTIONS;
-      }
-      if (!Array.isArray(updatedNearby.shopping) || updatedNearby.shopping.length === 0) {
-        updatedNearby.shopping = (target.nearby?.shopping && target.nearby.shopping.length > 0)
-          ? target.nearby.shopping
-          : CURATED_BENGALURU_SHOPPING;
-      }
-      if (!Array.isArray(updatedNearby.transportation) || updatedNearby.transportation.length === 0) {
-        updatedNearby.transportation = (target.nearby?.transportation && target.nearby.transportation.length > 0)
-          ? target.nearby.transportation
-          : CURATED_BENGALURU_TRANSIT;
-      }
+      // Ensure nearby categories preserve MongoDB data from customHotels if target was missing them
+      const propId = target.hotelPropertyId || target.id || target._id;
+      const dbHotel = this.customHotels.find(
+        (h) => (h.hotelPropertyId && h.hotelPropertyId === propId) || (h.id && h.id === propId) || (h._id && h._id === propId)
+      );
+      const sourceNearby = dbHotel?.nearby || target.nearby || {};
+
+      [
+        'touristPlaces',
+        'shopping',
+        'transportation',
+        'cafes',
+        'gyms',
+        'takeaways',
+        'restaurants',
+        'dining',
+        'pools',
+        'spa',
+        'atms',
+        'hospitals',
+        'pharmacies',
+        'facilities',
+      ].forEach((cat) => {
+        if (!Array.isArray(updatedNearby[cat]) || updatedNearby[cat].length === 0) {
+          if (Array.isArray(sourceNearby[cat]) && sourceNearby[cat].length > 0) {
+            updatedNearby[cat] = sourceNearby[cat];
+          } else if (!Array.isArray(updatedNearby[cat])) {
+            updatedNearby[cat] = [];
+          }
+        }
+      });
 
       const refreshedHotel = { ...target, nearby: updatedNearby };
       return this.setActiveHotel(refreshedHotel);
@@ -528,9 +327,12 @@ class ActiveHotelService {
 
   getActiveHotel() {
     if (!this.activeHotel || !this.activeHotel.name || !this.activeHotel.id) {
-      const defaultHotel = buildInitialSeedHotel();
-      this.activeHotel = defaultHotel;
-      return defaultHotel;
+      if (this.customHotels && this.customHotels.length > 0) {
+        const first = this.customHotels[0];
+        this.activeHotel = first;
+        return first;
+      }
+      return buildEmptyHotelState();
     }
     return this.activeHotel;
   }
@@ -1168,74 +970,10 @@ class ActiveHotelService {
     return this.setActiveHotel(updatedHotel);
   }
 
-  populatePresetPlaces(hotel = null) {
+  async populatePresetPlaces(hotel = null) {
     const targetHotel = hotel || this.activeHotel;
     if (!targetHotel) return null;
-    const seed = buildInitialSeedHotel();
-    const hotelLat = parseFloat(targetHotel.latitude != null ? targetHotel.latitude : targetHotel.lat) || 12.9753;
-    const hotelLng = parseFloat(targetHotel.longitude != null ? targetHotel.longitude : targetHotel.lng) || 77.6062;
-    const hotelCity = targetHotel.city || 'Local Area';
-
-    // Adjust seed coordinates to relative offsets from the current hotel's actual location
-    const adjustCoords = (items, defaultLatOffset = 0, defaultLngOffset = 0) => {
-      return (items || []).map((p, idx) => {
-        const offsetLat = (idx * 0.006 + 0.003) * (idx % 2 === 0 ? 1 : -1);
-        const offsetLng = (idx * 0.007 + 0.004) * (idx % 3 === 0 ? 1 : -1);
-        const lat = parseFloat((hotelLat + (defaultLatOffset || offsetLat)).toFixed(5));
-        const lng = parseFloat((hotelLng + (defaultLngOffset || offsetLng)).toFixed(5));
-        return {
-          ...p,
-          latitude: lat,
-          longitude: lng,
-          lat: lat,
-          lng: lng,
-          address: p.address ? p.address.replace(/Bengaluru/g, hotelCity) : `${hotelCity} Central`,
-          location: p.location ? p.location.replace(/Bengaluru/g, hotelCity) : `${hotelCity} Central`,
-        };
-      });
-    };
-
-    const updatedHotel = {
-      ...targetHotel,
-      nearby: {
-        ...(targetHotel.nearby || {}),
-        touristPlaces: adjustCoords(seed.nearby.touristPlaces),
-        shopping: adjustCoords(seed.nearby.shopping),
-        transportation: adjustCoords(seed.nearby.transportation),
-        hospitals: adjustCoords(seed.nearby.hospitals),
-        pharmacies: adjustCoords(seed.nearby.pharmacies),
-        gyms: adjustCoords(seed.nearby.gyms),
-        takeaways: adjustCoords(seed.nearby.takeaways),
-        restaurants: adjustCoords(seed.nearby.restaurants),
-        dining: adjustCoords(seed.nearby.dining || seed.nearby.restaurants),
-        pools: adjustCoords([
-          {
-            id: 'pool-1',
-            title: 'Royal Sapphire Infinity Pool',
-            subtitle: 'Temperature-Controlled Rooftop Panoramic Pool',
-            rating: 4.9,
-            distance: 'On-Site • 18th Floor',
-            hotelDistance: 'Resident Privilege Access',
-            address: `${targetHotel.name || 'Hotel'} Rooftop Deck`,
-            timings: '6:00 AM - 10:00 PM',
-            imageLink: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=800&q=80',
-          },
-          {
-            id: 'pool-2',
-            title: 'Courtyard Palm Oasis Pool',
-            subtitle: 'Heated Lap Pool & Private Cabanas',
-            rating: 4.8,
-            distance: 'On-Site • Garden Level',
-            hotelDistance: 'Complimentary for Hotel Guests',
-            address: `${targetHotel.name || 'Hotel'} Courtyard Garden`,
-            timings: '7:00 AM - 9:00 PM',
-            imageLink: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80',
-          },
-        ]),
-      },
-    };
-
-    return this.setActiveHotel(updatedHotel);
+    return await this.syncComponentsFromBackend(targetHotel);
   }
 
   clearAllNearbyPlaces() {
