@@ -63,7 +63,7 @@ async function verify() {
     // Step 1: Load Guest Portal
     console.log('[Step 1] Navigating to Guest Portal...');
     await cdp.send('Page.navigate', { url: 'http://localhost:8081/#/guest' });
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, 3500));
 
     // Scroll to the categories section
     await cdp.send('Runtime.evaluate', {

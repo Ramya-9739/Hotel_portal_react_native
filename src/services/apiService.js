@@ -479,6 +479,7 @@ class ApiService {
       paidTill: doc.paidTill,
       status: doc.status || 'pending',
       rejectionReason: doc.rejectionReason || '',
+      nearby: doc.nearby || undefined,
     };
   }
 
@@ -505,6 +506,7 @@ class ApiService {
       paidTill: data.paidTill || (Date.now() + 365 * 86400000),
       status: data.status || 'pending',
       rejectionReason: data.rejectionReason || '',
+      nearby: data.nearby || undefined,
     };
   }
 

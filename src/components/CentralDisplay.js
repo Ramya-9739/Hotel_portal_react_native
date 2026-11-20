@@ -139,11 +139,11 @@ export default function CentralDisplay({
           accessibilityLabel="Click to view stay registration and booking"
         >
           <Text style={styles.crownIcon}>✦</Text>
-          <View>
-            <Text style={styles.spotlightTitle}>
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.spotlightTitle} numberOfLines={1}>
               {activeHotel.brandBadge || `${activeHotel.name.toUpperCase()} · ${(activeHotel.city || '').toUpperCase()}`}
             </Text>
-            <Text style={styles.spotlightSubtitle}>
+            <Text style={styles.spotlightSubtitle} numberOfLines={1}>
               {activeHotel.subtitle || activeHotel.address}
             </Text>
           </View>
@@ -166,7 +166,7 @@ export default function CentralDisplay({
             onPress={handleHotelClick}
             activeOpacity={0.8}
           >
-            <Text style={styles.ratePillText}>
+            <Text style={styles.ratePillText} numberOfLines={1}>
               ★ {activeHotel.rating || 4.95} · From {activeHotel.pricePerNight || '₹8,500 / night'}
             </Text>
           </TouchableOpacity>
@@ -284,11 +284,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 6,
     paddingHorizontal: 4,
     flexShrink: 0,
+    width: '100%',
   },
   headerLeft: {
+    flex: 1,
+    minWidth: 180,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
@@ -296,15 +301,20 @@ const styles = StyleSheet.create({
       web: { cursor: 'pointer' },
     }),
   },
+  headerTitleWrap: {
+    flex: 1,
+    minWidth: 0,
+  },
   crownIcon: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#E2C082',
+    flexShrink: 0,
   },
   spotlightTitle: {
     color: '#F8F6F0',
-    fontSize: 13.5,
+    fontSize: 13,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
     ...Platform.select({
       web: {
         fontFamily: "'Playfair Display', Georgia, serif",
@@ -313,15 +323,17 @@ const styles = StyleSheet.create({
   },
   spotlightSubtitle: {
     color: '#E2C082',
-    fontSize: 9,
+    fontSize: 9.5,
     fontWeight: '600',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
     marginTop: 1,
   },
   headerRightGroup: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 6,
+    flexShrink: 0,
   },
   directionsHeaderBtn: {
     backgroundColor: 'rgba(226, 192, 130, 0.16)',
@@ -330,6 +342,7 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     borderWidth: 1,
     borderColor: 'rgba(226, 192, 130, 0.4)',
+    flexShrink: 0,
     ...Platform.select({
       web: {
         cursor: 'pointer',
@@ -341,14 +354,20 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: '800',
     letterSpacing: 0.2,
+    ...Platform.select({
+      web: {
+        whiteSpace: 'nowrap',
+      },
+    }),
   },
   ratePill: {
     backgroundColor: 'rgba(226, 192, 130, 0.1)',
     paddingVertical: 4,
-    paddingHorizontal: 9,
+    paddingHorizontal: 8,
     borderRadius: 7,
     borderWidth: 1,
     borderColor: 'rgba(226, 192, 130, 0.3)',
+    flexShrink: 0,
     ...Platform.select({
       web: {
         cursor: 'pointer',
@@ -360,6 +379,11 @@ const styles = StyleSheet.create({
     color: '#E2C082',
     fontSize: 9,
     fontWeight: '700',
+    ...Platform.select({
+      web: {
+        whiteSpace: 'nowrap',
+      },
+    }),
   },
 
   // Main Side-by-Side Area

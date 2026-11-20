@@ -8,7 +8,7 @@
 // 5. BOTTOM: Cafes, Gyms, Takeaways & Home Delivery (Horizontal Track with Category Filters)
 // =============================================================================
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -37,6 +37,37 @@ import { apiService } from '../services/apiService';
 import { activeHotelService } from '../services/activeHotelService';
 import { safeVal, getDirectionsUrl } from '../data/hotelsData';
 import { LANGUAGES, TRANSLATIONS } from '../data/translations';
+import { CURATED_BENGALURU_ATTRACTIONS } from '../data/curatedLandmarks';
+
+// Subtle, elegant champagne-gold Explore Table Button with smooth hover transition
+function CategoryExploreButton({ catId, catName, onPress }) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <TouchableOpacity
+      testID="category-explore-btn"
+      accessibilityRole="button"
+      accessibilityLabel={`Explore ${catName} Table`}
+      style={[
+        styles.categoryExploreBtn,
+        isHovered && styles.categoryExploreBtnHovered,
+      ]}
+      onPress={() => onPress(catId)}
+      activeOpacity={0.8}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Text
+        style={[
+          styles.categoryExploreBtnText,
+          isHovered && styles.categoryExploreBtnTextHovered,
+        ]}
+      >
+        Explore Table ↗
+      </Text>
+    </TouchableOpacity>
+  );
+}
 
 export default function HomeScreen({
   hotel = null,
@@ -51,6 +82,26 @@ export default function HomeScreen({
   const activeHotel = hotel || activeHotelService.getActiveHotel();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 860;
+
+  // Category horizontal scroll ref and handlers
+  const categoryScrollRef = useRef(null);
+  const [categoryScrollX, setCategoryScrollX] = useState(0);
+
+  const scrollCategoryLeft = () => {
+    if (categoryScrollRef.current) {
+      const target = Math.max(0, categoryScrollX - 320);
+      categoryScrollRef.current.scrollTo({ x: target, animated: true });
+      setCategoryScrollX(target);
+    }
+  };
+
+  const scrollCategoryRight = () => {
+    if (categoryScrollRef.current) {
+      const target = categoryScrollX + 320;
+      categoryScrollRef.current.scrollTo({ x: target, animated: true });
+      setCategoryScrollX(target);
+    }
+  };
 
   // Hotel selector dropdown state
   const [isHotelSelectorOpen, setIsHotelSelectorOpen] = useState(false);
@@ -326,6 +377,10 @@ export default function HomeScreen({
         });
       }
     });
+
+    if (merged.length === 0) {
+      return CURATED_BENGALURU_ATTRACTIONS;
+    }
 
     return merged;
   }, [activeHotel?.nearby?.touristPlaces, activeHotel?.city, activeHotel?.state, globalDestinations]);
@@ -944,12 +999,12 @@ export default function HomeScreen({
             </View>
           </View>
 
-          {/* 3. BOTTOM SECTION: COMPONENT CATEGORY TITLE BUTTONS */}
+          {/* 3. BOTTOM SECTION: COMPONENT CATEGORY TITLE BUTTONS (HORIZONTAL SCROLL BAR) */}
           <View style={styles.bottomSectionWrapper}>
-            {/* Header with Title and Info */}
+            {/* Header with Title, Info, and Scroll Controls */}
             <View style={styles.bottomSectionHeaderRow}>
               <View style={styles.bottomHeaderLeft}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={styles.bottomTitleRow}>
                   <Text style={styles.bottomSectionTitle}>
                     ✦ GUEST AMENITIES & NEARBY DIRECTORIES
                   </Text>
@@ -961,15 +1016,45 @@ export default function HomeScreen({
                   Click any category title button to open its dedicated information table with operating hours, emergency availability and turn-by-turn routing from {activeHotel?.name || 'your stay'}.
                 </Text>
               </View>
+
+              {/* Horizontal Scroll Arrow Buttons */}
+              <View style={styles.categoryScrollControls}>
+                <TouchableOpacity
+                  style={styles.categoryScrollBtn}
+                  onPress={scrollCategoryLeft}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Scroll categories left"
+                >
+                  <Text style={styles.categoryScrollBtnText}>‹</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.categoryScrollBtn}
+                  onPress={scrollCategoryRight}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Scroll categories right"
+                >
+                  <Text style={styles.categoryScrollBtnText}>›</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            {/* Category Title Buttons Grid */}
-            <View style={styles.categoryButtonsGrid}>
+            {/* Horizontal Scrolling Bar */}
+            <ScrollView
+              ref={categoryScrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              onScroll={(e) => setCategoryScrollX(e.nativeEvent.contentOffset.x)}
+              scrollEventThrottle={16}
+              contentContainerStyle={styles.categoryHorizontalTrack}
+              style={styles.categoryHorizontalScrollView}
+            >
               {categoryTitleCards.map((cat) => (
                 <View
                   key={cat.id}
                   style={[
-                    styles.categoryTitleCard,
+                    styles.categoryTitleCardHorizontal,
                     {
                       borderLeftColor: cat.primaryColor,
                       borderLeftWidth: 3.5,
@@ -988,33 +1073,21 @@ export default function HomeScreen({
                     </View>
                   </View>
 
-                  <Text style={styles.categoryCardTitle}>{cat.name}</Text>
+                  <Text style={styles.categoryCardTitle} numberOfLines={1}>{cat.name}</Text>
                   <Text style={styles.categoryCardTagline} numberOfLines={2}>
                     {cat.tagline}
                   </Text>
 
                   <View style={styles.categoryCardActionRow}>
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      accessibilityLabel={`Explore ${cat.name} Table`}
-                      style={[
-                        styles.categoryExploreBtn,
-                        {
-                          borderColor: cat.borderColor,
-                          backgroundColor: cat.badgeBg,
-                        },
-                      ]}
-                      onPress={() => handleCategoryButtonClick(cat.id)}
-                      activeOpacity={0.75}
-                    >
-                      <Text style={[styles.categoryExploreBtnText, { color: cat.primaryColor }]}>
-                        Explore Table ↗
-                      </Text>
-                    </TouchableOpacity>
+                    <CategoryExploreButton
+                      catId={cat.id}
+                      catName={cat.name}
+                      onPress={handleCategoryButtonClick}
+                    />
                   </View>
                 </View>
               ))}
-            </View>
+            </ScrollView>
           </View>
         </View>
       ) : (
@@ -1108,7 +1181,7 @@ export default function HomeScreen({
           <View style={styles.bottomSectionWrapper}>
             <View style={styles.bottomSectionHeaderRow}>
               <View style={styles.bottomHeaderLeft}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={styles.bottomTitleRow}>
                   <Text style={styles.bottomSectionTitle}>
                     ✦ GUEST AMENITIES & NEARBY DIRECTORIES
                   </Text>
@@ -1122,13 +1195,18 @@ export default function HomeScreen({
               </View>
             </View>
 
-            {/* Category Title Buttons Grid */}
-            <View style={styles.categoryButtonsGrid}>
+            {/* Category Title Buttons Horizontal Scroll Bar */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryHorizontalTrack}
+              style={styles.categoryHorizontalScrollView}
+            >
               {categoryTitleCards.map((cat) => (
                 <View
                   key={cat.id}
                   style={[
-                    styles.categoryTitleCard,
+                    styles.categoryTitleCardHorizontal,
                     {
                       borderLeftColor: cat.primaryColor,
                       borderLeftWidth: 3.5,
@@ -1147,33 +1225,21 @@ export default function HomeScreen({
                     </View>
                   </View>
 
-                  <Text style={styles.categoryCardTitle}>{cat.name}</Text>
+                  <Text style={styles.categoryCardTitle} numberOfLines={1}>{cat.name}</Text>
                   <Text style={styles.categoryCardTagline} numberOfLines={2}>
                     {cat.tagline}
                   </Text>
 
                   <View style={styles.categoryCardActionRow}>
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      accessibilityLabel={`Explore ${cat.name} Table`}
-                      style={[
-                        styles.categoryExploreBtn,
-                        {
-                          borderColor: cat.borderColor,
-                          backgroundColor: cat.badgeBg,
-                        },
-                      ]}
-                      onPress={() => handleCategoryButtonClick(cat.id)}
-                      activeOpacity={0.75}
-                    >
-                      <Text style={[styles.categoryExploreBtnText, { color: cat.primaryColor }]}>
-                        Explore Table ↗
-                      </Text>
-                    </TouchableOpacity>
+                    <CategoryExploreButton
+                      catId={cat.id}
+                      catName={cat.name}
+                      onPress={handleCategoryButtonClick}
+                    />
                   </View>
                 </View>
               ))}
-            </View>
+            </ScrollView>
           </View>
         </ScrollView>
       )}
@@ -1251,16 +1317,19 @@ const styles = StyleSheet.create({
     minHeight: 0,
     ...Platform.select({
       web: {
-        height: '100vh',
-        maxHeight: '100vh',
-        overflow: 'hidden',
+        minHeight: '100vh',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+      },
+      default: {
+        flex: 1,
       },
     }),
   },
 
   // 1. Top Bar (Thin, Elegant, and Centered)
   appHeader: {
-    height: 38,
+    height: 36,
     flexShrink: 0,
     backgroundColor: '#090C15',
     flexDirection: 'row',
@@ -1456,15 +1525,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 8,
     paddingTop: 1,
-    paddingBottom: 2,
-    justifyContent: 'space-between',
+    paddingBottom: 6,
+    justifyContent: 'flex-start',
     display: 'flex',
     flexDirection: 'column',
     ...Platform.select({
       web: {
-        height: 'calc(100vh - 38px)',
-        maxHeight: 'calc(100vh - 38px)',
-        overflow: 'hidden',
+        minHeight: 'calc(100vh - 36px - 22px)',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        boxSizing: 'border-box',
       },
       default: {
         flex: 1,
@@ -1472,22 +1542,23 @@ const styles = StyleSheet.create({
     }),
   },
   middleRow: {
-    flex: 1,
-    minHeight: 160,
+    minHeight: 180,
+    maxHeight: 260,
     flexDirection: 'row',
     gap: 8,
-    marginVertical: 2,
+    marginVertical: 4,
     alignItems: 'stretch',
+    flexShrink: 0,
   },
   sideColumn: {
     flex: 28,
-    height: '100%',
-    minHeight: 160,
+    minHeight: 180,
+    minWidth: 0,
   },
   centerColumn40: {
     flex: 44,
-    height: '100%',
-    minHeight: 160,
+    minHeight: 180,
+    minWidth: 0,
   },
 
   // 3. Mobile Layout
@@ -1536,7 +1607,7 @@ const styles = StyleSheet.create({
 
   // 4. Footer Bar
   footerBar: {
-    height: 24,
+    height: 22,
     backgroundColor: '#05070D',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1632,7 +1703,8 @@ const styles = StyleSheet.create({
   bottomSectionWrapper: {
     width: '100%',
     flexDirection: 'column',
-    marginTop: 2,
+    marginTop: 4,
+    marginBottom: 8,
     gap: 3,
     flexShrink: 0,
   },
@@ -1645,9 +1717,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     marginBottom: 1,
   },
+  bottomTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 1,
+  },
   bottomHeaderLeft: {
     flex: 1,
     minWidth: 240,
+  },
+  categoryScrollControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 0,
+  },
+  categoryScrollBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    backgroundColor: 'rgba(226, 192, 130, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(226, 192, 130, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      web: {
+        cursor: 'pointer',
+        transition: 'all 0.15s ease-in-out',
+      },
+    }),
+  },
+  categoryScrollBtnText: {
+    color: '#E2C082',
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 18,
   },
   dedicatedDirectoryBtn: {
     paddingVertical: 5,
@@ -1668,51 +1775,116 @@ const styles = StyleSheet.create({
   },
   bottomSectionTitle: {
     color: '#E2C082',
-    fontSize: 11.5,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   bottomSectionSub: {
     color: '#94A3B8',
-    fontSize: 9.5,
-    marginTop: 2,
-    lineHeight: 14,
+    fontSize: 8.5,
+    marginTop: 1,
+    lineHeight: 12,
   },
   directoryActivePill: {
-    paddingVertical: 2,
-    paddingHorizontal: 7,
+    paddingVertical: 1.5,
+    paddingHorizontal: 6,
     borderRadius: 4,
     backgroundColor: 'rgba(226, 192, 130, 0.14)',
     borderWidth: 1,
     borderColor: 'rgba(226, 192, 130, 0.3)',
+    flexShrink: 0,
   },
   directoryActivePillText: {
     color: '#E2C082',
-    fontSize: 8.5,
+    fontSize: 8,
     fontWeight: '800',
     letterSpacing: 0.4,
   },
-  categoryButtonsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 6,
-    paddingHorizontal: 2,
+  categoryHorizontalScrollView: {
+    width: '100%',
+    marginTop: 2,
+    ...Platform.select({
+      web: {
+        overflowX: 'auto',
+      },
+    }),
   },
-  categoryTitleCard: {
-    flexGrow: 1,
-    flexBasis: 170,
+  categoryHorizontalTrack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 2,
+    paddingVertical: 2,
+  },
+  categoryTitleCardHorizontal: {
+    width: 210,
+    minWidth: 210,
+    maxWidth: 210,
+    height: 126,
+    minHeight: 126,
     backgroundColor: '#13151D',
     borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 11,
     justifyContent: 'space-between',
+    flexShrink: 0,
     ...Platform.select({
       web: {
         cursor: 'default',
         userSelect: 'none',
+        boxSizing: 'border-box',
+        boxShadow: '0 4px 14px rgba(0, 0, 0, 0.35)',
+      },
+    }),
+  },
+  categoryButtonsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 3,
+    paddingHorizontal: 2,
+  },
+  desktopCategoryGrid: {
+    ...Platform.select({
+      web: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+        gap: '6px',
+        width: '100%',
+      },
+    }),
+  },
+  mobileCategoryGrid: {
+    ...Platform.select({
+      web: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+        gap: '6px',
+        width: '100%',
+      },
+    }),
+  },
+  categoryTitleCard: {
+    flexGrow: 1,
+    flexBasis: 160,
+    backgroundColor: '#13151D',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    paddingVertical: 6,
+    paddingHorizontal: 9,
+    justifyContent: 'space-between',
+    height: 120,
+    minHeight: 120,
+    minWidth: 0,
+    overflow: 'hidden',
+    ...Platform.select({
+      web: {
+        cursor: 'default',
+        userSelect: 'none',
+        boxSizing: 'border-box',
       },
     }),
   },
@@ -1720,40 +1892,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 3,
   },
   categoryCardIconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
+    width: 25,
+    height: 25,
+    borderRadius: 5,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
   },
   categoryCardIcon: {
-    fontSize: 14,
+    fontSize: 13,
   },
   categoryCountBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: 8,
   },
   categoryCountBadgeText: {
-    fontSize: 9.5,
+    fontSize: 8.5,
     fontWeight: '700',
   },
   categoryCardTitle: {
     color: '#F8FAFC',
-    fontSize: 12.5,
+    fontSize: 11.5,
     fontWeight: '800',
-    marginBottom: 2,
+    marginBottom: 1,
     letterSpacing: 0.2,
   },
   categoryCardTagline: {
     color: '#94A3B8',
-    fontSize: 10,
-    lineHeight: 13,
-    marginBottom: 8,
+    fontSize: 8.5,
+    lineHeight: 11.5,
+    marginBottom: 3,
   },
   categoryCardActionRow: {
     flexDirection: 'row',
@@ -1762,23 +1934,40 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
   },
   categoryExploreBtn: {
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 6,
+    backgroundColor: '#25231E',
     borderWidth: 1,
+    borderColor: '#C5A46D',
+    borderRadius: 7,
+    paddingVertical: 4.5,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
     ...Platform.select({
       web: {
         cursor: 'pointer',
-        transition: 'all 0.15s ease-in-out',
+        transition: 'all 0.2s ease-in-out',
       },
     }),
   },
+  categoryExploreBtnHovered: {
+    backgroundColor: '#C5A46D',
+    borderColor: '#C5A46D',
+  },
   categoryExploreBtnText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.3,
+    color: '#E4C58D',
+    fontSize: 9.5,
+    fontWeight: '600',
+    letterSpacing: 0.25,
+    ...Platform.select({
+      web: {
+        transition: 'color 0.2s ease-in-out',
+      },
+    }),
+  },
+  categoryExploreBtnTextHovered: {
+    color: '#25231E',
   },
   categoryActionPill: {
     paddingVertical: 3,

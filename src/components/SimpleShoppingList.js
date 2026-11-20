@@ -23,6 +23,7 @@ import {
   Linking,
 } from 'react-native';
 import { getDirectionsUrl, safeVal } from '../data/hotelsData';
+import { CURATED_BENGALURU_SHOPPING } from '../data/curatedLandmarks';
 
 export default function SimpleShoppingList({
   title = '🛍️ SHOPPING MALLS & SILK BAZAARS',
@@ -31,6 +32,9 @@ export default function SimpleShoppingList({
   hotel,
   onSelectItem,
 }) {
+  const displayItems = (Array.isArray(items) && items.length > 0)
+    ? items
+    : CURATED_BENGALURU_SHOPPING;
   const handleOpenLink = (url) => {
     if (!url) return;
     if (Platform.OS === 'web') {
@@ -65,19 +69,19 @@ export default function SimpleShoppingList({
           </Text>
         </View>
         <View style={styles.countBadge}>
-          <Text style={styles.countBadgeText}>{items.length} Places</Text>
+          <Text style={styles.countBadgeText}>{displayItems.length} Places</Text>
         </View>
       </View>
 
       {/* 2. SCROLLABLE LIST WITH THUMBNAILS & DETAILS */}
       <ScrollView
         showsVerticalScrollIndicator={true}
-        contentContainerStyle={[styles.scrollContent, items.length === 0 && styles.emptyScrollContent]}
+        contentContainerStyle={[styles.scrollContent, displayItems.length === 0 && styles.emptyScrollContent]}
         style={styles.scrollContainer}
         scrollIndicatorInsets={{ right: 1 }}
         nestedScrollEnabled={true}
       >
-        {items.length === 0 ? (
+        {displayItems.length === 0 ? (
           <View style={styles.shoppingEmptyBox}>
             <Text style={styles.shoppingEmptyIcon}>🛍️</Text>
             <Text style={styles.shoppingEmptyTitle}>No shopping destinations found near this hotel.</Text>
@@ -86,7 +90,7 @@ export default function SimpleShoppingList({
             </Text>
           </View>
         ) : (
-          items.map((item, index) => {
+          displayItems.map((item, index) => {
             const directionsUrl = getDirectionsUrl(hotel, item);
             const websiteUrl = item.websiteUrl || item.link;
             const imgSrc = item.imageLink || item.image || item.imageUrl || 'https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=600&q=80';

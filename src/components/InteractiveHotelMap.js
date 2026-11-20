@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   mapContainer: {
     flex: 1,
     height: '100%',
-    minHeight: 180,
+    minHeight: 160,
     backgroundColor: '#16181F',
     borderRadius: 10,
     borderWidth: 1,

@@ -17,6 +17,11 @@ import { Platform } from 'react-native';
 import { searchNearby } from './placeSearchService';
 import sampleAdminData from '../../sample_admin_data.json';
 import {
+  CURATED_BENGALURU_ATTRACTIONS,
+  CURATED_BENGALURU_SHOPPING,
+  CURATED_BENGALURU_TRANSIT,
+} from '../data/curatedLandmarks';
+import {
   extractEntityCoordinates,
   getHotelLocationUrl,
   getDirectionsToHotelUrl,
@@ -479,6 +484,23 @@ class ActiveHotelService {
             });
           }
         });
+      }
+
+      // Safeguard: Ensure hotel nearby arrays are never blank
+      if (!Array.isArray(updatedNearby.touristPlaces) || updatedNearby.touristPlaces.length === 0) {
+        updatedNearby.touristPlaces = (target.nearby?.touristPlaces && target.nearby.touristPlaces.length > 0)
+          ? target.nearby.touristPlaces
+          : CURATED_BENGALURU_ATTRACTIONS;
+      }
+      if (!Array.isArray(updatedNearby.shopping) || updatedNearby.shopping.length === 0) {
+        updatedNearby.shopping = (target.nearby?.shopping && target.nearby.shopping.length > 0)
+          ? target.nearby.shopping
+          : CURATED_BENGALURU_SHOPPING;
+      }
+      if (!Array.isArray(updatedNearby.transportation) || updatedNearby.transportation.length === 0) {
+        updatedNearby.transportation = (target.nearby?.transportation && target.nearby.transportation.length > 0)
+          ? target.nearby.transportation
+          : CURATED_BENGALURU_TRANSIT;
       }
 
       const refreshedHotel = { ...target, nearby: updatedNearby };

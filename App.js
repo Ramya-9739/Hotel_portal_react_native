@@ -234,6 +234,23 @@ export default function App() {
             scrollbar-width: thin;
             scrollbar-color: rgba(226, 192, 130, 0.25) #0F1014;
           }
+          [data-testid="category-explore-btn"],
+          .category-explore-btn {
+            background-color: #25231E !important;
+            border: 1px solid #C5A46D !important;
+            border-radius: 8px !important;
+            transition: all 0.2s ease-in-out !important;
+          }
+          [data-testid="category-explore-btn"]:hover,
+          .category-explore-btn:hover {
+            background-color: #C5A46D !important;
+            border-color: #C5A46D !important;
+          }
+          [data-testid="category-explore-btn"]:hover span,
+          [data-testid="category-explore-btn"]:hover div,
+          .category-explore-btn:hover * {
+            color: #25231E !important;
+          }
         `;
         document.head.appendChild(style);
       }

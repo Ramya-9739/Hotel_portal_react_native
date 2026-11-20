@@ -1,0 +1,66 @@
+{
+  "timestamp": "2026-11-19T17:05:24.855Z",
+  "layoutResults": {
+    "1920x1080": {
+      "hasHorizontalOverflow": false,
+      "scrollWidth": 1920,
+      "clientWidth": 1920,
+      "isSectionOverlapping": false,
+      "centralBottom": null,
+      "amenitiesTop": null,
+      "isHeaderColliding": false,
+      "categoryCardsCount": 13,
+      "buttonsFit": true,
+      "clippedButtons": 0,
+      "touristCardsCount": 12
+    },
+    "1440x900": {
+      "hasHorizontalOverflow": false,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "isSectionOverlapping": false,
+      "centralBottom": null,
+      "amenitiesTop": null,
+      "isHeaderColliding": false,
+      "categoryCardsCount": 13,
+      "buttonsFit": true,
+      "clippedButtons": 0,
+      "touristCardsCount": 12
+    },
+    "1366x768": {
+      "hasHorizontalOverflow": false,
+      "scrollWidth": 1366,
+      "clientWidth": 1366,
+      "isSectionOverlapping": false,
+      "centralBottom": null,
+      "amenitiesTop": null,
+      "isHeaderColliding": false,
+      "categoryCardsCount": 13,
+      "buttonsFit": true,
+      "clippedButtons": 0,
+      "touristCardsCount": 12
+    },
+    "1280x720": {
+      "hasHorizontalOverflow": false,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "isSectionOverlapping": false,
+      "centralBottom": null,
+      "amenitiesTop": null,
+      "isHeaderColliding": false,
+      "categoryCardsCount": 13,
+      "buttonsFit": true,
+      "clippedButtons": 0,
+      "touristCardsCount": 12
+    }
+  },
+  "buttonTestResult": {
+    "cardBgSafe": true,
+    "iconSafe": true,
+    "titleSafe": true,
+    "descSafe": true,
+    "buttonNavWorked": false,
+    "hashAfterCardClick": "#/guest",
+    "hashAfterBtnClick": "#/guest"
+  }
+}

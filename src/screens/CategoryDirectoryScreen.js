@@ -122,6 +122,8 @@ export default function CategoryDirectoryScreen({
       {/* 1. TOP NAVIGATION & ORIGIN BAR */}
       <View style={styles.navBar}>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Back to Hotel Portal"
           style={styles.backButton}
           onPress={onBackToHotel}
           activeOpacity={0.8}

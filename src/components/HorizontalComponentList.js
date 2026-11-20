@@ -50,11 +50,11 @@ export default function HorizontalComponentList({
     }
   };
 
-  // Responsive Card Width: Compact proportions for 5-quadrant layout
+  // Responsive Card Width: Generous, prominent proportions for 5-quadrant layout
   const isDesktop = width >= 768;
   const cardWidth = isDesktop
-    ? Math.max(215, Math.min(235, (width - 60) / 4.8))
-    : Math.max(200, width * 0.75);
+    ? Math.max(230, Math.min(260, (width - 60) / 4.4))
+    : Math.max(215, width * 0.75);
 
   const displayItems = items.length > 0 ? items : [];
 
@@ -428,12 +428,12 @@ export default function HorizontalComponentList({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#111217',
-    borderRadius: 9,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(226, 192, 130, 0.14)',
-    paddingHorizontal: 8,
-    paddingVertical: 1.5,
-    marginVertical: 0.5,
+    borderColor: 'rgba(226, 192, 130, 0.16)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginVertical: 2,
     flexShrink: 0,
     ...Platform.select({
       web: {
@@ -445,17 +445,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: 4,
     paddingHorizontal: 2,
   },
   titleColumn: {
-    gap: 0.5,
+    gap: 1,
   },
   sectionTitle: {
     color: '#F8F6F0',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
     ...Platform.select({
       web: {
         fontFamily: "'Playfair Display', Georgia, serif",
@@ -464,12 +464,12 @@ const styles = StyleSheet.create({
   },
   sectionSubtitle: {
     color: '#94A3B8',
-    fontSize: 8,
+    fontSize: 9,
     marginTop: 0.5,
   },
   actionButton: {
-    paddingVertical: 1.5,
-    paddingHorizontal: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 7,
     backgroundColor: 'rgba(226, 192, 130, 0.12)',
     borderRadius: 5,
     borderWidth: 1,
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
   },
   actionLabelText: {
     color: '#E2C082',
-    fontSize: 9,
+    fontSize: 9.5,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
@@ -840,34 +840,33 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   horizontalEmptyBox: {
-    height: 140,
+    minHeight: 48,
     backgroundColor: 'rgba(15, 23, 42, 0.4)',
     borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
-    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    gap: 8,
     marginHorizontal: 12,
   },
   horizontalEmptyIcon: {
-    fontSize: 22,
+    fontSize: 16,
     color: '#E2C082',
-    opacity: 0.7,
+    opacity: 0.8,
   },
   horizontalEmptyTitle: {
     color: '#CBD5E1',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    textAlign: 'center',
   },
   horizontalEmptySubtitle: {
     color: '#64748B',
-    fontSize: 10.5,
-    textAlign: 'center',
-    maxWidth: 320,
-    lineHeight: 15,
+    fontSize: 9.5,
+    lineHeight: 13,
   },
 });
 
