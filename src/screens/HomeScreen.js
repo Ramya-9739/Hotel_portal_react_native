@@ -37,7 +37,6 @@ import { apiService } from '../services/apiService';
 import { activeHotelService } from '../services/activeHotelService';
 import { safeVal, getDirectionsUrl } from '../data/hotelsData';
 import { LANGUAGES, TRANSLATIONS } from '../data/translations';
-import { CURATED_BENGALURU_ATTRACTIONS } from '../data/curatedLandmarks';
 
 // Subtle, elegant champagne-gold Explore Table Button with smooth hover transition
 function CategoryExploreButton({ catId, catName, onPress }) {
@@ -377,10 +376,6 @@ export default function HomeScreen({
         });
       }
     });
-
-    if (merged.length === 0) {
-      return CURATED_BENGALURU_ATTRACTIONS;
-    }
 
     return merged;
   }, [activeHotel?.nearby?.touristPlaces, activeHotel?.city, activeHotel?.state, globalDestinations]);

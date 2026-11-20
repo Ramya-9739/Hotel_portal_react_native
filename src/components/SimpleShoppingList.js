@@ -23,7 +23,6 @@ import {
   Linking,
 } from 'react-native';
 import { getDirectionsUrl, safeVal } from '../data/hotelsData';
-import { CURATED_BENGALURU_SHOPPING } from '../data/curatedLandmarks';
 
 export default function SimpleShoppingList({
   title = '🛍️ SHOPPING MALLS & SILK BAZAARS',
@@ -32,9 +31,7 @@ export default function SimpleShoppingList({
   hotel,
   onSelectItem,
 }) {
-  const displayItems = (Array.isArray(items) && items.length > 0)
-    ? items
-    : CURATED_BENGALURU_SHOPPING;
+  const displayItems = Array.isArray(items) ? items : [];
   const handleOpenLink = (url) => {
     if (!url) return;
     if (Platform.OS === 'web') {

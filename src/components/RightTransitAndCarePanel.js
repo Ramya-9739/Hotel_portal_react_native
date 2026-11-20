@@ -26,16 +26,13 @@ import {
   Linking,
 } from 'react-native';
 import { getDirectionsUrl, safeVal } from '../data/hotelsData';
-import { CURATED_BENGALURU_TRANSIT } from '../data/curatedLandmarks';
 
 export default function RightTransitAndCarePanel({
   hotel,
   onSelectTransitItem,
 }) {
   const hotelTransit = hotel?.nearby?.transportation;
-  const transitItems = (Array.isArray(hotelTransit) && hotelTransit.length > 0)
-    ? hotelTransit
-    : CURATED_BENGALURU_TRANSIT;
+  const transitItems = Array.isArray(hotelTransit) ? hotelTransit : [];
 
   const handleOpenLink = (url) => {
     if (!url) return;
